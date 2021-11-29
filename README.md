@@ -18,9 +18,9 @@ AWS S3 API 기반 실시간 백업 유틸리티
  ![](images/ifssync2.png)
  
 * 참고1: Event Monitor(1)
- * Event Monitor는 OS에서 발생하는 File Operation 관련 이벤트를 callback 하는 라이브러리를 사용하여 구현 가능합니다.
- * 현재 프로그램에서 사용한 라이브러리는 [CBFS](https://www.callback.com/cbfsfilter/) 이며 nuget으로 설치하여 사용 할 수 있습니다.
- * CBFS는 유료 라이브러리이며 빌드를 위해서는 라이센스를 구입하거나 트라이얼용 키를 별도로 받아 MainData.RUNTIME_LICENSE_KEY에 입력하여 사용해야 합니다.
+  * Event Monitor는 OS에서 발생하는 File Operation 관련 이벤트를 callback 하는 라이브러리를 사용하여 구현 가능합니다.
+  * 현재 프로그램에서 사용한 라이브러리는 [CBFS](https://www.callback.com/cbfsfilter/) 이며 nuget으로 설치하여 사용 할 수 있습니다.
+  * CBFS는 유료 라이브러리이며 빌드를 위해서는 라이센스를 구입하거나 트라이얼용 키를 별도로 받아 MainData.RUNTIME_LICENSE_KEY에 입력하여 사용해야 합니다.
 * 참고2: 중앙관리 기능(Global Backup Job)은 공개 소스 내에 포함되어 있지만, 이 기능을 사용하기 위해서는 Infinistor와의 연동이 필요합니다.
 
 ## 구동 환경

@@ -1,0 +1,6 @@
+bin/
+packages/
+obj/
+.sonarqube/
+IfsSync/
+.vs/

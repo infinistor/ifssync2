@@ -1,0 +1,781 @@
+﻿<Window x:Class="IfsSync2UI.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        WindowStartupLocation="CenterScreen"
+        Closing="Window_Closing"
+        Background="#F2F2F2"
+        ResizeMode="NoResize"
+        Title="IfsSync2" Height="700" Width="1000">
+    <Grid>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="15"/>
+            <ColumnDefinition Width="*"/>
+            <ColumnDefinition Width="15"/>
+        </Grid.ColumnDefinitions>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="45"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="40"/>
+        </Grid.RowDefinitions>
+        <TextBlock Grid.Column="1" Grid.Row="0" x:Name="L_MainTitle" Text="Text" Width="auto" Style="{StaticResource MainTitleStyle}" />
+        <Button Grid.Column="1" Grid.Row="0" x:Name="B_JobType" Content="RealTime Job" Style="{StaticResource MainButtonStyle}" Visibility="Hidden"/>
+        <TabControl x:Name="MainTab" Grid.Row="1" Grid.Column="1" SelectionChanged="MainTab_SelectionChanged" BorderThickness="0">
+            <TabControl.Resources>
+                <Style TargetType="TabItem">
+                    <Setter Property="Template">
+                        <Setter.Value>
+                            <ControlTemplate TargetType="TabItem">
+                                <Grid Name="Panel" Height="30">
+                                    <ContentPresenter x:Name="ContentSite" ContentSource="Header" VerticalAlignment="Center" HorizontalAlignment="Center" Margin="10,2">
+                                        <TextBlock.FontSize >12</TextBlock.FontSize>
+                                    </ContentPresenter>
+                                </Grid>
+                                <ControlTemplate.Triggers>
+                                    <Trigger Property="IsSelected" Value="True">
+                                        <Setter TargetName="Panel" Property="Background" Value="White" />
+                                        <Setter Property="Foreground" Value="Black"/>
+                                        <Setter Property="FontFamily" Value="Segoe UI"/>
+                                    </Trigger>
+                                    <Trigger Property="IsSelected" Value="False">
+                                        <Setter TargetName="Panel" Property="Background" Value="#BFBFBF" />
+                                        <Setter Property="Foreground" Value="White"/>
+                                        <Setter Property="FontFamily" Value="Segoe UI"/>
+                                    </Trigger>
+                                </ControlTemplate.Triggers>
+                            </ControlTemplate>
+                        </Setter.Value>
+                    </Setter>
+                </Style>
+            </TabControl.Resources>
+            <TabItem Header="Summary">
+                <Grid Background="White">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+                    <Grid Grid.Row="0">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="*"/>
+                            <RowDefinition Height="*"/>
+                            <RowDefinition Height="*"/>
+                            <RowDefinition Height="*"/>
+                            <RowDefinition Height="*"/>
+                            <RowDefinition Height="*"/>
+                        </Grid.RowDefinitions>
+                        <Grid>
+                            <TextBlock Text="Job Information" Margin="5" Style="{StaticResource SummaryTitleStyle}"/>
+                            <Button x:Name="B_Refresh" Margin="130,0" Click="Btn_JobListUpdate" Style="{StaticResource RefreshButtonStyle}">
+                                <Image Source="/IfsSync2UI;component/Res/Refresh.png" Style="{StaticResource RefreshImageStyle}"/>
+                            </Button>
+                            <Grid HorizontalAlignment="Right" Width="125" Margin="140, 0">
+                                <ToggleButton Content="+ Real Time Job" x:Name="B_RealTimeToggle" Click="Btn_RealTimeToggleClick" Style="{StaticResource MainToggleButtonStyle}" />
+                                <Popup PlacementTarget="{Binding ElementName=B_RealTimeToggle}" Placement="Bottom" HorizontalOffset="-55" IsOpen="{Binding IsChecked,ElementName=B_RealTimeToggle}" AllowsTransparency="True">
+                                    <Border Height="110" Width="220" Style="{StaticResource EditBorderStyle}">
+                                        <Grid>
+                                            <Grid.RowDefinitions>
+                                                <RowDefinition Height="*"/>
+                                                <RowDefinition Height="*"/>
+                                                <RowDefinition Height="*"/>
+                                            </Grid.RowDefinitions>
+                                            <Label Grid.Row="0" Content="RealTime Job Name" Style="{StaticResource EditTitleStyle}"/>
+                                            <TextBox Grid.Row="1" x:Name="T_RealTimeName"  KeyDown="Txb_RealTimeTextEnterEvent" MouseUp="PopupTextBoxMouseUp" Style="{StaticResource EditTextBoxStyle}"/>
+                                            <Grid Grid.Row="2">
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="*"/>
+                                                    <ColumnDefinition Width="*"/>
+                                                </Grid.ColumnDefinitions>
+                                                <Button Grid.Column="0" Content="Add Job" Click="Btn_CreateRealTimeJob" Style="{StaticResource EditButtonStyle}"/>
+                                                <Button Grid.Column="1" Content="Cencel" Click="Btn_RealTimeToggleClose" Style="{StaticResource EditButtonCloseStyle}"/>
+                                            </Grid>
+                                        </Grid>
+                                    </Border>
+                                </Popup>
+                            </Grid>
+                            <Grid HorizontalAlignment="Right" Width="125" Margin="5,0">
+                                <ToggleButton Content="+ Schedule Job" x:Name="B_ScheduleToggle" Click="Btn_ScheduleToggleClick" Style="{StaticResource MainToggleButtonStyle}" />
+                                <Popup PlacementTarget="{Binding ElementName=B_ScheduleToggle}" IsOpen="{Binding IsChecked,ElementName=B_ScheduleToggle}" HorizontalOffset="-55" AllowsTransparency="True">
+                                    <Border Height="110" Width="220" Style="{StaticResource EditBorderStyle}">
+                                        <Grid>
+                                            <Grid.RowDefinitions>
+                                                <RowDefinition Height="*"/>
+                                                <RowDefinition Height="*"/>
+                                                <RowDefinition Height="*"/>
+                                            </Grid.RowDefinitions>
+                                            <Label Grid.Row="0" Content="Schedule Job Name" Style="{StaticResource EditTitleStyle}"/>
+                                            <TextBox Grid.Row="1" x:Name="T_ScheduleName" KeyDown="Txb_ScheduleTextEnterEvent" MouseUp="PopupTextBoxMouseUp" Style="{StaticResource EditTextBoxStyle}"/>
+                                            <Grid Grid.Row="2">
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="*"/>
+                                                    <ColumnDefinition Width="*"/>
+                                                </Grid.ColumnDefinitions>
+                                                <Button Grid.Column="0" Content="Add Job" Click="Btn_CreateScheduleJob" Style="{StaticResource EditButtonStyle}"/>
+                                                <Button Grid.Column="1" Content="Cencel" Click="Btn_ScheduleToggleClose" Style="{StaticResource EditButtonCloseStyle}"/>
+                                            </Grid>
+                                        </Grid>
+                                    </Border>
+                                </Popup>
+                            </Grid>
+                        </Grid>
+                        <ListView Grid.Row="1" x:Name="L_JobList" Grid.RowSpan="5" Margin="5" BorderBrush="#F2F2F2" ScrollViewer.HorizontalScrollBarVisibility="Disabled" MouseDoubleClick="JobListDoubleClickEvent">
+                            <ListView.View>
+                                <GridView >
+                                    <GridViewColumn Header="Name" Width="110">
+                                        <GridViewColumn.CellTemplate>
+                                            <DataTemplate>
+                                                <TextBlock Text="{Binding JobName}" ToolTip="{Binding JobName}" Style="{StaticResource ListViewStyle}"/>
+                                            </DataTemplate>
+                                        </GridViewColumn.CellTemplate>
+                                    </GridViewColumn>
+                                    <GridViewColumn Header="Job Type" Width="80">
+                                        <GridViewColumn.CellTemplate>
+                                            <DataTemplate>
+                                                <TextBlock Text="{Binding JobType}" Style="{StaticResource ListViewStyle}"/>
+                                            </DataTemplate>
+                                        </GridViewColumn.CellTemplate>
+                                    </GridViewColumn>
+                                    <GridViewColumn Header="Storage&#10;(Credential ID)" Width="110">
+                                        <GridViewColumn.CellTemplate>
+                                            <DataTemplate>
+                                                <TextBlock Text="{Binding StorageName}" ToolTip="{Binding StorageName}" Style="{StaticResource ListViewStyle}"/>
+                                            </DataTemplate>
+                                        </GridViewColumn.CellTemplate>
+                                    </GridViewColumn>
+                                    <GridViewColumn Header="Selected Extension" Width="350">
+                                        <GridViewColumn.CellTemplate>
+                                            <DataTemplate>
+                                                <ListBox ItemsSource="{Binding ExtensionList}" IsEnabled="False" BorderThickness="0" Background="Transparent" ScrollViewer.HorizontalScrollBarVisibility="Hidden">
+                                                    <ListBox.ItemsPanel>
+                                                        <ItemsPanelTemplate>
+                                                            <WrapPanel Width="345"/>
+                                                        </ItemsPanelTemplate>
+                                                    </ListBox.ItemsPanel>
+                                                    <ListBox.ItemTemplate>
+                                                        <DataTemplate>
+                                                            <Border CornerRadius="5" Background="#D9D9D9" >
+                                                                <TextBlock Text="{Binding}" Style="{StaticResource ListBoxStyle}" Margin="3, 0"/>
+                                                            </Border>
+                                                        </DataTemplate>
+                                                    </ListBox.ItemTemplate>
+                                                </ListBox>
+                                            </DataTemplate>
+                                        </GridViewColumn.CellTemplate>
+                                    </GridViewColumn>
+                                    <GridViewColumn Header="Status" Width="80">
+                                        <GridViewColumn.CellTemplate>
+                                            <DataTemplate>
+                                                <TextBlock Text="{Binding Status}" Style="{StaticResource ListViewStyle}"  Width="80" VerticalAlignment="Center" HorizontalAlignment="Center" TextAlignment="Center"/>
+                                            </DataTemplate>
+                                        </GridViewColumn.CellTemplate>
+                                    </GridViewColumn>
+                                    <GridViewColumn Header="Monitor" Width="50">
+                                        <GridViewColumn.CellTemplate>
+                                            <DataTemplate>
+                                                <StackPanel Orientation="Horizontal">
+                                                    <Image Source="{Binding FilterIcon}" Height="16" Width="16" Margin="10,0"/>
+                                                </StackPanel>
+                                            </DataTemplate>
+                                        </GridViewColumn.CellTemplate>
+                                    </GridViewColumn>
+                                    <GridViewColumn Header="VSS" Width="50">
+                                        <GridViewColumn.CellTemplate>
+                                            <DataTemplate>
+                                                <StackPanel Orientation="Horizontal">
+                                                    <Image Source="{Binding VSSIcon}" Height="16" Width="16" Margin="10,0"/>
+                                                </StackPanel>
+                                            </DataTemplate>
+                                        </GridViewColumn.CellTemplate>
+                                    </GridViewColumn>
+                                    <GridViewColumn Header="Sender" Width="50">
+                                        <GridViewColumn.CellTemplate>
+                                            <DataTemplate>
+                                                <StackPanel Orientation="Horizontal">
+                                                    <Image Source="{Binding SenderIcon}" Height="16" Width="16" Margin="10,0"  ToolTip="에러의 발생 이유는 스토리지와의 통신에 문제가 있거나 최초 설치시 관리자의 허가가 필요한 경우에 발생할 수 있습니다."/>
+                                                </StackPanel>
+                                            </DataTemplate>
+                                        </GridViewColumn.CellTemplate>
+                                    </GridViewColumn>
+                                    <GridViewColumn Header="" Width="30">
+                                        <GridViewColumn.CellTemplate>
+                                            <DataTemplate>
+                                                <Grid x:Name="Grid_Delete" Width="10" Height="10">
+                                                    <ToggleButton x:Name="B_DeleteJob" Click="ToggleBtn_DeleteJob" Background="Transparent" BorderThickness="0" Visibility="{Binding ButtonVisibility}">
+                                                        <Image Height="10" Width="10" Source="/IfsSync2UI;component/Res/delete.png" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                                    </ToggleButton>
+                                                    <Popup PlacementTarget="{Binding ElementName=B_DeleteJob}" IsOpen="{Binding IsChecked,ElementName=B_DeleteJob}" HorizontalOffset="-85" Placement="Bottom" AllowsTransparency="True">
+                                                        <Border Height="130" Width="220" Style="{StaticResource EditBorderStyle}">
+                                                            <Grid>
+                                                                <Grid.RowDefinitions>
+                                                                    <RowDefinition Height="30"/>
+                                                                    <RowDefinition Height="1.5*"/>
+                                                                    <RowDefinition Height="*"/>
+                                                                </Grid.RowDefinitions>
+                                                                <Label Grid.Row="0" Content="Job을 삭제시겠습니까?" Style="{StaticResource EditTitleStyle}"/>
+                                                                <Label Grid.Row="1" Content="Job을 삭제하면&#10; 다시 복원할 수 없습니다." Style="{StaticResource EditTitleStyle}" FontWeight="Light"/>
+                                                                <Grid Grid.Row="2">
+                                                                    <Grid.ColumnDefinitions>
+                                                                        <ColumnDefinition Width="*"/>
+                                                                        <ColumnDefinition Width="*"/>
+                                                                    </Grid.ColumnDefinitions>
+                                                                    <Button Grid.Column="0" Content="Delete Job" Click="Btn_DeleteJobList"      Tag="{Binding ButtonTag}" Style="{StaticResource EditButtonStyle}" />
+                                                                    <Button Grid.Column="1" Content="Cencel"     Click="Btn_DeleteJobListClose" Tag="{Binding ButtonTag}" Style="{StaticResource EditButtonCloseStyle}"/>
+                                                                </Grid>
+                                                            </Grid>
+                                                        </Border>
+                                                    </Popup>
+                                                </Grid>
+                                            </DataTemplate>
+                                        </GridViewColumn.CellTemplate>
+                                    </GridViewColumn>
+                                    <GridView.ColumnHeaderContainerStyle>
+                                        <Style TargetType="GridViewColumnHeader">
+                                            <Setter Property="IsEnabled" Value="False"/>
+                                            <Setter Property="Height"  Value="40"/>
+                                            <Setter Property="FontFamily" Value="Segoe UI"/>
+                                            <Setter Property="Foreground" Value="#5F5F5F"/>
+                                        </Style>
+                                    </GridView.ColumnHeaderContainerStyle>
+                                    
+                                </GridView>
+                            </ListView.View>
+                        </ListView>
+                    </Grid>
+
+                    <Grid Grid.Row="1">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="*"/>
+                            <RowDefinition Height="*"/>
+                            <RowDefinition Height="*"/>
+                            <RowDefinition Height="*"/>
+                            <RowDefinition Height="*"/>
+                            <RowDefinition Height="*"/>
+                        </Grid.RowDefinitions>
+                        <TextBlock Text="Storage Information (Credential)" Margin="5, 0" Style="{StaticResource SummaryTitleStyle}"/>
+                        <Button x:Name="B_RefreshStorage"  Click="Btn_StorageUpdate" Margin="250, 0" Style="{StaticResource RefreshButtonStyle}">
+                            <Image Source="/IfsSync2UI;component/Res/Refresh.png" Style="{StaticResource RefreshImageStyle}"/>
+                        </Button>
+                        <Grid HorizontalAlignment="Right" Width="150" Margin="5, 0">
+                            <ToggleButton Content="+ Storage Credential" x:Name="B_StorageToggle" Click="Btn_StorageToggleClick" Style="{StaticResource MainToggleButtonStyle}" />
+                            <Popup PlacementTarget="{Binding ElementName=B_StorageToggle}" Placement="Bottom" HorizontalOffset="-65" IsOpen="{Binding IsChecked,ElementName=B_StorageToggle}" AllowsTransparency="True">
+                                <Border Height="320" Width="240" Style="{StaticResource EditBorderStyle}">
+                                    <Grid>
+                                        <Grid.RowDefinitions>
+                                            <RowDefinition Height="*"/>
+                                            <RowDefinition Height="*"/>
+                                            <RowDefinition Height="*"/>
+                                            <RowDefinition Height="*"/>
+                                            <RowDefinition Height="*"/>
+                                            <RowDefinition Height="*"/>
+                                            <RowDefinition Height="*"/>
+                                            <RowDefinition Height="*"/>
+                                            <RowDefinition Height="*"/>
+                                            <RowDefinition Height="*"/>
+                                            <RowDefinition Height="*"/>
+                                        </Grid.RowDefinitions>
+                                        <Label   Grid.Row="0" Content="Storage Credential Name" Style="{StaticResource EditTitleStyle}"/>
+                                        <TextBox Grid.Row="1" x:Name="T_AddStorageName" KeyDown="CreateCredentialEvent" MouseUp="PopupTextBoxMouseUp" Style="{StaticResource EditTextBoxStyle}"/>
+                                        <Label   Grid.Row="2" Content="Full URL or Region Information(S3)" Style="{StaticResource EditTitleStyle}"/>
+                                        <TextBox Grid.Row="3" x:Name="T_AddStorageURL" KeyDown="CreateCredentialEvent" MouseUp="PopupTextBoxMouseUp" Style="{StaticResource EditTextBoxStyle}"/>
+                                        <Label   Grid.Row="4" Content="Access Key" Style="{StaticResource EditTitleStyle}"/>
+                                        <TextBox Grid.Row="5" x:Name="T_AddStorageAccessKey" KeyDown="CreateCredentialEvent" MouseUp="PopupTextBoxMouseUp" Style="{StaticResource EditTextBoxStyle}"/>
+                                        <Label   Grid.Row="6" Content="Secret Key" Style="{StaticResource EditTitleStyle}"/>
+                                        <TextBox Grid.Row="7" x:Name="T_AddStorageSecretKey" KeyDown="CreateCredentialEvent" MouseUp="PopupTextBoxMouseUp" Style="{StaticResource EditTextBoxStyle}"/>
+                                        <Label   Grid.Row="8" Content="Bucket Name for Backup" Style="{StaticResource EditTitleStyle}"/>
+                                        <TextBox Grid.Row="9" x:Name="T_AddStorageUserName" KeyDown="CreateCredentialEvent" MouseUp="PopupTextBoxMouseUp" Style="{StaticResource EditTextBoxStyle}"/>
+                                        <Grid Grid.Row="99">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="*"/>
+                                            </Grid.ColumnDefinitions>
+                                            <Button Grid.Column="0" Content="Add Credential"  Click="Btn_CreateCredential" Style="{StaticResource EditButtonStyle}"/>
+                                            <Button Grid.Column="1" Content="Cencel" Click="Btn_CredentialToggleClose" Style="{StaticResource EditButtonCloseStyle}"/>
+                                        </Grid>
+                                    </Grid>
+                                </Border>
+                            </Popup>
+                        </Grid>
+                        <Grid Grid.Column="0" Grid.Row="1" Grid.RowSpan="5" >
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <Grid Grid.Column="0" x:Name="Storage_1" Margin="5" Background="#F8F8F8">
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="*"/>
+                                    <RowDefinition Height="*"/>
+                                    <RowDefinition Height="*"/>
+                                    <RowDefinition Height="*"/>
+                                </Grid.RowDefinitions>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <Grid Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="2">
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="1.2*"/>
+                                        <RowDefinition Height="*"/>
+                                    </Grid.RowDefinitions>
+                                    <TextBlock Grid.Row="0" x:Name="L_StorageName_1" Text="Default" Style="{StaticResource StorageTitleStyle}"/>
+                                    <TextBlock Grid.Row="1" x:Name="L_URL_1" Style="{StaticResource StorageURLStyle}"/>
+                                    <Grid Grid.Row="0" Width="30" HorizontalAlignment="Right">
+                                        <ToggleButton x:Name="B_Edit1" Style="{StaticResource MainToggleButtonStyle}" Click="Btn_Edit1">
+                                            <Image Source="/IfsSync2UI;component/Res/Pencil.png" Style="{StaticResource StorageImageStyle}"/>
+                                        </ToggleButton>
+                                        <Popup PlacementTarget="{Binding ElementName=B_Edit1}" IsOpen="{Binding IsChecked,ElementName=B_Edit1}" Placement="Bottom" HorizontalOffset="-95" AllowsTransparency="True">
+                                            <Border Height="350" Width="220" Style="{StaticResource EditBorderStyle}">
+                                                <Grid>
+                                                    <Grid.RowDefinitions>
+                                                        <RowDefinition Height="*"/>
+                                                        <RowDefinition Height="20"/>
+                                                        <RowDefinition Height="*"/>
+                                                        <RowDefinition Height="20"/>
+                                                        <RowDefinition Height="*"/>
+                                                        <RowDefinition Height="20"/>
+                                                        <RowDefinition Height="*"/>
+                                                        <RowDefinition Height="20"/>
+                                                        <RowDefinition Height="*"/>
+                                                        <RowDefinition Height="20"/>
+                                                        <RowDefinition Height="*"/>
+                                                        <RowDefinition Height="20"/>
+                                                        <RowDefinition Height="5"/>
+                                                        <RowDefinition Height="*"/>
+                                                    </Grid.RowDefinitions>
+                                                    <Label   Grid.Row="0" Content="Storage Name" Style="{StaticResource EditTitleStyle}"/>
+                                                    <TextBox Grid.Row="1" x:Name="T_StorageName" KeyDown="MainStorageSaveEvent" MouseUp="PopupTextBoxMouseUp" Style="{StaticResource EditTextBoxStyle}"/>
+                                                    <Label   Grid.Row="2" Content="Address" Style="{StaticResource EditTitleStyle}"/>
+                                                    <TextBox Grid.Row="3" x:Name="T_EditMainIP" KeyDown="MainStorageSaveEvent" MouseUp="PopupTextBoxMouseUp" Style="{StaticResource EditTextBoxStyle}"/>
+                                                    <Label   Grid.Row="4" Content="Port Number" Style="{StaticResource EditTitleStyle}"/>
+                                                    <TextBox Grid.Row="5" x:Name="T_PortNumber" KeyDown="MainStorageSaveEvent" MouseUp="PopupTextBoxMouseUp" Style="{StaticResource EditTextBoxStyle}"/>
+                                                    <Label   Grid.Row="6" Content="PC Name" Style="{StaticResource EditTitleStyle}"/>
+                                                    <TextBox Grid.Row="7" x:Name="T_AditPCName" KeyDown="MainStorageSaveEvent" MouseUp="PopupTextBoxMouseUp" Style="{StaticResource EditTextBoxStyle}"/>
+                                                    <Label   Grid.Row="8" Content="Email" Style="{StaticResource EditTitleStyle}"/>
+                                                    <TextBox Grid.Row="9" x:Name="T_AditEmail" KeyDown="MainStorageSaveEvent" MouseUp="PopupTextBoxMouseUp" Style="{StaticResource EditTextBoxStyle}"/>
+                                                    <Label   Grid.Row="10" Content="S3 File Manager URL" Style="{StaticResource EditTitleStyle}"/>
+                                                    <TextBox Grid.Row="11" x:Name="T_S3FileManagerURL" KeyDown="MainStorageSaveEvent" MouseUp="PopupTextBoxMouseUp" Style="{StaticResource EditTextBoxStyle}"/>
+                                                    <Grid Grid.Row="99">
+                                                        <Grid.ColumnDefinitions>
+                                                            <ColumnDefinition Width="*"/>
+                                                            <ColumnDefinition Width="*"/>
+                                                        </Grid.ColumnDefinitions>
+                                                        <Button Grid.Column="0" Content="Register" Click="Btn_Edit1Save" Style="{StaticResource EditButtonStyle}" />
+                                                        <Button Grid.Column="1" Content="Cencel" Click="Btn_Edit1Close" Style="{StaticResource EditButtonCloseStyle}" />
+                                                    </Grid>
+                                                </Grid>
+                                            </Border>
+                                        </Popup>
+                                    </Grid>
+                                </Grid>
+                                <StackPanel Grid.Row="1" Grid.RowSpan="2" Width="100" Height="100" x:Name="DefaultGraph">
+                                    <Ellipse Width="100" Height="100" Fill="#7F7F7F"/>
+                                </StackPanel>
+                                <StackPanel Width="100" Height="100" Grid.Row="1" Grid.RowSpan="2" x:Name="P_Graph_1"/>
+                                <Label Grid.Row="1" Grid.Column="1" Grid.RowSpan="2" x:Name="L_SizeRate_1" Content="" Style="{StaticResource StorageRateStyle}"/>
+                                <TextBlock Grid.Row="1" Grid.RowSpan="2" Grid.ColumnSpan="2" x:Name="T_EmptyStorage" Text="Global Backup Service를 활성화&#10;하시려면 상단 연필모양을 클릭하여&#10;기본 스토리지 연결 정보를&#10;설정하여 주십시오." Style="{StaticResource  TextBlockStyle}" />
+                                <Grid Grid.Row="3" Grid.Column="0" Grid.ColumnSpan="2">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="*"/>
+                                        <RowDefinition Height="*"/>
+                                    </Grid.RowDefinitions>
+                                    <Label Grid.Row="0" Grid.Column="0" Content="Total" Style="{StaticResource StorageLabelStyle}" />
+                                    <Label Grid.Row="0" Grid.Column="1" Content="Used" Style="{StaticResource StorageLabelStyle}"/>
+                                    <Label Grid.Row="0" Grid.Column="2" Content="Free" Style="{StaticResource StorageLabelStyle}"/>
+                                    <Label Grid.Row="1" Grid.Column="0" x:Name="L_Total_1" Style="{StaticResource StorageSizeStyle}"/>
+                                    <Label Grid.Row="1" Grid.Column="1" x:Name="L_Used_1" Style="{StaticResource StorageSizeStyle}"/>
+                                    <Label Grid.Row="1" Grid.Column="2" x:Name="L_Free_1" Style="{StaticResource StorageSizeStyle}"/>
+                                </Grid>
+                            </Grid>
+                            <Grid Grid.Column="1" x:Name="Storage_2" Margin="5" Background="#F8F8F8" >
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="*"/>
+                                    <RowDefinition Height="3*"/>
+                                </Grid.RowDefinitions>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <Grid Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="2">
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="1.2*"/>
+                                        <RowDefinition Height="*"/>
+                                    </Grid.RowDefinitions>
+                                    <TextBlock Grid.Row="0" x:Name="L_StorageName_2" Text=""  Style="{StaticResource StorageTitleStyle}"/>
+                                    <TextBlock Grid.Row="1" x:Name="L_URL_2" Style="{StaticResource StorageURLStyle}"/>
+                                    <Grid Grid.Row="0" Width="30" HorizontalAlignment="Right" Margin="35, 0">
+                                        <ToggleButton x:Name="B_Edit_2" Tag="0" Click="Btn_Edit" Style="{StaticResource MainToggleButtonStyle}">
+                                            <Image Source="/IfsSync2UI;component/Res/Pencil.png" Style="{StaticResource StorageImageStyle}"/>
+                                        </ToggleButton>
+                                        <Popup PlacementTarget="{Binding ElementName=B_Edit_2}" IsOpen="{Binding IsChecked,ElementName=B_Edit_2}" Placement="Bottom" HorizontalOffset="-95" AllowsTransparency="True">
+                                            <Border Height="330" Width="220" Style="{StaticResource EditBorderStyle}">
+                                                <Grid>
+                                                    <Grid.RowDefinitions>
+                                                        <RowDefinition Height="*"/>
+                                                        <RowDefinition Height="20"/>
+                                                        <RowDefinition Height="*"/>
+                                                        <RowDefinition Height="20"/>
+                                                        <RowDefinition Height="*"/>
+                                                        <RowDefinition Height="20"/>
+                                                        <RowDefinition Height="*"/>
+                                                        <RowDefinition Height="20"/>
+                                                        <RowDefinition Height="*"/>
+                                                        <RowDefinition Height="20"/>
+                                                        <RowDefinition Height="*"/>
+                                                        <RowDefinition Height="20"/>
+                                                        <RowDefinition Height="5"/>
+                                                        <RowDefinition Height="*"/>
+                                                    </Grid.RowDefinitions>
+                                                    <Label   Grid.Row="0" Content="Storage Name" Style="{StaticResource EditTitleStyle}"/>
+                                                    <TextBox Grid.Row="1" x:Name="T_EditStorage_2" Tag="0" KeyDown="StorageSaveEvent" MouseUp="PopupTextBoxMouseUp" Style="{StaticResource EditTextBoxStyle}"/>
+                                                    <Label   Grid.Row="2" Content="Full URL" Style="{StaticResource EditTitleStyle}"/>
+                                                    <TextBox Grid.Row="3" x:Name="T_EditURL_2" Tag="0" KeyDown="StorageSaveEvent" MouseUp="PopupTextBoxMouseUp" Style="{StaticResource EditTextBoxStyle}"/>
+                                                    <Label   Grid.Row="4" Content="Access Key" Style="{StaticResource EditTitleStyle}"/>
+                                                    <TextBox Grid.Row="5" x:Name="T_EditAccessKey_2" Tag="0" KeyDown="StorageSaveEvent" MouseUp="PopupTextBoxMouseUp" Style="{StaticResource EditTextBoxStyle}"/>
+                                                    <Label   Grid.Row="6" Content="Access Secret" Style="{StaticResource EditTitleStyle}"/>
+                                                    <TextBox Grid.Row="7" x:Name="T_EditAccessSecret_2" Tag="0" KeyDown="StorageSaveEvent" MouseUp="PopupTextBoxMouseUp" Style="{StaticResource EditTextBoxStyle}"/>
+                                                    <Label   Grid.Row="8" Content="User Name (Bucket)" Style="{StaticResource EditTitleStyle}"/>
+                                                    <TextBox Grid.Row="9" x:Name="T_EditUserName_2" Tag="0" KeyDown="StorageSaveEvent" MouseUp="PopupTextBoxMouseUp" Style="{StaticResource EditTextBoxStyle}"/>
+                                                    <Label   Grid.Row="10" Content="S3 File Manager URL" Style="{StaticResource EditTitleStyle}"/>
+                                                    <TextBox Grid.Row="11" x:Name="T_EditS3FileManagerURL_2" Tag="0" KeyDown="StorageSaveEvent" MouseUp="PopupTextBoxMouseUp" Style="{StaticResource EditTextBoxStyle}"/>
+                                                    <Grid Grid.Row="99">
+                                                        <Grid.ColumnDefinitions>
+                                                            <ColumnDefinition Width="*"/>
+                                                            <ColumnDefinition Width="*"/>
+                                                        </Grid.ColumnDefinitions>
+                                                        <Button Grid.Column="0" Content="Register" Click="BtnEditSave" Tag="0" Style="{StaticResource EditButtonStyle}"/>
+                                                        <Button Grid.Column="1" Content="Cencel" Style="{StaticResource EditButtonCloseStyle}" Click="Btn_PopupAllClose"/>
+                                                    </Grid>
+                                                </Grid>
+                                            </Border>
+                                        </Popup>
+                                    </Grid>
+                                    <Grid Grid.Row="0" Width="30" HorizontalAlignment="Right">
+                                        <ToggleButton x:Name="B_Delete_2" Click="Btn_Delete" Style="{StaticResource MainToggleButtonStyle}">
+                                            <Image Source="/IfsSync2UI;component/Res/Trash.png" Style="{StaticResource StorageImageStyle}"/>
+                                        </ToggleButton>
+                                        <Popup PlacementTarget="{Binding ElementName=B_Delete_2}" IsOpen="{Binding IsChecked,ElementName=B_Delete_2}" Placement="Bottom" HorizontalOffset="-125" AllowsTransparency="True">
+                                            <Border Height="130" Width="300" Style="{StaticResource EditBorderStyle}">
+                                                <Grid>
+                                                    <Grid.RowDefinitions>
+                                                        <RowDefinition Height="30"/>
+                                                        <RowDefinition Height="1.5*"/>
+                                                        <RowDefinition Height="*"/>
+                                                    </Grid.RowDefinitions>
+                                                    <Label Grid.Row="0" Content="스토리지 연결 정보를 삭제 하시겠습니까?" Style="{StaticResource EditTitleStyle}"/>
+                                                    <Label Grid.Row="1" Content="해당 스토리지 연결 정보와 관련된 IfsSync Job이&#10;자동으로 삭제됩니다." Style="{StaticResource EditTitleStyle}" FontWeight="Light"/>
+                                                    <Grid Grid.Row="2">
+                                                        <Grid.ColumnDefinitions>
+                                                            <ColumnDefinition Width="*"/>
+                                                            <ColumnDefinition Width="*"/>
+                                                        </Grid.ColumnDefinitions>
+                                                        <Button Grid.Column="0" Content="Delete Storage" Tag="0" Click="Btn_EditDelete" Style="{StaticResource EditButtonStyle}"/>
+                                                        <Button Grid.Column="1" Content="Cencel"  Click="Btn_PopupAllClose" Style="{StaticResource EditButtonCloseStyle}"/>
+                                                    </Grid>
+                                                </Grid>
+                                            </Border>
+                                        </Popup>
+                                    </Grid>
+                                </Grid>
+                                <TextBlock Grid.Row="0" Grid.RowSpan="2" Grid.ColumnSpan="2" x:Name="T_EmptyStorage_2" Text="AWS S3로 설정한 경우&#10;Quota 사용 정보를&#10;표시할 수 없습니다." Style="{StaticResource  TextBlockStyle}" />
+                                <Grid Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="2" x:Name="G_Quota_2">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="*"/>
+                                        <RowDefinition Height="*"/>
+                                        <RowDefinition Height="*"/>
+                                    </Grid.RowDefinitions>
+                                    <StackPanel Grid.Row="0" Grid.RowSpan="2" Width="100" Height="100">
+                                        <Ellipse Width="100" Height="100" Fill="#7F7F7F"/>
+                                    </StackPanel>
+                                    <StackPanel Grid.Row="0" Grid.RowSpan="2" Width="100" Height="100" x:Name="P_Graph_2"/>
+                                    <Label Grid.Row="0" Grid.Column="1" Grid.RowSpan="2" x:Name="L_SizeRate_2" Content="" Style="{StaticResource StorageRateStyle}"/>
+                                    <Grid Grid.Row="3" Grid.Column="0" Grid.ColumnSpan="2">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="*"/>
+                                        </Grid.ColumnDefinitions>
+                                        <Grid.RowDefinitions>
+                                            <RowDefinition Height="*"/>
+                                            <RowDefinition Height="*"/>
+                                        </Grid.RowDefinitions>
+                                        <Label Grid.Row="0" Grid.Column="0" Content="Total" Style="{StaticResource StorageLabelStyle}" />
+                                        <Label Grid.Row="0" Grid.Column="1" Content="Used" Style="{StaticResource StorageLabelStyle}"/>
+                                        <Label Grid.Row="0" Grid.Column="2" Content="Free" Style="{StaticResource StorageLabelStyle}"/>
+                                        <Label Grid.Row="1" Grid.Column="0" x:Name="L_Total_2" Style="{StaticResource StorageSizeStyle}"/>
+                                        <Label Grid.Row="1" Grid.Column="1" x:Name="L_Used_2" Style="{StaticResource StorageSizeStyle}"/>
+                                        <Label Grid.Row="1" Grid.Column="2" x:Name="L_Free_2" Style="{StaticResource StorageSizeStyle}"/>
+                                    </Grid>
+                                </Grid>
+                            </Grid>
+                            <Grid Grid.Column="2" x:Name="Storage_3" Margin="5" Background="#F8F8F8" >
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="*"/>
+                                    <RowDefinition Height="3*"/>
+                                </Grid.RowDefinitions>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <Grid Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="2">
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="1.2*"/>
+                                        <RowDefinition Height="*"/>
+                                    </Grid.RowDefinitions>
+                                    <TextBlock Grid.Row="0" x:Name="L_StorageName_3" Text=""  Style="{StaticResource StorageTitleStyle}"/>
+                                    <TextBlock Grid.Row="1" x:Name="L_URL_3" Style="{StaticResource StorageURLStyle}"/>
+                                    <Grid Grid.Row="0" Width="30" HorizontalAlignment="Right" Margin="35, 0">
+                                        <ToggleButton x:Name="B_Edit_3" Tag="1" Click="Btn_Edit" Style="{StaticResource MainToggleButtonStyle}">
+                                            <Image Source="/IfsSync2UI;component/Res/Pencil.png" Style="{StaticResource StorageImageStyle}"/>
+                                        </ToggleButton>
+                                        <Popup PlacementTarget="{Binding ElementName=B_Edit_3}" IsOpen="{Binding IsChecked,ElementName=B_Edit_3}" Placement="Bottom" HorizontalOffset="-95" AllowsTransparency="True">
+                                            <Border Height="330" Width="220" Style="{StaticResource EditBorderStyle}">
+                                                <Grid>
+                                                    <Grid.RowDefinitions>
+                                                        <RowDefinition Height="*"/>
+                                                        <RowDefinition Height="20"/>
+                                                        <RowDefinition Height="*"/>
+                                                        <RowDefinition Height="20"/>
+                                                        <RowDefinition Height="*"/>
+                                                        <RowDefinition Height="20"/>
+                                                        <RowDefinition Height="*"/>
+                                                        <RowDefinition Height="20"/>
+                                                        <RowDefinition Height="*"/>
+                                                        <RowDefinition Height="20"/>
+                                                        <RowDefinition Height="*"/>
+                                                        <RowDefinition Height="20"/>
+                                                        <RowDefinition Height="5"/>
+                                                        <RowDefinition Height="*"/>
+                                                    </Grid.RowDefinitions>
+                                                    <Label   Grid.Row="0" Content="Storage Name" Style="{StaticResource EditTitleStyle}"/>
+                                                    <TextBox Grid.Row="1" x:Name="T_EditStorage_3" Tag="1" KeyDown="StorageSaveEvent" MouseUp="PopupTextBoxMouseUp" Style="{StaticResource EditTextBoxStyle}"/>
+                                                    <Label   Grid.Row="2" Content="Full URL" Style="{StaticResource EditTitleStyle}"/>
+                                                    <TextBox Grid.Row="3" x:Name="T_EditURL_3" Tag="1" KeyDown="StorageSaveEvent" MouseUp="PopupTextBoxMouseUp" Style="{StaticResource EditTextBoxStyle}"/>
+                                                    <Label   Grid.Row="4" Content="Access Key" Style="{StaticResource EditTitleStyle}"/>
+                                                    <TextBox Grid.Row="5" x:Name="T_EditAccessKey_3" Tag="1" KeyDown="StorageSaveEvent" MouseUp="PopupTextBoxMouseUp" Style="{StaticResource EditTextBoxStyle}"/>
+                                                    <Label   Grid.Row="6" Content="Access Secret" Style="{StaticResource EditTitleStyle}"/>
+                                                    <TextBox Grid.Row="7" x:Name="T_EditAccessSecret_3" Tag="1" KeyDown="StorageSaveEvent" MouseUp="PopupTextBoxMouseUp" Style="{StaticResource EditTextBoxStyle}"/>
+                                                    <Label   Grid.Row="8" Content="User Name (Bucket)" Style="{StaticResource EditTitleStyle}"/>
+                                                    <TextBox Grid.Row="9" x:Name="T_EditUserName_3" Tag="1" KeyDown="StorageSaveEvent" MouseUp="PopupTextBoxMouseUp" Style="{StaticResource EditTextBoxStyle}"/>
+                                                    <Label   Grid.Row="10" Content="S3 File Manager URL" Style="{StaticResource EditTitleStyle}"/>
+                                                    <TextBox Grid.Row="11" x:Name="T_EditS3FileManagerURL_3" Tag="1" KeyDown="StorageSaveEvent" MouseUp="PopupTextBoxMouseUp" Style="{StaticResource EditTextBoxStyle}"/>
+                                                    <Grid Grid.Row="99">
+                                                        <Grid.ColumnDefinitions>
+                                                            <ColumnDefinition Width="*"/>
+                                                            <ColumnDefinition Width="*"/>
+                                                        </Grid.ColumnDefinitions>
+                                                        <Button Grid.Column="0" Content="Register" Click="BtnEditSave" Tag="1" Style="{StaticResource EditButtonStyle}"/>
+                                                        <Button Grid.Column="1" Content="Cencel" Style="{StaticResource EditButtonCloseStyle}" Click="Btn_PopupAllClose"/>
+                                                    </Grid>
+                                                </Grid>
+                                            </Border>
+                                        </Popup>
+                                    </Grid>
+                                    <Grid Grid.Row="0" Width="30" HorizontalAlignment="Right">
+                                        <ToggleButton x:Name="B_Delete_3" Click="Btn_Delete" Style="{StaticResource MainToggleButtonStyle}">
+                                            <Image Source="/IfsSync2UI;component/Res/Trash.png" Style="{StaticResource StorageImageStyle}"/>
+                                        </ToggleButton>
+                                        <Popup PlacementTarget="{Binding ElementName=B_Delete_3}" IsOpen="{Binding IsChecked,ElementName=B_Delete_3}" Placement="Bottom" HorizontalOffset="-125" AllowsTransparency="True">
+                                            <Border Height="130" Width="300" Style="{StaticResource EditBorderStyle}">
+                                                <Grid>
+                                                    <Grid.RowDefinitions>
+                                                        <RowDefinition Height="30"/>
+                                                        <RowDefinition Height="1.5*"/>
+                                                        <RowDefinition Height="*"/>
+                                                    </Grid.RowDefinitions>
+                                                    <Label Grid.Row="0" Content="스토리지 연결 정보를 삭제 하시겠습니까?" Style="{StaticResource EditTitleStyle}"/>
+                                                    <Label Grid.Row="1" Content="해당 스토리지 연결 정보와 관련된 IfsSync Job이&#10;자동으로 삭제됩니다." Style="{StaticResource EditTitleStyle}" FontWeight="Light"/>
+                                                    <Grid Grid.Row="2">
+                                                        <Grid.ColumnDefinitions>
+                                                            <ColumnDefinition Width="*"/>
+                                                            <ColumnDefinition Width="*"/>
+                                                        </Grid.ColumnDefinitions>
+                                                        <Button Grid.Column="0" Content="Delete Storage" Tag="1" Click="Btn_EditDelete"  Style="{StaticResource EditButtonStyle}"/>
+                                                        <Button Grid.Column="1" Content="Cencel"  Click="Btn_PopupAllClose" Style="{StaticResource EditButtonCloseStyle}"/>
+                                                    </Grid>
+                                                </Grid>
+                                            </Border>
+                                        </Popup>
+                                    </Grid>
+                                </Grid>
+                                <TextBlock Grid.Row="0" Grid.RowSpan="2" Grid.ColumnSpan="2" x:Name="T_EmptyStorage_3" Text="AWS S3로 설정한 경우&#10;Quota 사용 정보를&#10;표시할 수 없습니다." Style="{StaticResource  TextBlockStyle}" />
+                                <Grid Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="2" x:Name="G_Quota_3">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="*"/>
+                                        <RowDefinition Height="*"/>
+                                        <RowDefinition Height="*"/>
+                                    </Grid.RowDefinitions>
+                                    <StackPanel Grid.Row="0" Grid.RowSpan="2" Width="100" Height="100">
+                                        <Ellipse Width="100" Height="100" Fill="#7F7F7F"/>
+                                    </StackPanel>
+                                    <StackPanel Grid.Row="0" Grid.RowSpan="2" Width="100" Height="100" x:Name="P_Graph_3"/>
+                                    <Label Grid.Row="0" Grid.Column="1" Grid.RowSpan="2" x:Name="L_SizeRate_3" Content="" Style="{StaticResource StorageRateStyle}"/>
+                                    <Grid Grid.Row="3" Grid.Column="0" Grid.ColumnSpan="2">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="*"/>
+                                        </Grid.ColumnDefinitions>
+                                        <Grid.RowDefinitions>
+                                            <RowDefinition Height="*"/>
+                                            <RowDefinition Height="*"/>
+                                        </Grid.RowDefinitions>
+                                        <Label Grid.Row="0" Grid.Column="0" Content="Total" Style="{StaticResource StorageLabelStyle}" />
+                                        <Label Grid.Row="0" Grid.Column="1" Content="Used" Style="{StaticResource StorageLabelStyle}"/>
+                                        <Label Grid.Row="0" Grid.Column="2" Content="Free" Style="{StaticResource StorageLabelStyle}"/>
+                                        <Label Grid.Row="1" Grid.Column="0" x:Name="L_Total_3" Style="{StaticResource StorageSizeStyle}"/>
+                                        <Label Grid.Row="1" Grid.Column="1" x:Name="L_Used_3" Style="{StaticResource StorageSizeStyle}"/>
+                                        <Label Grid.Row="1" Grid.Column="2" x:Name="L_Free_3" Style="{StaticResource StorageSizeStyle}"/>
+                                    </Grid>
+                                </Grid>
+                            </Grid>
+                            <Grid Grid.Column="3" x:Name="Storage_4" Margin="5" Background="#F8F8F8" >
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="*"/>
+                                    <RowDefinition Height="3*"/>
+                                </Grid.RowDefinitions>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <Grid Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="2">
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="1.2*"/>
+                                        <RowDefinition Height="*"/>
+                                    </Grid.RowDefinitions>
+                                    <TextBlock Grid.Row="0" x:Name="L_StorageName_4" Text=""  Style="{StaticResource StorageTitleStyle}"/>
+                                    <TextBlock Grid.Row="1" x:Name="L_URL_4" Style="{StaticResource StorageURLStyle}"/>
+                                    <Grid Grid.Row="0" Width="30" HorizontalAlignment="Right" Margin="35, 0">
+                                        <ToggleButton x:Name="B_Edit_4" Tag="2" Click="Btn_Edit" Style="{StaticResource MainToggleButtonStyle}">
+                                            <Image Source="/IfsSync2UI;component/Res/Pencil.png" Style="{StaticResource StorageImageStyle}"/>
+                                        </ToggleButton>
+                                        <Popup PlacementTarget="{Binding ElementName=B_Edit_4}" IsOpen="{Binding IsChecked,ElementName=B_Edit_4}" Placement="Bottom" HorizontalOffset="-95" AllowsTransparency="True">
+                                            <Border Height="330" Width="220" Style="{StaticResource EditBorderStyle}">
+                                                <Grid>
+                                                    <Grid.RowDefinitions>
+                                                        <RowDefinition Height="*"/>
+                                                        <RowDefinition Height="20"/>
+                                                        <RowDefinition Height="*"/>
+                                                        <RowDefinition Height="20"/>
+                                                        <RowDefinition Height="*"/>
+                                                        <RowDefinition Height="20"/>
+                                                        <RowDefinition Height="*"/>
+                                                        <RowDefinition Height="20"/>
+                                                        <RowDefinition Height="*"/>
+                                                        <RowDefinition Height="20"/>
+                                                        <RowDefinition Height="*"/>
+                                                        <RowDefinition Height="20"/>
+                                                        <RowDefinition Height="5"/>
+                                                        <RowDefinition Height="*"/>
+                                                    </Grid.RowDefinitions>
+                                                    <Label   Grid.Row="0" Content="Storage Name" Style="{StaticResource EditTitleStyle}"/>
+                                                    <TextBox Grid.Row="1" x:Name="T_EditStorage_4" Tag="2" KeyDown="StorageSaveEvent" MouseUp="PopupTextBoxMouseUp" Style="{StaticResource EditTextBoxStyle}"/>
+                                                    <Label   Grid.Row="2" Content="Full URL" Style="{StaticResource EditTitleStyle}"/>
+                                                    <TextBox Grid.Row="3" x:Name="T_EditURL_4" Tag="2" KeyDown="StorageSaveEvent" MouseUp="PopupTextBoxMouseUp" Style="{StaticResource EditTextBoxStyle}"/>
+                                                    <Label   Grid.Row="4" Content="Access Key" Style="{StaticResource EditTitleStyle}"/>
+                                                    <TextBox Grid.Row="5" x:Name="T_EditAccessKey_4" Tag="2" KeyDown="StorageSaveEvent" MouseUp="PopupTextBoxMouseUp" Style="{StaticResource EditTextBoxStyle}"/>
+                                                    <Label   Grid.Row="6" Content="Access Secret" Style="{StaticResource EditTitleStyle}"/>
+                                                    <TextBox Grid.Row="7" x:Name="T_EditAccessSecret_4" Tag="2" KeyDown="StorageSaveEvent" MouseUp="PopupTextBoxMouseUp" Style="{StaticResource EditTextBoxStyle}"/>
+                                                    <Label   Grid.Row="8" Content="User Name (Bucket)" Style="{StaticResource EditTitleStyle}"/>
+                                                    <TextBox Grid.Row="9" x:Name="T_EditUserName_4" Tag="2" KeyDown="StorageSaveEvent" MouseUp="PopupTextBoxMouseUp" Style="{StaticResource EditTextBoxStyle}"/>
+                                                    <Label   Grid.Row="10" Content="S3 File Manager URL" Style="{StaticResource EditTitleStyle}"/>
+                                                    <TextBox Grid.Row="11" x:Name="T_EditS3FileManagerURL_4" Tag="2" KeyDown="StorageSaveEvent" MouseUp="PopupTextBoxMouseUp" Style="{StaticResource EditTextBoxStyle}"/>
+                                                    <Grid Grid.Row="99">
+                                                        <Grid.ColumnDefinitions>
+                                                            <ColumnDefinition Width="*"/>
+                                                            <ColumnDefinition Width="*"/>
+                                                        </Grid.ColumnDefinitions>
+                                                        <Button Grid.Column="0" Content="Register" Click="BtnEditSave" Tag="2" Style="{StaticResource EditButtonStyle}"/>
+                                                        <Button Grid.Column="1" Content="Cencel" Style="{StaticResource EditButtonCloseStyle}" Click="Btn_PopupAllClose"/>
+                                                    </Grid>
+                                                </Grid>
+                                            </Border>
+                                        </Popup>
+                                    </Grid>
+                                    <Grid Grid.Row="0" Width="30" HorizontalAlignment="Right">
+                                        <ToggleButton x:Name="B_Delete_4" Click="Btn_Delete" Style="{StaticResource MainToggleButtonStyle}">
+                                            <Image Source="/IfsSync2UI;component/Res/Trash.png" Style="{StaticResource StorageImageStyle}"/>
+                                        </ToggleButton>
+                                        <Popup PlacementTarget="{Binding ElementName=B_Delete_4}" IsOpen="{Binding IsChecked,ElementName=B_Delete_4}" Placement="Bottom" HorizontalOffset="-125" AllowsTransparency="True">
+                                            <Border Height="130" Width="300" Style="{StaticResource EditBorderStyle}">
+                                                <Grid>
+                                                    <Grid.RowDefinitions>
+                                                        <RowDefinition Height="30"/>
+                                                        <RowDefinition Height="1.5*"/>
+                                                        <RowDefinition Height="*"/>
+                                                    </Grid.RowDefinitions>
+                                                    <Label Grid.Row="0" Content="스토리지 연결 정보를 삭제 하시겠습니까?" Style="{StaticResource EditTitleStyle}"/>
+                                                    <Label Grid.Row="1" Content="해당 스토리지 연결 정보와 관련된 IfsSync Job이&#10;자동으로 삭제됩니다." Style="{StaticResource EditTitleStyle}" FontWeight="Light"/>
+                                                    <Grid Grid.Row="2">
+                                                        <Grid.ColumnDefinitions>
+                                                            <ColumnDefinition Width="*"/>
+                                                            <ColumnDefinition Width="*"/>
+                                                        </Grid.ColumnDefinitions>
+                                                        <Button Grid.Column="0" Content="Delete Storage" Tag="2" Click="Btn_EditDelete"  Style="{StaticResource EditButtonStyle}"/>
+                                                        <Button Grid.Column="1" Content="Cencel"  Click="Btn_PopupAllClose" Style="{StaticResource EditButtonCloseStyle}"/>
+                                                    </Grid>
+                                                </Grid>
+                                            </Border>
+                                        </Popup>
+                                    </Grid>
+                                </Grid>
+                                <TextBlock Grid.Row="0" Grid.RowSpan="2" Grid.ColumnSpan="2" x:Name="T_EmptyStorage_4" Text="AWS S3로 설정한 경우&#10;Quota 사용 정보를&#10;표시할 수 없습니다." Style="{StaticResource  TextBlockStyle}" />
+                                <Grid Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="2" x:Name="G_Quota_4">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="*"/>
+                                        <RowDefinition Height="*"/>
+                                        <RowDefinition Height="*"/>
+                                    </Grid.RowDefinitions>
+                                    <StackPanel Grid.Row="0" Grid.RowSpan="2" Width="100" Height="100">
+                                        <Ellipse Width="100" Height="100" Fill="#7F7F7F"/>
+                                    </StackPanel>
+                                    <StackPanel Grid.Row="0" Grid.RowSpan="2" Width="100" Height="100" x:Name="P_Graph_4"/>
+                                    <Label Grid.Row="0" Grid.Column="1" Grid.RowSpan="2" x:Name="L_SizeRate_4" Content="" Style="{StaticResource StorageRateStyle}"/>
+                                    <Grid Grid.Row="3" Grid.Column="0" Grid.ColumnSpan="2">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="*"/>
+                                        </Grid.ColumnDefinitions>
+                                        <Grid.RowDefinitions>
+                                            <RowDefinition Height="*"/>
+                                            <RowDefinition Height="*"/>
+                                        </Grid.RowDefinitions>
+                                        <Label Grid.Row="0" Grid.Column="0" Content="Total" Style="{StaticResource StorageLabelStyle}" />
+                                        <Label Grid.Row="0" Grid.Column="1" Content="Used" Style="{StaticResource StorageLabelStyle}"/>
+                                        <Label Grid.Row="0" Grid.Column="2" Content="Free" Style="{StaticResource StorageLabelStyle}"/>
+                                        <Label Grid.Row="1" Grid.Column="0" x:Name="L_Total_4" Style="{StaticResource StorageSizeStyle}"/>
+                                        <Label Grid.Row="1" Grid.Column="1" x:Name="L_Used_4" Style="{StaticResource StorageSizeStyle}"/>
+                                        <Label Grid.Row="1" Grid.Column="2" x:Name="L_Free_4" Style="{StaticResource StorageSizeStyle}"/>
+                                    </Grid>
+                                </Grid>
+                            </Grid>
+                        </Grid>
+                    </Grid>
+                </Grid>
+            </TabItem>
+        </TabControl>
+        <Image Grid.Column="1" Grid.Row="99" Source="/IfsSync2UI;component/Res/Logo.png" Margin="5" HorizontalAlignment="Right" VerticalAlignment="Bottom" />
+
+        <Image Name="Image_CircleBlue"    Source="/IfsSync2UI;component/Res/CircleBlue.png"    Height="16" HorizontalAlignment="Left" Margin="590,271,0,0" Stretch="Fill" VerticalAlignment="Top" Width="16" Visibility="Hidden"/>
+        <Image Name="Image_CircleGray"    Source="/IfsSync2UI;component/Res/CircleGray.png"    Height="16" HorizontalAlignment="Left" Margin="590,271,0,0" Stretch="Fill" VerticalAlignment="Top" Width="16" Visibility="Hidden"/>
+        <Image Name="Image_TriangleRed"   Source="/IfsSync2UI;component/Res/TriangleRed.png"  Height="16" HorizontalAlignment="Left" Margin="590,271,0,0" Stretch="Fill" VerticalAlignment="Top" Width="16" Visibility="Hidden"/>
+        <Image Name="Image_SquareGray"    Source="/IfsSync2UI;component/Res/SquareGray.png"    Height="16" HorizontalAlignment="Left" Margin="590,271,0,0" Stretch="Fill" VerticalAlignment="Top" Width="16" Visibility="Hidden"/>
+        <Image Name="Image_TriangleGreen" Source="/IfsSync2UI;component/Res/TriangleGreen.png" Height="16" HorizontalAlignment="Left" Margin="590,271,0,0" Stretch="Fill" VerticalAlignment="Top" Width="16" Visibility="Hidden"/>
+    </Grid>
+</Window>

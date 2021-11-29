@@ -1,0 +1,61 @@
+﻿/*
+* Copyright (c) 2021 PSPACE, inc. KSAN Development Team ksan@pspace.co.kr
+* KSAN is a suite of free software: you can redistribute it and/or modify it under the terms of
+* the GNU General Public License as published by the Free Software Foundation, either version 
+* 3 of the License.  See LICENSE for details
+*
+* 본 프로그램 및 관련 소스코드, 문서 등 모든 자료는 있는 그대로 제공이 됩니다.
+* KSAN 프로젝트의 개발자 및 개발사는 이 프로그램을 사용한 결과에 따른 어떠한 책임도 지지 않습니다.
+* KSAN 개발팀은 사전 공지, 허락, 동의 없이 KSAN 개발에 관련된 모든 결과물에 대한 LICENSE 방식을 변경 할 권리가 있습니다.
+*/
+using System.ServiceProcess;
+using System.Timers;
+using IfsSync2Data;
+
+namespace IfsSync2WatcherService
+{
+    public partial class WatcherService : ServiceBase
+    {
+        private readonly Watcher BackupWatcher = new Watcher();
+        readonly Timer BackupThreadTimer;
+        private bool RunCheck = false;
+        private readonly WatcherConfig WatcherConfigs = new WatcherConfig();
+        public WatcherService()
+        {
+            InitializeComponent();
+            MainUtility.DeleteOldLogs(MainData.GetLogFolder("WatcherService"));
+
+            BackupThreadTimer = new Timer
+            {
+                Interval = 5000
+            };
+            BackupThreadTimer.Elapsed += new ElapsedEventHandler(OnBackupThreadTimer);
+        }
+
+        public void OnBackupThreadTimer(object sender, ElapsedEventArgs args)
+        {
+            if (RunCheck) return;
+            RunCheck = true;
+            BackupThreadTimer.Interval = WatcherConfigs.WatcherCheckDelay;
+            BackupWatcher.CheckOnce();
+            RunCheck = false;
+        }
+
+        protected override void OnStart(string[] args)
+        {
+            BackupThreadTimer.Start();
+        }
+
+        protected override void OnPause()
+        {
+            BackupThreadTimer.Stop();
+            BackupWatcher.Stop();
+        }
+
+        protected override void OnStop()
+        {
+            BackupThreadTimer.Stop();
+            BackupWatcher.Stop();
+        }
+    }
+}

@@ -7,7 +7,7 @@ AWS S3 API 기반 실시간 백업 유틸리티
 ## 주요 기능
 
 * AWS S3기반의 개인 PC 파일의 실시간 백업 지원
-  * InfiniStor 스토리지와 연동 가능
+  * InfiniStor, KSAN 스토리지와 연동 가능
   * 추가적으로 s3 기반 저장소를 최대 3개까지 연동 가능
 * 사용자가 제공하는 UI를 통해 Instant, RealTime, Schedule 방식의 백업 작업 추가 가능
 * 새로운 백업 작업이 추가될 때마다 별도의 탭에서 세부적인 백업 설정, 모니터링, 제어 가능
@@ -15,12 +15,13 @@ AWS S3 API 기반 실시간 백업 유틸리티
 * 특정 PC를 관리자가 원격으로 백업 설정 가능 (InfiniStor 스토리지와 연동 시)
 * 윈도우 스케줄러를 이용하여 백업 프로세스를 관리
 
- ![](images/fad827b4-d56f-4d54-8491-2cc8fae4b0c8.png)
+ ![](images/ifssync2.png)
  
-* 참고: 중앙관리 기능(Global Backup Job)은 공개 소스 내에 포함되어 있지만, 이 기능을 사용하기 위해서는 Infinistor와의 연동이 필요합니다.
-* Event Manager는 OS에서 발생하는 File Operation 관련 이벤트를 callback 하는 라이브러리를 사용하여 구현 가능합니다.
-* 현재 프로그램에서 사용한 라이브러리는 [CBFS](https://www.callback.com/cbfsfilter/) 이며 nuget으로 설치하여 사용 할 수 있습니다.
-* CBFS는 유료 라이브러리이며 빌드를 위해서는 라이센스를 구입하거나 트라이얼용 키를 별도로 받아 MainData.RUNTIME_LICENSE_KEY에 입력하여 사용해야 합니다.
+* 참고1: Event Monitor(1)
+  * Event Monitor는 OS에서 발생하는 File Operation 관련 이벤트를 callback 하는 라이브러리를 사용하여 구현 가능합니다.
+  * 현재 프로그램에서 사용한 라이브러리는 [CBFS](https://www.callback.com/cbfsfilter/) 이며 nuget으로 설치하여 사용 할 수 있습니다.
+  * CBFS는 유료 라이브러리이며 빌드를 위해서는 라이센스를 구입하거나 트라이얼용 키를 별도로 받아 MainData.RUNTIME_LICENSE_KEY에 입력하여 사용해야 합니다.
+* 참고2: 중앙관리 기능(Global Backup Job)은 공개 소스 내에 포함되어 있지만, 이 기능을 사용하기 위해서는 Infinistor와의 연동이 필요합니다.
 
 ## 구동 환경
 

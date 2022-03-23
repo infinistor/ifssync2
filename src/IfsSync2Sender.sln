@@ -3,11 +3,11 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 16
 VisualStudioVersion = 16.0.30128.74
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "IfsSync2Sender", "IfsSync2Sender.csproj", "{A6BAB51B-E4D1-4DCF-8D57-9F4E5B19C981}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "IfsSync2Sender", "IfsSync2Sender\IfsSync2Sender.csproj", "{A6BAB51B-E4D1-4DCF-8D57-9F4E5B19C981}"
 EndProject
 Global
 	GlobalSection(SharedMSBuildProjectFiles) = preSolution
-		..\IfsSync2Data\IfsSync2Data.projitems*{a6bab51b-e4d1-4dcf-8d57-9f4e5b19c981}*SharedItemsImports = 4
+		IfsSync2Data\IfsSync2Data.projitems*{a6bab51b-e4d1-4dcf-8d57-9f4e5b19c981}*SharedItemsImports = 4
 	EndGlobalSection
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU

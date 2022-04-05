@@ -337,7 +337,6 @@ namespace IfsSync2Init
             uint versionHigh = (uint)(moduleVersion >> 32);
             uint versionLow = (uint)(moduleVersion & 0xFFFFFFFF);
 
-
             if (moduleStatus != 0)
             {
                 Console.WriteLine("CBFS Driver version: {0}.{1}.{2}.{3}",

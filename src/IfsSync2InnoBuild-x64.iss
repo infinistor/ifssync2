@@ -35,10 +35,8 @@ ArchitecturesAllowed=x64
 ; 64-bit Program Files directory and the 64-bit view of the registry.
 ArchitecturesInstallIn64BitMode=x64
 
+
 [Files]
-; Install MyProg-x64.exe if running in 64-bit mode (x64; see above),
-; MyProg.exe otherwise.    
-; Place all x64 files here
 Source: "{#SourcePath}\Ifssync2\*"; DestDir: "{app}\{#MyAppName}"; Flags: recursesubdirs createallsubdirs; Excludes: "*.xml,*.manifest,*.exp,*.a,*.lib,*.pdb,*.suo,*.config,dbghelp.dll,*.txt,*.yes,*.ilk"
 Source: "{#SourcePath}\Ifssync2\*Config.xml"; DestDir: "{app}\{#MyAppName}"; Flags: recursesubdirs createallsubdirs; 
 
@@ -62,3 +60,21 @@ Type: filesandordirs; Name: "{group}";
 
 [UninstallDelete]
 Type: filesandordirs; Name: "{app}\{#MyAppName}";
+
+[code]
+procedure CurPageChanged(CurPageID: Integer);
+var  
+  FilePath: String;
+  ResultCode: Integer;
+  Results: bool;                                                                                                                           
+begin
+  if CurPageID = wpReady then
+  begin
+    FilePath:= 'C:\Program Files\PSPACE\IfsSync2\IfsSync2Init.exe'
+    Results:= FileExists(FilePath);
+    if Results then
+    begin                
+        Exec(ExpandConstant(FilePath), '-d', '', SW_SHOW, ewWaitUntilTerminated, ResultCode)
+    end;
+  end;
+end;

@@ -1,9 +1,9 @@
 bin/
 packages/
 obj/
-.sonarqube/
-IfsSync/
+IfsSync2/
 .vs/
+Setup/
 
 
 # Created by https://www.toptal.com/developers/gitignore/api/visualstudio,csharp
@@ -407,4 +407,3 @@ FodyWeavers.xsd
 # JetBrains Rider
 *.sln.iml
 
-### VisualStudio ###

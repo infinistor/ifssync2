@@ -64,6 +64,7 @@ namespace IfsSync2UI
         /**************************Toggle Button*******************************/
         ToggleButton SeletedBtn = null;
         Mutex mutex = null;
+        private int GlobalCount = 0;
 
         public MainWindow()
         {
@@ -223,6 +224,7 @@ namespace IfsSync2UI
             JobList.AddRange(GlobalJobs);
             JobList.AddRange(NormalJobs);
 
+            GlobalCount = GlobalJobs.Count;
 
             //JobDetailData Check
             foreach (JobDetailData DetailData in JobDetailList) DetailData.Delete = true;
@@ -1202,11 +1204,13 @@ namespace IfsSync2UI
 
         private void JobListDoubleClickEvent(object sender, MouseButtonEventArgs e)
         {
-            MessageBox.Show("이 기능은 현재 점검중입니다");
-            return;
+            // MessageBox.Show("이 기능은 현재 점검중입니다");
+            // return;
             
-            //if (L_JobList.SelectedIndex < 0) return;
-            //int index = L_JobList.SelectedIndex;
+            if (L_JobList.SelectedIndex < 0) return;
+            int index = L_JobList.SelectedIndex + 1 - GlobalCount;
+            MainTab.SelectedIndex = index;
+
             //Console.WriteLine(index);
 
             //string StorageName = JobDetailList[index].StorageName;

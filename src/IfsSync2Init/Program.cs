@@ -176,7 +176,6 @@ namespace IfsSync2Init
             try { Registry.LocalMachine.DeleteSubKeyTree(MainData.REGISTRY_ROOT); } catch { }
             Console.WriteLine("Registry Delete End!");
 
-
             Console.WriteLine("Service Stop.");
             string CmdStop = string.Format("sc stop \"{0}\"", MainData.WATCHER_SERVICE_NAME);
             CMDExecute(CmdStop);
@@ -202,7 +201,6 @@ namespace IfsSync2Init
                     else taskService.RootFolder.DeleteTask(ScheduleName);
                 }
                 catch { }
-
 
                 TaskDefinition taskDefinition = taskService.NewTask();
 

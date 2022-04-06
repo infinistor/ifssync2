@@ -20,7 +20,6 @@ namespace IfsSync2Data
 {
     public class JobDataSqlManager
     {
-        private const string CLASS_NAME = "JobDataSqlManager";
         /******************** Global Job List Attribute *************************/
         private const string STR_GLOBAL_JOB_TABLE_NAME      = "GlobalJobList";
         private const string STR_GLOBAL_SCHEDULE_TABLE_NAME = "GlobalScheduleList";
@@ -61,180 +60,114 @@ namespace IfsSync2Data
         public JobDataSqlManager(string RootPath)
         {
             FilePath = MainData.CreateDBFileName(RootPath, MainData.JOB_DB_FILE_NAME);
-            const string FUNCTION_NAME = "Init";
             try
             {
                 SqliteMutex = new Mutex(false, MainData.MUTEX_NAME_JOB_SQL, out bool CreatedNew);
 
-                if (!CreatedNew) log.DebugFormat("[{0}:{1}] Mutex({3})", CLASS_NAME, FUNCTION_NAME, "Mutex", MainData.MUTEX_NAME_JOB_SQL);
-                else log.DebugFormat("[{0}:{1}] Mutex({3}) create", CLASS_NAME, FUNCTION_NAME, "Mutex", MainData.MUTEX_NAME_JOB_SQL);
+                if (!CreatedNew) log.Debug($"Mutex({MainData.MUTEX_NAME_JOB_SQL})");
+                else log.Debug($"Mutex({MainData.MUTEX_NAME_JOB_SQL}) create");
             }
             catch (Exception e)
             {
-                log.ErrorFormat("[{0}:{1}:{2}] Mutex({3}) fail : ", CLASS_NAME, FUNCTION_NAME, "Exception", MainData.MUTEX_NAME_JOB_SQL, e.Message);
+                log.Error($"Mutex({MainData.MUTEX_NAME_JOB_SQL}) fail", e);
             }
         }
 
         private bool CreateDBFile()
         {
-            const string FUNCTION_NAME = "CreateDBFile";
             try
             {
                 MainData.CreateDirectory(FilePath);
                 SQLiteConnection.CreateFile(FilePath);
 
                 SqliteMutex.WaitOne();
-                SQLiteConnection conn = new SQLiteConnection(string.Format("Data Source={0};Version=3;", FilePath));
+                SQLiteConnection conn = new SQLiteConnection($"Data Source={FilePath};Version=3;");
                 conn.Open();
                 SQLiteCommand cmd = new SQLiteCommand(conn)
                 {
                     CommandText =
                     //JobList
                                 string.Format(
-                    "Create Table '{0}'(" + //STR_JOB_TABLE_NAME
-                                 "'{1}' INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT," + //STR_JOB_ID
-                                 "'{2}' TEXT, "                       + //STR_JOB_HOSTNAME
-                                 "'{3}' TEXT NOT NULL, "              + //STR_JOB_NAME
-                                 "'{4}' BOOL NOT NULL, "              + //STR_JOB_ISGLOBALUSER
-                                 "'{5}' INTEGER  NOT NULL, "          + //STR_JOB_USERID
-                                 "'{6}' TEXT NOT NULL, "              + //STR_JOB_POLICY_NAME
-                                 "'{7}' TEXT NULL, "                  + //STR_JOB_PATH
-                                 "'{8}' TEXT NULL, "                  + //STR_JOB_BLACK_PATH
-                                 "'{9}' TEXT NULL, "                  + //STR_JOB_BLACK_FILE
-                                 "'{10}' TEXT NULL, "                  + //STR_JOB_BLACK_FILE_EXT
-                                 "'{11}' TEXT NOT NULL, "             + //STR_JOB_WHITE_FILE
-                                 "'{12}' TEXT NOT NULL, "             + //STR_JOB_WHITE_FILE_EXT
-                                 "'{13}' TEXT NULL, "                 + //STR_JOB_VSS_FILE_EXT
-                                 "'{14}' BOOL NOT NULL DEFAULT TRUE," + //STR_JOB_REMOVE
-                                 "'{15}' BOOL NOT NULL DEFAULT TRUE," + //STR_JOB_IS_RUNNING
-                                 "'{16}' BOOL NOT NULL DEFAULT TRUE," + //STR_JOB_FILTER_UPDATE
-                                 "'{17}' BOOL NOT NULL DEFAULT TRUE);", //STR_JOB_SENDER_UPDATE
-                                 STR_JOB_TABLE_NAME,
-                                 STR_JOB_ID,
-                                 STR_JOB_HOSTNAME,
-                                 STR_JOB_NAME,
-                                 STR_JOB_ISGLOBALUSER,
-                                 STR_JOB_USERID,
-                                 STR_JOB_POLICY_NAME,
-                                 STR_JOB_PATH,
-                                 STR_JOB_BLACK_PATH,
-                                 STR_JOB_BLACK_FILE,
-                                 STR_JOB_BLACK_FILE_EXT,
-                                 STR_JOB_WHITE_FILE,
-                                 STR_JOB_WHITE_FILE_EXT,
-                                 STR_JOB_VSS_FILE_EXT,
-                                 STR_JOB_REMOVE,
-                                 STR_JOB_IS_INIT,
-                                 STR_JOB_FILTER_UPDATE,
-                                 STR_JOB_SENDER_UPDATE) +
+                    $"Create Table '{STR_JOB_TABLE_NAME}'(" + 
+                                 $"'{STR_JOB_ID}' INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT," + 
+                                 $"'{STR_JOB_HOSTNAME}' TEXT, " + 
+                                 $"'{STR_JOB_NAME}' TEXT NOT NULL, " + 
+                                 $"'{STR_JOB_ISGLOBALUSER}' BOOL NOT NULL, " + 
+                                 $"'{STR_JOB_USERID}' INTEGER  NOT NULL, " + 
+                                 $"'{STR_JOB_POLICY_NAME}' TEXT NOT NULL, " + 
+                                 $"'{STR_JOB_PATH}' TEXT NULL, " + 
+                                 $"'{STR_JOB_BLACK_PATH}' TEXT NULL, " + 
+                                 $"'{STR_JOB_BLACK_FILE}' TEXT NULL, " + 
+                                 $"'{STR_JOB_BLACK_FILE_EXT}' TEXT NULL, " + 
+                                 $"'{STR_JOB_WHITE_FILE}' TEXT NOT NULL, " + 
+                                 $"'{STR_JOB_WHITE_FILE_EXT}' TEXT NOT NULL, " + 
+                                 $"'{STR_JOB_VSS_FILE_EXT}' TEXT NULL, " + 
+                                 $"'{STR_JOB_REMOVE}' BOOL NOT NULL DEFAULT TRUE," + 
+                                 $"'{STR_JOB_IS_INIT}' BOOL NOT NULL DEFAULT TRUE," + 
+                                 $"'{STR_JOB_FILTER_UPDATE}' BOOL NOT NULL DEFAULT TRUE," + 
+                                 $"'{STR_JOB_SENDER_UPDATE}' BOOL NOT NULL DEFAULT TRUE);") +
                     //Global JobList
                                 string.Format(
-                    "Create Table '{0}'(" + //STR_GLOBAL_JOB_TABLE_NAME
-                                 "'{1}' INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT," + //STR_JOB_ID
-                                 "'{2}' TEXT, "                       + //STR_JOB_HOSTNAME
-                                 "'{3}' TEXT NOT NULL, "              + //STR_JOB_NAME
-                                 "'{4}' BOOL NOT NULL, "              + //STR_JOB_ISGLOBALUSER
-                                 "'{5}' INTEGER  NOT NULL, "          + //STR_JOB_USERID
-                                 "'{6}' TEXT NOT NULL, "              + //STR_JOB_POLICY_NAME
-                                 "'{7}' TEXT NULL, "                  + //STR_JOB_PATH
-                                 "'{8}' TEXT NULL, "                  + //STR_JOB_BLACK_PATH
-                                 "'{9}' TEXT NULL, "                  + //STR_JOB_BLACK_FILE
-                                 "'{10}' TEXT NULL, "                  + //STR_JOB_BLACK_FILE_EXT
-                                 "'{11}' TEXT NOT NULL, "             + //STR_JOB_WHITE_FILE
-                                 "'{12}' TEXT NOT NULL, "             + //STR_JOB_WHITE_FILE_EXT
-                                 "'{13}' TEXT NULL, "                 + //STR_JOB_VSS_FILE_EXT
-                                 "'{14}' BOOL NOT NULL DEFAULT TRUE," + //STR_JOB_REMOVE
-                                 "'{15}' BOOL NOT NULL DEFAULT TRUE," + //STR_JOB_IS_RUNNING
-                                 "'{16}' BOOL NOT NULL DEFAULT TRUE," + //STR_JOB_FILTER_UPDATE
-                                 "'{17}' BOOL NOT NULL DEFAULT TRUE);", //STR_JOB_SENDER_UPDATE
-                                 STR_GLOBAL_JOB_TABLE_NAME,
-                                 STR_JOB_ID,
-                                 STR_JOB_HOSTNAME,
-                                 STR_JOB_NAME,
-                                 STR_JOB_ISGLOBALUSER,
-                                 STR_JOB_USERID,
-                                 STR_JOB_POLICY_NAME,
-                                 STR_JOB_PATH,
-                                 STR_JOB_BLACK_PATH,
-                                 STR_JOB_BLACK_FILE,
-                                 STR_JOB_BLACK_FILE_EXT,
-                                 STR_JOB_WHITE_FILE,
-                                 STR_JOB_WHITE_FILE_EXT,
-                                 STR_JOB_VSS_FILE_EXT,
-                                 STR_JOB_REMOVE,
-                                 STR_JOB_IS_INIT,
-                                 STR_JOB_FILTER_UPDATE, 
-                                 STR_JOB_SENDER_UPDATE) +
+                    $"Create Table '{STR_GLOBAL_JOB_TABLE_NAME}'(" + 
+                                 $"'{STR_JOB_ID}' INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT," + 
+                                 $"'{STR_JOB_HOSTNAME}' TEXT, " + 
+                                 $"'{STR_JOB_NAME}' TEXT NOT NULL, " + 
+                                 $"'{STR_JOB_ISGLOBALUSER}' BOOL NOT NULL, " + 
+                                 $"'{STR_JOB_USERID}' INTEGER  NOT NULL, " + 
+                                 $"'{STR_JOB_POLICY_NAME}' TEXT NOT NULL, " + 
+                                 $"'{STR_JOB_PATH}' TEXT NULL, " + 
+                                 $"'{STR_JOB_BLACK_PATH}' TEXT NULL, " + 
+                                 $"'{STR_JOB_BLACK_FILE}' TEXT NULL, " + 
+                                 $"'{STR_JOB_BLACK_FILE_EXT}' TEXT NULL, " + 
+                                 $"'{STR_JOB_WHITE_FILE}' TEXT NOT NULL, " + 
+                                 $"'{STR_JOB_WHITE_FILE_EXT}' TEXT NOT NULL, " + 
+                                 $"'{STR_JOB_VSS_FILE_EXT}' TEXT NULL, " + 
+                                 $"'{STR_JOB_REMOVE}' BOOL NOT NULL DEFAULT TRUE," + 
+                                 $"'{STR_JOB_IS_INIT}' BOOL NOT NULL DEFAULT TRUE," + 
+                                 $"'{STR_JOB_FILTER_UPDATE}' BOOL NOT NULL DEFAULT TRUE," + 
+                                 $"'{STR_JOB_SENDER_UPDATE}' BOOL NOT NULL DEFAULT TRUE);") +
                     //ScheduleList
                     string.Format( "\n" + 
-                    "Create Table '{0}'(" + //STR_SCHEDULE_TABLE_NAME
-                                 "'{1}' INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT," +//STR_SCHEDULE_ID
-                                 "'{2}' INTEGER NOT NULL, " + //STR_SCHEDULE_JOB_ID
-                                 "'{3}' INTEGER NOT NULL, " + //STR_SCHEDULE_WEEKS
-                                 "'{4}' INTEGER NOT NULL, " + //STR_SCHEDULE_ATTIME
-                                 "'{5}' INTEGER NOT NULL, " + //STR_SCHEDULE_FORHOURS
-                                 "FOREIGN KEY('{2}') REFERENCES '{6}'('{7}') ON DELETE CASCADE);",   
-                                 STR_SCHEDULE_TABLE_NAME,
-                                 STR_SCHEDULE_ID,
-                                 STR_SCHEDULE_JOB_ID,
-                                 STR_SCHEDULE_WEEKS,
-                                 STR_SCHEDULE_ATTIME,
-                                 STR_SCHEDULE_FORHOURS,
-                                 STR_JOB_TABLE_NAME,
-                                 STR_JOB_ID) +
+                    $"Create Table '{STR_SCHEDULE_TABLE_NAME}'(" + 
+                                 $"'{STR_SCHEDULE_ID}' INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT," +
+                                 $"'{STR_SCHEDULE_JOB_ID}' INTEGER NOT NULL, " + 
+                                 $"'{STR_SCHEDULE_WEEKS}' INTEGER NOT NULL, " + 
+                                 $"'{STR_SCHEDULE_ATTIME}' INTEGER NOT NULL, " + 
+                                 $"'{STR_SCHEDULE_FORHOURS}' INTEGER NOT NULL, " + 
+                                 $"FOREIGN KEY('{STR_SCHEDULE_JOB_ID}') REFERENCES '{STR_JOB_TABLE_NAME}'('{STR_JOB_ID}') ON DELETE CASCADE);") +
                     //GlobalScheduleList
                     string.Format("\n" +
-                    "Create Table '{0}'(" + //STR_GLOBAL_SCHEDULE_TABLE_NAME
-                                 "'{1}' INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT," +//STR_SCHEDULE_ID
-                                 "'{2}' INTEGER NOT NULL, " + //STR_SCHEDULE_JOB_ID
-                                 "'{3}' INTEGER NOT NULL, " + //STR_SCHEDULE_WEEKS
-                                 "'{4}' INTEGER NOT NULL, " + //STR_SCHEDULE_ATTIME
-                                 "'{5}' INTEGER NOT NULL, " + //STR_SCHEDULE_FORHOURS
-                                 "FOREIGN KEY('{2}') REFERENCES '{6}'('{7}') ON DELETE CASCADE);",
-                                 STR_GLOBAL_SCHEDULE_TABLE_NAME,
-                                 STR_SCHEDULE_ID,
-                                 STR_SCHEDULE_JOB_ID,
-                                 STR_SCHEDULE_WEEKS,
-                                 STR_SCHEDULE_ATTIME,
-                                 STR_SCHEDULE_FORHOURS,
-                                 STR_JOB_TABLE_NAME,
-                                 STR_JOB_ID) +
+                    $"Create Table '{STR_GLOBAL_SCHEDULE_TABLE_NAME}'(" + 
+                                 $"'{STR_SCHEDULE_ID}' INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT," +
+                                 $"'{STR_SCHEDULE_JOB_ID}' INTEGER NOT NULL, " + 
+                                 $"'{STR_SCHEDULE_WEEKS}' INTEGER NOT NULL, " + 
+                                 $"'{STR_SCHEDULE_ATTIME}' INTEGER NOT NULL, " + 
+                                 $"'{STR_SCHEDULE_FORHOURS}' INTEGER NOT NULL, " + 
+                                 $"FOREIGN KEY('{STR_SCHEDULE_JOB_ID}') REFERENCES '{STR_JOB_TABLE_NAME}'('{STR_JOB_ID}') ON DELETE CASCADE);") + 
                                  "PRAGMA foreign_keys = On;" //Delete Cascade : on
                 };
                 cmd.ExecuteNonQuery();
                 conn.Close();
                 
-                log.DebugFormat("[{0}:{1}] Success : {2}", CLASS_NAME, FUNCTION_NAME, cmd.CommandText);
+                log.Debug($"SuccessMainData.MUTEX_NAME_JOB_SQL: {cmd.CommandText}");
                 return true;
             }
-            catch (SQLiteException e)
-            {
-                log.ErrorFormat("[{0}:{1}:{2}] {3}", CLASS_NAME, FUNCTION_NAME, "SQLiteException", e.Message);
-                return false;
-            }
-            catch (Exception e)
-            {
-                log.ErrorFormat("[{0}:{1}:{2}] {3}", CLASS_NAME, FUNCTION_NAME, "Exception", e.Message);
-                return false;
-            }
-            finally
-            {
-                SqliteMutex.ReleaseMutex();
-            }
+            catch (SQLiteException e) { log.Error(e); return false; }
+            catch (Exception e) { log.Error(e); return false; }
+            finally { SqliteMutex.ReleaseMutex(); }
         }
 
         public bool Insert(JobData Data, bool Global = false)
         {
-            const string FUNCTION_NAME = "Insert";
             if (!File.Exists(FilePath)) if(!CreateDBFile()) return false;
 
             try
             {
                 SqliteMutex.WaitOne();
-                SQLiteConnection conn = new SQLiteConnection(string.Format("Data Source={0};Version=3;", FilePath));
+                SQLiteConnection conn = new SQLiteConnection($"Data Source={FilePath};Version=3;");
                 if (conn == null)
                 {
-                    log.ErrorFormat("[{0}:{1}:{2}] SQLiteConnection fail", CLASS_NAME, FUNCTION_NAME, "SQLiteConnection");
+                    log.Error("SQLiteConnection fail");
                     return false;
                 }
                 conn.Open();
@@ -266,45 +199,25 @@ namespace IfsSync2Data
                 
                 int result = cmd.ExecuteNonQuery();
                 conn.Close();
-                if (result > 0)
-                {
-                    log.DebugFormat("[{0}:{1}] Success : {2}", CLASS_NAME, FUNCTION_NAME, cmd.CommandText);
-                    return true;
-                }
-                else
-                {
-                    log.ErrorFormat("[{0}:{1}:{2}] Fail : ", CLASS_NAME, FUNCTION_NAME, "ExecuteNonQuery", cmd.CommandText);
-                    return false;
-                }
+                if (result > 0) { log.Debug($"Success({result}): {cmd.CommandText}"); return true; }
+                else            { log.Error($"Failed({result}) : {cmd.CommandText}"); return false; }
             }
-            catch (SQLiteException e)
-            {
-                log.ErrorFormat("[{0}:{1}:{2}] {3}", CLASS_NAME, FUNCTION_NAME, "SQLiteException", e.Message);
-                return false;
-            }
-            catch(Exception e)
-            {
-                log.ErrorFormat("[{0}:{1}:{2}] {3}", CLASS_NAME, FUNCTION_NAME, "Exception", e.Message);
-                return false;
-            }
-            finally
-            {
-                SqliteMutex.ReleaseMutex();
-            }
+            catch (SQLiteException e) { log.Error(e); return false; }
+            catch (Exception e) { log.Error(e); return false; }
+            finally { SqliteMutex.ReleaseMutex(); }
         }
         public bool Update(JobData Data, bool Global = false)
         {
-            const string FUNCTION_NAME = "Update";
             if (!File.Exists(FilePath)) return false;
 
             try
             {
                 SqliteMutex.WaitOne();
 
-                SQLiteConnection conn = new SQLiteConnection(string.Format("Data Source={0};Version=3;", FilePath));
+                SQLiteConnection conn = new SQLiteConnection($"Data Source={FilePath};Version=3;");
                 if (conn == null)
                 {
-                    log.ErrorFormat("[{0}:{1}:{2}] SQLiteConnection fail", CLASS_NAME, FUNCTION_NAME, "SQLiteConnection");
+                    log.Error("SQLiteConnection fail");
                     return false;
                 }
                 conn.Open();
@@ -351,46 +264,25 @@ namespace IfsSync2Data
                 int result = cmd.ExecuteNonQuery();
                
                 conn.Close();
-
-                if (result > 0)
-                {
-                    log.DebugFormat("[{0}:{1}] Success : {2}", CLASS_NAME, FUNCTION_NAME, cmd.CommandText);
-                    return true;
-                }
-                else
-                {
-                    log.ErrorFormat("[{0}:{1}:{2}] Fail : ", CLASS_NAME, FUNCTION_NAME, "ExecuteNonQuery", cmd.CommandText);
-                    return false;
-                }
+                if (result > 0) { log.Debug($"Success({result}): {cmd.CommandText}"); return true; }
+                else            { log.Error($"Failed({result}) : {cmd.CommandText}"); return false; }
             }
-            catch (SQLiteException e)
-            {
-                log.ErrorFormat("[{0}:{1}:{2}] {3}", CLASS_NAME, FUNCTION_NAME, "SQLiteException", e.Message);
-                return false;
-            }
-            catch (Exception e)
-            {
-                log.ErrorFormat("[{0}:{1}:{2}] {3}", CLASS_NAME, FUNCTION_NAME, "Exception", e.Message);
-                return false;
-            }
-            finally
-            {
-                SqliteMutex.ReleaseMutex();
-            }
+            catch (SQLiteException e) { log.Error(e); return false; }
+            catch (Exception e) { log.Error(e); return false; }
+            finally { SqliteMutex.ReleaseMutex(); }
         }
         public bool Delete(int JobID, bool Global = false)
         {
-            const string FUNCTION_NAME = "DeleteJobData";
             if (!File.Exists(FilePath)) return false;
 
             try
             {
                 SqliteMutex.WaitOne();
 
-                SQLiteConnection conn = new SQLiteConnection(string.Format("Data Source={0};Version=3;", FilePath));
+                SQLiteConnection conn = new SQLiteConnection($"Data Source={FilePath};Version=3;");
                 if (conn == null)
                 {
-                    log.ErrorFormat("[{0}:{1}:{2}] SQLiteConnection fail", CLASS_NAME, FUNCTION_NAME, "SQLiteConnection");
+                    log.Error("SQLiteConnection fail");
                     return false;
                 }
 
@@ -400,56 +292,30 @@ namespace IfsSync2Data
                 if (Global) TableName = STR_GLOBAL_JOB_TABLE_NAME;
                 else TableName = STR_JOB_TABLE_NAME;
 
-                SQLiteCommand cmd = new SQLiteCommand(conn)
-                {
-                    CommandText = string.Format(
-                                    "DELETE FROM '{0}' WHERE {1} = {2}",
-                                    TableName, STR_JOB_ID, JobID)
-                };
+                SQLiteCommand cmd = new SQLiteCommand(conn) { CommandText = $"DELETE FROM '{TableName}' WHERE {STR_JOB_ID} = {JobID}" };
 
                 int result = cmd.ExecuteNonQuery();
                 conn.Close();
-
-                if (result > 0)
-                {
-                    log.DebugFormat("[{0}:{1}] Success : {2}", CLASS_NAME, FUNCTION_NAME, cmd.CommandText);
-                    return true;
-                }
-                else
-                {
-                    log.ErrorFormat("[{0}:{1}:{2}] Fail : ", CLASS_NAME, FUNCTION_NAME, "ExecuteNonQuery", cmd.CommandText);
-                    return false;
-                }
+                if (result > 0) { log.Debug($"Success({result}): {cmd.CommandText}"); return true; }
+                else            { log.Error($"Failed({result}) : {cmd.CommandText}"); return false; }
             }
-            catch (SQLiteException e)
-            {
-                log.ErrorFormat("[{0}:{1}:{2}] {3}", CLASS_NAME, FUNCTION_NAME, "SQLiteException", e.Message);
-                return false;
-            }
-            catch (Exception e)
-            {
-                log.ErrorFormat("[{0}:{1}:{2}] {3}", CLASS_NAME, FUNCTION_NAME, "Exception", e.Message);
-                return false;
-            }
-            finally
-            {
-                SqliteMutex.ReleaseMutex();
-            }
+            catch (SQLiteException e) { log.Error(e); return false; }
+            catch (Exception e) { log.Error(e); return false; }
+            finally { SqliteMutex.ReleaseMutex(); }
         }
 
         public bool DeleteCascadeForUser(int UserID, bool IsGlobalUser, bool Global = false)
         {
-            const string FUNCTION_NAME = "DeleteJobData";
             if (!File.Exists(FilePath)) return false;
 
             try
             {
                 SqliteMutex.WaitOne();
 
-                SQLiteConnection conn = new SQLiteConnection(string.Format("Data Source={0};Version=3;", FilePath));
+                SQLiteConnection conn = new SQLiteConnection($"Data Source={FilePath};Version=3;");
                 if (conn == null)
                 {
-                    log.ErrorFormat("[{0}:{1}:{2}] SQLiteConnection fail", CLASS_NAME, FUNCTION_NAME, "SQLiteConnection");
+                    log.Error("SQLiteConnection fail");
                     return false;
                 }
 
@@ -459,64 +325,36 @@ namespace IfsSync2Data
                 if (Global) TableName = STR_GLOBAL_JOB_TABLE_NAME;
                 else TableName = STR_JOB_TABLE_NAME;
 
-                SQLiteCommand cmd = new SQLiteCommand(conn)
-                {
-                    CommandText = string.Format(
-                                    "DELETE FROM '{0}' WHERE {1} = {2} AND {3} = {4};",
-                                    TableName,
-                                    STR_JOB_USERID, UserID,
-                                    STR_JOB_ISGLOBALUSER, IsGlobalUser)
-                };
+                SQLiteCommand cmd = new SQLiteCommand(conn) 
+                { CommandText = $"DELETE FROM '{TableName}' WHERE {STR_JOB_USERID} = {UserID} AND {STR_JOB_ISGLOBALUSER} = {IsGlobalUser};" };
 
                 int result = cmd.ExecuteNonQuery();
                 conn.Close();
-
-                if (result > 0)
-                {
-                    log.DebugFormat("[{0}:{1}] Success({3}) : {2}", CLASS_NAME, FUNCTION_NAME, cmd.CommandText, result);
-                    return true;
-                }
-                else
-                {
-                    log.ErrorFormat("[{0}:{1}:{2}] Fail : ", CLASS_NAME, FUNCTION_NAME, "ExecuteNonQuery", cmd.CommandText);
-                    return false;
-                }
+                if (result > 0) { log.Debug($"Success({result}): {cmd.CommandText}"); return true; }
+                else            { log.Error($"Failed({result}) : {cmd.CommandText}"); return false; }
             }
-            catch (SQLiteException e)
-            {
-                log.ErrorFormat("[{0}:{1}:{2}] {3}", CLASS_NAME, FUNCTION_NAME, "SQLiteException", e.Message);
-                return false;
-            }
-            catch (Exception e)
-            {
-                log.ErrorFormat("[{0}:{1}:{2}] {3}", CLASS_NAME, FUNCTION_NAME, "Exception", e.Message);
-                return false;
-            }
-            finally
-            {
-                SqliteMutex.ReleaseMutex();
-            }
+            catch (SQLiteException e) { log.Error(e); return false; }
+            catch (Exception e) { log.Error(e); return false; }
+            finally { SqliteMutex.ReleaseMutex(); }
         }
 
         private bool InsertScheduleList(JobData Data, bool Global = false)
         {
-            const string FUNCTION_NAME = "InsertScheduleList";
-
             if (!File.Exists(FilePath)) return false;
             if (Data.ID < 1) Data.ID = GetJobDataID(Data.HostName, Data.JobName);
             if (Data.ScheduleList.Count == 0)
             {
-                log.ErrorFormat("[{0}:{1}:{2}] ScheduleList is Empty", CLASS_NAME, FUNCTION_NAME, "Count");
+                log.Error("ScheduleList is Empty");
                 return false;
             }
 
             try
             {
                 SqliteMutex.WaitOne();
-                SQLiteConnection conn = new SQLiteConnection(string.Format("Data Source={0};Version=3;", FilePath));
+                SQLiteConnection conn = new SQLiteConnection($"Data Source={FilePath};Version=3;");
                 if (conn == null)
                 {
-                    log.ErrorFormat("[{0}:{1}:{2}] SQLiteConnection fail", CLASS_NAME, FUNCTION_NAME, "SQLiteConnection");
+                    log.Error("SQLiteConnection fail");
                     return false;
                 }
 
@@ -528,9 +366,7 @@ namespace IfsSync2Data
 
                 using (SQLiteCommand cmd = new SQLiteCommand(conn))
                 {
-                    cmd.CommandText = string.Format(
-                                    "DELETE FROM '{0}' WHERE {1} = {2}",
-                                    TableName, STR_SCHEDULE_JOB_ID, Data.ID);
+                    cmd.CommandText = $"DELETE FROM '{TableName}' WHERE {STR_SCHEDULE_JOB_ID} = {Data.ID}";
                     cmd.ExecuteNonQuery();
                 }
 
@@ -550,11 +386,11 @@ namespace IfsSync2Data
                     };
                     if (cmd.ExecuteNonQuery() > 0)
                     {
-                        log.DebugFormat("[{0}:{1}] Success({3}) : {2}", CLASS_NAME, FUNCTION_NAME, cmd.CommandText, Data.JobName);
+                        log.Debug($"SuccessMainData.MUTEX_NAME_JOB_SQL{Data.JobName}) : {cmd.CommandText}");
                     }
                     else
                     {
-                        log.ErrorFormat("[{0}:{1}:{2}] Fail({3}) : ", CLASS_NAME, FUNCTION_NAME, "ExecuteNonQuery", cmd.CommandText, Data.JobName);
+                        log.Error($"Fail({Data.JobName}) : {cmd.CommandText}");
                         return false;
                     }
                 }
@@ -562,35 +398,23 @@ namespace IfsSync2Data
 
                 return true;
             }
-            catch (SQLiteException e)
-            {
-                log.ErrorFormat("[{0}:{1}:{2}] {3}", CLASS_NAME, FUNCTION_NAME, "SQLiteException", e.Message);
-                return false;
-            }
-            catch (Exception e)
-            {
-                log.ErrorFormat("[{0}:{1}:{2}] {3}", CLASS_NAME, FUNCTION_NAME, "Exception", e.Message);
-                return false;
-            }
-            finally
-            {
-                SqliteMutex.ReleaseMutex();
-            }
+            catch (SQLiteException e) { log.Error(e); return false; }
+            catch (Exception e) { log.Error(e); return false; }
+            finally { SqliteMutex.ReleaseMutex(); }
         }
         
         public bool UpdateIsinit(JobData Data, bool Flag, bool Global = false)
         {
-            const string FUNCTION_NAME = "UpdateIsinit";
             if (!File.Exists(FilePath)) return false;
 
             try
             {
                 SqliteMutex.WaitOne();
 
-                SQLiteConnection conn = new SQLiteConnection(string.Format("Data Source={0};Version=3;", FilePath));
+                SQLiteConnection conn = new SQLiteConnection($"Data Source={FilePath};Version=3;");
                 if (conn == null)
                 {
-                    log.ErrorFormat("[{0}:{1}:{2}] SQLiteConnection fail", CLASS_NAME, FUNCTION_NAME, "SQLiteConnection");
+                    log.Error("SQLiteConnection fail");
                     return false;
                 }
                 conn.Open();
@@ -600,57 +424,29 @@ namespace IfsSync2Data
                 else TableName = STR_JOB_TABLE_NAME;
 
                 SQLiteCommand cmd = new SQLiteCommand(conn)
-                {
-                    CommandText = string.Format(
-                                    "UPDATE '{0}' SET {1} = {2} " +
-                                               "WHERE {3} = {4};",
-                                    TableName,
-                                    STR_JOB_IS_INIT, Flag,
-                                    STR_JOB_ID, Data.ID)
-                };
+                { CommandText = $"UPDATE '{TableName}' SET {STR_JOB_IS_INIT} = {Flag} WHERE {STR_JOB_ID} = {Data.ID};" };
                 int result = cmd.ExecuteNonQuery();
 
                 conn.Close();
-
-                if (result > 0)
-                {
-                    log.DebugFormat("[{0}:{1}] Success({3}) : {2}", CLASS_NAME, FUNCTION_NAME, cmd.CommandText, Data.JobName);
-                    return true;
-                }
-                else
-                {
-                    log.ErrorFormat("[{0}:{1}:{2}] Fail({3}) : ", CLASS_NAME, FUNCTION_NAME, "ExecuteNonQuery", cmd.CommandText, Data.JobName);
-                    return false;
-                }
+                if (result > 0) { log.Debug($"Success({result}): {cmd.CommandText}"); return true; }
+                else            { log.Error($"Failed({result}) : {cmd.CommandText}"); return false; }
             }
-            catch (SQLiteException e)
-            {
-                log.ErrorFormat("[{0}:{1}:{2}] {3}", CLASS_NAME, FUNCTION_NAME, "SQLiteException", e.Message);
-                return false;
-            }
-            catch (Exception e)
-            {
-                log.ErrorFormat("[{0}:{1}:{2}] {3}", CLASS_NAME, FUNCTION_NAME, "Exception", e.Message);
-                return false;
-            }
-            finally
-            {
-                SqliteMutex.ReleaseMutex();
-            }
+            catch (SQLiteException e) { log.Error(e); return false; }
+            catch (Exception e) { log.Error(e); return false; }
+            finally { SqliteMutex.ReleaseMutex(); }
         }
         public bool UpdateFilterCheck(JobData Data, bool Global = false)
         {
-            const string FUNCTION_NAME = "UpdateFilterCheck";
             if (!File.Exists(FilePath)) return false;
 
             try
             {
                 SqliteMutex.WaitOne();
 
-                SQLiteConnection conn = new SQLiteConnection(string.Format("Data Source={0};Version=3;", FilePath));
+                SQLiteConnection conn = new SQLiteConnection($"Data Source={FilePath};Version=3;");
                 if (conn == null)
                 {
-                    log.ErrorFormat("[{0}:{1}:{2}] SQLiteConnection fail", CLASS_NAME, FUNCTION_NAME, "SQLiteConnection");
+                    log.Error("SQLiteConnection fail");
                     return false;
                 }
                 conn.Open();
@@ -660,57 +456,29 @@ namespace IfsSync2Data
                 else        TableName = STR_JOB_TABLE_NAME;
 
                 SQLiteCommand cmd = new SQLiteCommand(conn)
-                {
-                    CommandText = string.Format(
-                                    "UPDATE '{0}' SET {1} = {2} " +
-                                               "WHERE {3} = {4};" ,
-                                    TableName,
-                                    STR_JOB_FILTER_UPDATE , false,
-                                    STR_JOB_ID            , Data.ID)
-                };
+                { CommandText = $"UPDATE '{TableName}' SET {STR_JOB_FILTER_UPDATE} = {false} WHERE {STR_JOB_ID} = {Data.ID};" };
                 int result = cmd.ExecuteNonQuery();
                
                 conn.Close();
-
-                if (result > 0)
-                {
-                    log.DebugFormat("[{0}:{1}] Success({3}) : {2}", CLASS_NAME, FUNCTION_NAME, cmd.CommandText, Data.JobName);
-                    return true;
-                }
-                else
-                {
-                    log.ErrorFormat("[{0}:{1}:{2}] Fail({3}) : ", CLASS_NAME, FUNCTION_NAME, "ExecuteNonQuery", cmd.CommandText, Data.JobName);
-                    return false;
-                }
+                if (result > 0) { log.Debug($"Success({result}): {cmd.CommandText}"); return true; }
+                else            { log.Error($"Failed({result}) : {cmd.CommandText}"); return false; }
             }
-            catch (SQLiteException e)
-            {
-                log.ErrorFormat("[{0}:{1}:{2}] {3}", CLASS_NAME, FUNCTION_NAME, "SQLiteException", e.Message);
-                return false;
-            }
-            catch (Exception e)
-            {
-                log.ErrorFormat("[{0}:{1}:{2}] {3}", CLASS_NAME, FUNCTION_NAME, "Exception", e.Message);
-                return false;
-            }
-            finally
-            {
-                SqliteMutex.ReleaseMutex();
-            }
+            catch (SQLiteException e) { log.Error(e); return false; }
+            catch (Exception e) { log.Error(e); return false; }
+            finally { SqliteMutex.ReleaseMutex(); }
         }
         public bool UpdateSenderCheck(JobData Data, bool Global = false)
         {
-            const string FUNCTION_NAME = "UpdateSenderCheck";
             if (!File.Exists(FilePath)) return false;
 
             try
             {
                 SqliteMutex.WaitOne();
 
-                SQLiteConnection conn = new SQLiteConnection(string.Format("Data Source={0};Version=3;", FilePath));
+                SQLiteConnection conn = new SQLiteConnection($"Data Source={FilePath};Version=3;");
                 if (conn == null)
                 {
-                    log.ErrorFormat("[{0}:{1}:{2}] SQLiteConnection fail", CLASS_NAME, FUNCTION_NAME, "SQLiteConnection");
+                    log.Error("SQLiteConnection fail");
                     return false;
                 }
                 conn.Open();
@@ -720,106 +488,59 @@ namespace IfsSync2Data
                 else TableName = STR_JOB_TABLE_NAME;
 
                 SQLiteCommand cmd = new SQLiteCommand(conn)
-                {
-                    CommandText = string.Format(
-                                    "UPDATE '{0}' SET {1} = {2} " +
-                                               "WHERE {3} = {4};",
-                                    TableName,
-                                    STR_JOB_SENDER_UPDATE, false,
-                                    STR_JOB_ID, Data.ID)
-                };
+                { CommandText = $"UPDATE '{TableName}' SET {STR_JOB_SENDER_UPDATE} = {false} WHERE {STR_JOB_ID} = {Data.ID};" };
                 int result = cmd.ExecuteNonQuery();
 
                 conn.Close();
-
-                if (result > 0)
-                {
-                    log.DebugFormat("[{0}:{1}] Success({3}) : {2}", CLASS_NAME, FUNCTION_NAME, cmd.CommandText, Data.JobName);
-                    return true;
-                }
-                else
-                {
-                    log.ErrorFormat("[{0}:{1}:{2}] Fail({3}) : ", CLASS_NAME, FUNCTION_NAME, "ExecuteNonQuery", cmd.CommandText, Data.JobName);
-                    return false;
-                }
+                if (result > 0) { log.Debug($"Success({result}): {cmd.CommandText}"); return true; }
+                else            { log.Error($"Failed({result}) : {cmd.CommandText}"); return false; }
             }
-            catch (SQLiteException e)
-            {
-                log.ErrorFormat("[{0}:{1}:{2}] {3}", CLASS_NAME, FUNCTION_NAME, "SQLiteException", e.Message);
-                return false;
-            }
-            catch (Exception e)
-            {
-                log.ErrorFormat("[{0}:{1}:{2}] {3}", CLASS_NAME, FUNCTION_NAME, "Exception", e.Message);
-                return false;
-            }
-            finally
-            {
-                SqliteMutex.ReleaseMutex();
-            }
+            catch (SQLiteException e) { log.Error(e); return false; }
+            catch (Exception e) { log.Error(e); return false; }
+            finally { SqliteMutex.ReleaseMutex(); }
         }
         public int GetJobDataID(string HostName, string JobName)
         {
             int ID = 0;
-            const string FUNCTION_NAME = "GetJobDataID";
-
             try
             {
                 SqliteMutex.WaitOne();
 
-                SQLiteConnection conn = new SQLiteConnection(string.Format("Data Source={0};Version=3;", FilePath));
+                SQLiteConnection conn = new SQLiteConnection($"Data Source={FilePath};Version=3;");
                 if (conn == null)
                 {
-                    log.ErrorFormat("[{0}:{1}:{2}] SQLiteConnection fail", CLASS_NAME, FUNCTION_NAME, "SQLiteConnection");
+                    log.Error("SQLiteConnection fail");
                     return ID;
                 }
                 conn.Open();
 
                 SQLiteCommand cmd = new SQLiteCommand(conn)
-                {
-                    CommandText = string.Format(
-                                    "SELECT * FROM '{0}' WHERE {1} = '{2}' AND {3} = '{4}';",
-                                    STR_JOB_TABLE_NAME, STR_JOB_HOSTNAME, HostName, STR_JOB_NAME, JobName)
-                };
+                { CommandText = $"SELECT * FROM '{STR_JOB_TABLE_NAME}' WHERE {STR_JOB_HOSTNAME} = '{HostName}' AND {STR_JOB_NAME} = '{JobName}';" };
                 SQLiteDataReader rdr = cmd.ExecuteReader();
 
-                while (rdr.Read())
-                {
-                    ID = Convert.ToInt32(rdr[STR_JOB_ID]);
-                }
+                while (rdr.Read()) ID = Convert.ToInt32(rdr[STR_JOB_ID]);
 
                 conn.Close();
 
-                if (ID > 0) log.DebugFormat("[{0}:{1}] Success : {2}", CLASS_NAME, FUNCTION_NAME, cmd.CommandText);
-                else        log.ErrorFormat("[{0}:{1}:{2}] Fail : {3}", CLASS_NAME, FUNCTION_NAME, "ExecuteNonQuery", cmd.CommandText);
+                if (ID > 0) log.Debug($"Success : {cmd.CommandText}");
+                else        log.Error($"Failed : {cmd.CommandText}");
             }
-            catch (SQLiteException e)
-            {
-                log.ErrorFormat("[{0}:{1}:{2}] {3}", CLASS_NAME, FUNCTION_NAME, "SQLiteException", e.Message);
-            }
-            catch (Exception e)
-            {
-                log.ErrorFormat("[{0}:{1}:{2}] {3}", CLASS_NAME, FUNCTION_NAME, "Exception", e.Message);
-            }
-            finally
-            {
-                SqliteMutex.ReleaseMutex();
-            }
+            catch (SQLiteException e) { log.Error(e); }
+            catch (Exception e) { log.Error(e); }
+            finally { SqliteMutex.ReleaseMutex(); }
             return ID;
         }
 
         public bool IsJobName(string HostName, string JobName)
         {
-            const string FUNCTION_NAME = "IsJobName";
-
             try
             {
                 SqliteMutex.WaitOne();
 
-                SQLiteConnection conn = new SQLiteConnection(string.Format("Data Source={0};Version=3;", FilePath));
+                SQLiteConnection conn = new SQLiteConnection($"Data Source={FilePath};Version=3;");
                 if (conn == null)
                 {
-                    log.ErrorFormat("[{0}:{1}:{2}] SQLiteConnection fail", CLASS_NAME, FUNCTION_NAME, "SQLiteConnection");
+                    log.Error("SQLiteConnection fail");
                     return false;
                 }
                 conn.Open();
@@ -833,37 +554,16 @@ namespace IfsSync2Data
                 int result = Convert.ToInt32(cmd.ExecuteScalar());
 
                 conn.Close();
-
-                if (result > 0)
-                {
-                    log.DebugFormat("[{0}:{1}] Success : {2}", CLASS_NAME, FUNCTION_NAME, cmd.CommandText);
-                    return true;
-                }
-                else
-                {
-                    log.ErrorFormat("[{0}:{1}:{2}] Fail : {3}", CLASS_NAME, FUNCTION_NAME, "ExecuteNonQuery", cmd.CommandText);
-                    return false;
-                }
+                if (result > 0) { log.Debug($"Success({result}): {cmd.CommandText}"); return true; }
+                else            { log.Error($"Failed({result}) : {cmd.CommandText}"); return false; }
             }
-            catch (SQLiteException e)
-            {
-                log.ErrorFormat("[{0}:{1}:{2}] {3}", CLASS_NAME, FUNCTION_NAME, "SQLiteException", e.Message);
-                return false;
-            }
-            catch (Exception e)
-            {
-                log.ErrorFormat("[{0}:{1}:{2}] {3}", CLASS_NAME, FUNCTION_NAME, "Exception", e.Message);
-                return false;
-            }
-            finally
-            {
-                SqliteMutex.ReleaseMutex();
-            }
+            catch (SQLiteException e) { log.Error(e); return false; }
+            catch (Exception e) { log.Error(e); return false; }
+            finally { SqliteMutex.ReleaseMutex(); }
         }
 
         public List<JobData> GetJobDatas(bool Global = false)
         {
-            const string FUNCTION_NAME = "GetJobDatas";
 
             if (!File.Exists(FilePath)) CreateDBFile();
             try
@@ -872,12 +572,12 @@ namespace IfsSync2Data
 
                 SqliteMutex.WaitOne();
 
-                SQLiteConnection conn = new SQLiteConnection(string.Format("Data Source={0};Version=3;", FilePath));
+                SQLiteConnection conn = new SQLiteConnection($"Data Source={FilePath};Version=3;");
                 if (conn == null)
                 {
-                    string msg = string.Format("[{0}:{1}:{2}] SQLiteConnection fail", CLASS_NAME, FUNCTION_NAME, "SQLiteConnection");
+                    string msg = "SQLiteConnection fail";
 
-                    log.ErrorFormat(msg);
+                    log.Error(msg);
                     throw new Exception(msg);
                 }
                 conn.Open();
@@ -947,27 +647,15 @@ namespace IfsSync2Data
                 JobRdr.Close();
 
                 conn.Close();
-                log.DebugFormat("[{0}:{1}] {2} : {3}", CLASS_NAME, FUNCTION_NAME, TableName, items.Count);
+                log.Debug($"{TableName} : {items.Count}");
                 return items;
             }
-            catch (SQLiteException e)
-            {
-                log.ErrorFormat("[{0}:{1}:{2}] {3}", CLASS_NAME, FUNCTION_NAME, "SQLiteException", e.Message);
-                throw e;
-            }
-            catch (Exception e)
-            {
-                log.ErrorFormat("[{0}:{1}:{2}] {3}", CLASS_NAME, FUNCTION_NAME, "Exception", e.Message);
-                throw e;
-            }
-            finally
-            {
-                SqliteMutex.ReleaseMutex();
-            }
+            catch (SQLiteException e) { log.Error(e); throw e; }
+            catch (Exception e) { log.Error(e); throw e; }
+            finally { SqliteMutex.ReleaseMutex(); }
         }
         public List<JobData> GetJobDatas(string HostName = "")
         {
-            const string FUNCTION_NAME = "GetJobDatas";
             if (!File.Exists(FilePath)) CreateDBFile();
             try
             {
@@ -975,12 +663,12 @@ namespace IfsSync2Data
 
                 SqliteMutex.WaitOne();
 
-                SQLiteConnection conn = new SQLiteConnection(string.Format("Data Source={0};Version=3;", FilePath));
+                SQLiteConnection conn = new SQLiteConnection($"Data Source={FilePath};Version=3;");
                 if (conn == null)
                 {
-                    string msg = string.Format("[{0}:{1}:{2}] SQLiteConnection fail", CLASS_NAME, FUNCTION_NAME, "SQLiteConnection");
+                    string msg = "SQLiteConnection fail";
 
-                    log.ErrorFormat(msg);
+                    log.Error(msg);
                     throw new Exception(msg);
                 }
                 conn.Open();
@@ -1047,38 +735,26 @@ namespace IfsSync2Data
                 JobRdr.Close();
 
                 conn.Close();
-                log.DebugFormat("[{0}:{1}] JobCount({2}) : {3}", CLASS_NAME, FUNCTION_NAME, HostName, items.Count);
+                log.Debug($"{HostName} : {items.Count}");
                 return items;
             }
-            catch (SQLiteException e)
-            {
-                log.ErrorFormat("[{0}:{1}:{2}] {3}", CLASS_NAME, FUNCTION_NAME, "SQLiteException", e.Message);
-                throw e;
-            }
-            catch (Exception e)
-            {
-                log.ErrorFormat("[{0}:{1}:{2}] {3}", CLASS_NAME, FUNCTION_NAME, "Exception", e.Message);
-                throw e;
-            }
-            finally
-            {
-                SqliteMutex.ReleaseMutex();
-            }
+            catch (SQLiteException e) { log.Error(e); throw e; }
+            catch (Exception e) { log.Error(e); throw e; }
+            finally { SqliteMutex.ReleaseMutex(); }
         }
         public JobData GetJobData(int ID, bool Global = false)
         {
-            const string FUNCTION_NAME = "GetJobData";
             if (!File.Exists(FilePath)) CreateDBFile();
             try
             {
                 SqliteMutex.WaitOne();
 
-                SQLiteConnection conn = new SQLiteConnection(string.Format("Data Source={0};Version=3;", FilePath));
+                SQLiteConnection conn = new SQLiteConnection($"Data Source={FilePath};Version=3;");
                 if (conn == null)
                 {
-                    string msg = string.Format("[{0}:{1}:{2}] SQLiteConnection fail", CLASS_NAME, FUNCTION_NAME, "SQLiteConnection");
+                    string msg = "SQLiteConnection fail";
 
-                    log.ErrorFormat(msg);
+                    log.Error(msg);
                     throw new Exception(msg);
                 }
                 conn.Open();
@@ -1145,23 +821,12 @@ namespace IfsSync2Data
                 JobRdr.Close();
 
                 conn.Close();
-                log.DebugFormat("[{0}:{1}] Job : {2}", CLASS_NAME, FUNCTION_NAME, Data.JobName);
+                log.Debug($"Job : {Data.JobName}");
                 return Data;
             }
-            catch (SQLiteException e)
-            {
-                log.ErrorFormat("[{0}:{1}:{2}] {3}", CLASS_NAME, FUNCTION_NAME, "SQLiteException", e.Message);
-                throw e;
-            }
-            catch (Exception e)
-            {
-                log.ErrorFormat("[{0}:{1}:{2}] {3}", CLASS_NAME, FUNCTION_NAME, "Exception", e.Message);
-                throw e;
-            }
-            finally
-            {
-                SqliteMutex.ReleaseMutex();
-            }
+            catch (SQLiteException e) { log.Error(e); throw e; }
+            catch (Exception e) { log.Error(e); throw e; }
+            finally { SqliteMutex.ReleaseMutex(); }
         }
 
         public bool PutJobData(JobData Data)
@@ -1176,16 +841,14 @@ namespace IfsSync2Data
         public int NextGlobalJobIndex()
         {
             int Index = 0;
-            const string FUNCTION_NAME = "NextGlobalJobIndex";
-
             try
             {
                 SqliteMutex.WaitOne();
 
-                SQLiteConnection conn = new SQLiteConnection(string.Format("Data Source={0};Version=3;", FilePath));
+                SQLiteConnection conn = new SQLiteConnection($"Data Source={FilePath};Version=3;");
                 if (conn == null)
                 {
-                    log.ErrorFormat("[{0}:{1}:{2}] SQLiteConnection fail", CLASS_NAME, FUNCTION_NAME, "SQLiteConnection");
+                    log.Error("SQLiteConnection fail");
                     return Index;
                 }
                 conn.Open();
@@ -1205,20 +868,11 @@ namespace IfsSync2Data
 
                 conn.Close();
 
-                log.DebugFormat("[{0}:{1}] Success : {2}", CLASS_NAME, FUNCTION_NAME, cmd.CommandText);
+                log.Debug($"Success : {cmd.CommandText}");
             }
-            catch (SQLiteException e)
-            {
-                log.ErrorFormat("[{0}:{1}:{2}] {3}", CLASS_NAME, FUNCTION_NAME, "SQLiteException", e.Message);
-            }
-            catch (Exception e)
-            {
-                log.ErrorFormat("[{0}:{1}:{2}] {3}", CLASS_NAME, FUNCTION_NAME, "Exception", e.Message);
-            }
-            finally
-            {
-                SqliteMutex.ReleaseMutex();
-            }
+            catch (SQLiteException e) { log.Error(e);}
+            catch (Exception e) { log.Error(e); }
+            finally { SqliteMutex.ReleaseMutex(); }
             return Index + 1;
         }
     }

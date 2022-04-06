@@ -19,7 +19,6 @@ namespace IfsSync2TrayIcon
 {
     class TrayIconManager
     {
-        private static readonly string CLASS_NAME = "TrayIconManager";
 
         private readonly ILog log = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
         private NotifyIcon Tray;
@@ -36,8 +35,6 @@ namespace IfsSync2TrayIcon
 
         public bool SetTray()
         {
-            const string FUNCTION_NAME = "SetTray";
-
             //출처: https://overimagine.tistory.com/89 [Over Imagine]
             //Set tray option
             try
@@ -57,13 +54,13 @@ namespace IfsSync2TrayIcon
                 Menu.MenuItems.Add(SenderStop);
                 Tray.ContextMenu = Menu;
 
-                log.InfoFormat("[{0}:{1}] Create Tray Icon", CLASS_NAME, FUNCTION_NAME);
+                log.Info("Create Tray Icon");
 
                 return true;
             }
             catch (Exception e)
             {
-                log.ErrorFormat("[{0}:{1}:{2}] Tray registration failure: {3}", CLASS_NAME, FUNCTION_NAME, "Exception", e.Message);
+                log.Error("Tray registration failure.", e);
                 return false;
             }
         }
@@ -91,14 +88,12 @@ namespace IfsSync2TrayIcon
             }
             catch(Exception e)
             {
-                log.ErrorFormat("[{0}:{1}:{2}] ShowBalloonTip failure: {3}", CLASS_NAME, "IconClickEvent", "Exception", e.Message);
+                log.Error("ShowBalloonTip failure.", e);
             }
         }
 
         public void UpdateTray()
         {
-            const string FUNCTION_NAME = "UpdateTray";
-
             long MainRemaining = 0;
             long MainRemainingSize = 0;
             long MainUploadCount = 0;
@@ -128,8 +123,7 @@ namespace IfsSync2TrayIcon
                         long UploadFailCount = State.UploadFailCount;
                         long UploadSize      = State.UploadSize;
 
-                        DetailMessage += string.Format("{0} : {1}\nRemaining File : {2} ({3})\nUpload File : {4} ({5})\n",
-                                        State.JobName, State.Status, Remaining, MainData.SizeToString(RemainingSize), UploadCount, MainData.SizeToString(UploadSize));
+                        DetailMessage += $"{State.JobName} : {State.Status}\nRemaining File : {Remaining} ({MainData.SizeToString(RemainingSize)})\nUpload File : {UploadCount} ({MainData.SizeToString(UploadSize)})\n";
 
                         MainRemaining       += Remaining;
                         MainRemainingSize   += RemainingSize;
@@ -141,7 +135,7 @@ namespace IfsSync2TrayIcon
             }
             catch (Exception e)
             {
-                log.ErrorFormat("[{0}:{1}:{2}] Registry Key Read Faill: {3}", CLASS_NAME, FUNCTION_NAME, "Exception", e.Message);
+                log.Error("Registry Key Read Faill", e);
             }
 
             TrayIconConfigs.Remaining       = MainRemaining;
@@ -151,19 +145,13 @@ namespace IfsSync2TrayIcon
             TrayIconConfigs.FileSize        = MainUploadSize;
 
             //Tray.Text =
-            SummaryMessage = 
-                string.Format("Remaining Files     : {0}({1})\n" +
-                              "Uploaded Files      : {2}({3})\n" +
-                              "Upload Failed Files : {4}\n" ,
-                MainRemaining, MainData.SizeToString(MainRemainingSize),
-                MainUploadCount, MainData.SizeToString(MainUploadSize),
-                MainUploadFailCount);
+            SummaryMessage = $"Remaining Files     : {MainRemaining}({MainData.SizeToString(MainRemainingSize)})\n" +
+                             $"Uploaded Files      : {MainUploadCount}({MainData.SizeToString(MainUploadSize)})\n" +
+                             $"Upload Failed Files : {MainUploadFailCount}\n";
         }
 
         private void Clear()
         {
-            const string FUNCTION_NAME = "Clear";
-
             try
             {
                 RegistryKey UserKey = Registry.LocalMachine.OpenSubKey(MainData.REGISTRY_ROOT + "Job");
@@ -180,7 +168,7 @@ namespace IfsSync2TrayIcon
             }
             catch (Exception e)
             {
-                log.ErrorFormat("[{0}:{1}:{2}] Registry Key Read Faill: {3}", CLASS_NAME, FUNCTION_NAME, "Exception", e.Message);
+                log.Error("Registry Key Read Faill.", e);
             }
         }
 

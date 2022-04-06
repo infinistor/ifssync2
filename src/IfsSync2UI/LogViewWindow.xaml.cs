@@ -25,7 +25,6 @@ namespace IfsSync2UI
     /// </summary>
     public partial class LogViewWindow : Window
     {
-        private static readonly string CLASS_NAME = "MainWindow";
         private static readonly ILog log = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
         private readonly JobData Job;
 
@@ -60,30 +59,18 @@ namespace IfsSync2UI
 
         private void TabInit()
         {
-            const string FUNCTION_NAME = "TabInit";
             try
             {
                 MainTab.Dispatcher.Invoke(delegate
                 {
-                    TabItem Success = new TabItem
-                    {
-                        Content = SuccessTab,
-                        Header = "Success"
-                    };
+                    TabItem Success = new TabItem { Content = SuccessTab, Header = "Success" };
                     MainTab.Items.Add(Success);
 
-                    TabItem Failure = new TabItem
-                    {
-                        Content = FailureTab,
-                        Header = "Failure"
-                    };
+                    TabItem Failure = new TabItem { Content = FailureTab, Header = "Failure" };
                     MainTab.Items.Add(Failure);
                 });
             }
-            catch(Exception e)
-            {
-                    log.ErrorFormat("[{0}:{1}:{2}] {3}", CLASS_NAME, FUNCTION_NAME, "Exception", e.Message);
-            }
+            catch(Exception e) { log.Error(e); }
         }
 
         private void Btn_Clear(object sender, RoutedEventArgs e)

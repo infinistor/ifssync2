@@ -23,20 +23,16 @@ namespace IfsSync2TrayIcon
 {
     class Program
     {
-        private static readonly string CLASS_NAME = "TrayIcon";
-
         private static readonly ILog log = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
         private static readonly TrayIconConfig TrayIconConfigs = new TrayIconConfig(true);
 
         static void Main()
         {
-            const string FUNCTION_NAME = "Init";
-
             Mutex mutex = new Mutex(true, MainData.MUTEX_NAME_TRAYICON, out bool CreateNew);
 
             if(!CreateNew)
             {
-                log.ErrorFormat("[{0}:{1}:{2}] Prevent duplicate execution", CLASS_NAME, FUNCTION_NAME, "Mutex");
+                log.Error("Prevent duplicate execution");
                 return;
             }
             MainUtility.DeleteOldLogs(MainData.GetLogFolder("TrayIcon"));
@@ -52,7 +48,7 @@ namespace IfsSync2TrayIcon
                 }
                 catch (Exception e)
                 {
-                    log.ErrorFormat("[{0}:{1}:{2}] SetTray Failed : {3}", CLASS_NAME, FUNCTION_NAME, "Exception", e.Message);
+                    log.Error("SetTray Failed.", e);
                 }
             }
 
@@ -61,7 +57,7 @@ namespace IfsSync2TrayIcon
                 try { TrayIcon.UpdateTray(); }
                 catch(Exception e)
                 { 
-                    log.ErrorFormat("[{0}:{1}:{2}] UpdateTray Failed : {3}", CLASS_NAME, FUNCTION_NAME, "Exception", e.Message);
+                    log.Error("UpdateTray Failed.", e);
                     break;
                 }
                 Delay(TrayIconConfigs.Delay);
@@ -70,7 +66,7 @@ namespace IfsSync2TrayIcon
             try { TrayIcon.Close(); }
             catch (Exception e)
             {
-                log.ErrorFormat("[{0}:{1}:{2}] Close Failed : {3}", CLASS_NAME, FUNCTION_NAME, "Exception", e.Message);
+                log.Error("Close Failed.", e);
             }
             
         }

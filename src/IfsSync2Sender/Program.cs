@@ -21,19 +21,15 @@ namespace IfsSync2Sender
     class Program
     {
         private static readonly ILog log = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
-        private static readonly string CLASS_NAME = "Main";
-
         static void Main()
         {
-            const string FUNCTION_NAME = "Init";
-
             Mutex mutex = new Mutex(true, MainData.MUTEX_NAME_SENDER, out bool CreateNew);
             if (!CreateNew)
             {
-                log.ErrorFormat("[{0}:{1}:{2}] Prevent duplicate execution", CLASS_NAME, FUNCTION_NAME, "Mutex");
+                log.Error("Prevent duplicate execution");
                 return;
             }
-            log.InfoFormat("[{0}:{1}]Main Start", CLASS_NAME, FUNCTION_NAME);
+            log.Info("Main Start");
             MainUtility.DeleteOldLogs(MainData.GetLogFolder("Sender"));
             
             SenderConfig SenderConfigs = new SenderConfig(true);
@@ -54,9 +50,9 @@ namespace IfsSync2Sender
                 int FetchCount = SenderConfigs.FetchCount;
                 int Delay = SenderConfigs.SenderDelay;
                 GlobalSender.Once(FetchCount, Delay);
-                log.InfoFormat("[{0}:{1}]GlobalSender end", CLASS_NAME, FUNCTION_NAME);
+                log.Info("GlobalSender end");
                 NormalSender.Once(FetchCount, Delay);
-                log.InfoFormat("[{0}:{1}]Sender end", CLASS_NAME, FUNCTION_NAME);
+                log.Info("Sender end");
 
                 Thread.Sleep(SenderConfigs.SenderCheckDelay);
             }

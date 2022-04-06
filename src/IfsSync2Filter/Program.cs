@@ -20,20 +20,17 @@ namespace IfsSync2Filter
 {
     class Program
     {
-        private static readonly string CLASS_NAME = "IfsSync2Filter";
         private static readonly ILog log = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
         
         static void Main()
         {
-            const string FUNCTION_NAME = "Init";
-
             Mutex mutex = new Mutex(true, MainData.MUTEX_NAME_FILTER, out bool CreateNew);
             if (!CreateNew)
             {
-                log.ErrorFormat("[{0}:{1}:{2}] Prevent duplicate execution", CLASS_NAME, FUNCTION_NAME, "Mutex");
+                log.Error("Prevent duplicate execution");
                 return;
             }
-            log.InfoFormat("[{0}:{1}]Main Start", CLASS_NAME, FUNCTION_NAME);
+            log.Info("Main Start");
 
             MainUtility.DeleteOldLogs(MainData.GetLogFolder("Filter"));
 
@@ -47,9 +44,9 @@ namespace IfsSync2Filter
                 FilterConfigs.Alive = true;
 
                 NormalFilter.CheckOnce();
-                log.InfoFormat("[{0}:{1}]NormalFilter Check End", CLASS_NAME, FUNCTION_NAME);
+                log.Info("NormalFilter Check End");
                 GlobalFilter.CheckOnce();
-                log.InfoFormat("[{0}:{1}]GlobalFilter Check End", CLASS_NAME, FUNCTION_NAME);
+                log.Info("GlobalFilter Check End");
                 Thread.Sleep(FilterConfigs.FilterCheckDelay);
             }
         }

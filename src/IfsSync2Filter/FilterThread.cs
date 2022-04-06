@@ -21,8 +21,6 @@ namespace IfsSync2Filter
 {
     public class FilterThread
     {
-        private readonly string CLASS_NAME = "JobThread";
-
         private static readonly ILog log = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
         /***************************** Job Data *************************************/
         public readonly JobData Job;
@@ -75,12 +73,10 @@ namespace IfsSync2Filter
         }
         public FilterThread(string RootPath, JobData Data)
         {
-            const string FUNCTION_NAME = "Init";
             IsAlive = true;
             IsFilterUpdate = false;
             Job = Data;
             TaskSQL = new TaskDataSqlManager(RootPath, Job.HostName, Job.JobName);
-            CLASS_NAME += string.Format(":{0}:{1}", Job.HostName, Job.JobName);
             State = new JobState(Job.HostName, Job.JobName, true);
             NotifyWriteFileList = new List<WriteFileInfo>();
             DeleteStacks = new List<string>();
@@ -104,7 +100,7 @@ namespace IfsSync2Filter
                 monitor.Initialize(MainData.mGuid);
                 monitor.StartFilter();
                 State.Filter = true;
-                log.InfoFormat("[{0}:{1}] Start", CLASS_NAME, FUNCTION_NAME);
+                log.Info("Start");
             }
         }
 
@@ -126,8 +122,6 @@ namespace IfsSync2Filter
 
         public void FilterUpdate()
         {
-            const string FUNCTION_NAME = "FilterUpdate";
-
             List<string> FilterList = GetFilterList();
 
             bool FailCheck = false;
@@ -141,28 +135,28 @@ namespace IfsSync2Filter
                     if (MainData.CheckUNCFolder(Filter))
                     {
                         monitor.AddFilterRule(Filter, DEFULT_NOTIFY_FILTER);
-                        log.DebugFormat("[{0}:{1}] NUC Folder Filter : {2}", CLASS_NAME, FUNCTION_NAME, Filter);
+                        log.Debug($"NUC Folder Filter : {Filter}");
                     }
                     //Drive Check
                     else if (!new DriveInfo(Path.GetPathRoot(Filter)).IsReady)
                     {
                         FailCheck = true;
-                        log.DebugFormat("[{0}:{1}] Filter Update Fail : {2}", CLASS_NAME, FUNCTION_NAME, Filter);
+                        log.Debug($"Filter Update Fail : {Filter}");
                     }
                     else
                     {
                         monitor.AddFilterRule(Filter, DEFULT_NOTIFY_FILTER);
-                        log.DebugFormat("[{0}:{1}] Filter : {2}", CLASS_NAME, FUNCTION_NAME, Filter);
+                        log.Debug($"Filter : {Filter}");
                     }
                 }
                 catch(Exception e)
                 {
                     FailCheck = true;
-                    log.ErrorFormat("[{0}:{1}:{2}] {3} : {4}", CLASS_NAME, FUNCTION_NAME, "Exception", Filter, e.Message);
+                    log.Error(e);
                 }
             }
             SetBlackPath();
-            log.InfoFormat("[{0}:{1}] Filter Update", CLASS_NAME, FUNCTION_NAME);
+            log.Info("Filter Update");
 
             if (FailCheck) IsFilterUpdate = false;
             else           IsFilterUpdate = true;
@@ -264,7 +258,6 @@ namespace IfsSync2Filter
 
         private List<string> SubDirectory(string ParentDirectory, ObservableCollection<string> ExtList)
         {
-            //const string FUNCTION_NAME = "SubDirectory";
             DirectoryInfo dInfoParent = new DirectoryInfo(ParentDirectory);
             List<string> FileList = new List<string>();
             if (!dInfoParent.Exists) return FileList;
@@ -280,7 +273,6 @@ namespace IfsSync2Filter
         }
         private List<string> AddBackupFile(string ParentDirectory, ObservableCollection<string> ExtList)
         {
-            //const string FUNCTION_NAME = "SubDirectory";
             //add File List
             string[] files = Directory.GetFiles(ParentDirectory);
             List<string> FileList = new List<string>();
@@ -304,19 +296,10 @@ namespace IfsSync2Filter
 
         private long GetFileSize(string FilePath)
         {
-            try
-            {
-                return new FileInfo(FilePath).Length;
-            }
-            catch
-            {
-                return 0;
-            }
+            try { return new FileInfo(FilePath).Length; } catch { return 0; }
         }
         private bool CreateBackup(string FilePath)
         {
-            const string FUNCTION_NAME = "CreateBackup";
-
             string FileName = MainData.GetFileName(FilePath);
 
             if (!FilePathException(FileName))
@@ -328,7 +311,7 @@ namespace IfsSync2Filter
                     {
                         TaskData Data = new TaskData(TaskData.TaskNameList.Upload, File, DateTime.Now.ToString("yyyy-MM-dd-HH:mm:ss"), GetFileSize(File));
                         TaskSQL.Insert(Data);
-                        log.DebugFormat("[{0}:{1}] {2}", CLASS_NAME, FUNCTION_NAME, Data.FilePath);
+                        log.Debug(Data.FilePath);
                     }
                     return true;
                 }
@@ -336,7 +319,7 @@ namespace IfsSync2Filter
                 {
                     TaskData Data = new TaskData(TaskData.TaskNameList.Upload, FilePath, DateTime.Now.ToString("yyyy-MM-dd-HH:mm:ss"), GetFileSize(FilePath));
                     TaskSQL.Insert(Data);
-                    log.DebugFormat("[{0}:{1}] {2}", CLASS_NAME, FUNCTION_NAME, Data.FilePath);
+                    log.Debug(Data.FilePath);
                     return true;
                 }
             }
@@ -345,8 +328,6 @@ namespace IfsSync2Filter
         }
         private bool DeleteBackup(string FilePath)
         {
-            const string FUNCTION_NAME = "DeleteBackup";
-
             string FileName = MainData.GetFileName(FilePath);
 
             if (!FilePathException(FilePath))
@@ -356,7 +337,7 @@ namespace IfsSync2Filter
                     TaskData Data = new TaskData(TaskData.TaskNameList.Delete, FilePath,
                                                 DateTime.Now.ToString("yyyy-MM-dd-HH:mm:ss"));
                     TaskSQL.Insert(Data);
-                    log.DebugFormat("[{0}:{1}] {2}", CLASS_NAME, FUNCTION_NAME, Data.FilePath);
+                    log.Debug(Data.FilePath);
                     return true;
                 }
             }
@@ -364,7 +345,6 @@ namespace IfsSync2Filter
         }
         private bool RenameBackup(string FilePath, string NewFilePath)
         {
-            const string FUNCTION_NAME = "RenameBackup";
             //string FileName = MainData.GetFileName(FilePath);
 
             string NewFileName = MainData.GetFileName(NewFilePath);
@@ -378,14 +358,14 @@ namespace IfsSync2Filter
                     TaskData Data = new TaskData(TaskData.TaskNameList.Rename, FilePath,
                                                 DateTime.Now.ToString("yyyy-MM-dd-HH:mm:ss"), NewFilePath);
                     TaskSQL.Insert(Data);
-                    log.DebugFormat("[{0}:{1}] {2} => {3}", CLASS_NAME, FUNCTION_NAME, Data.FilePath, Data.NewFilePath);
+                    log.Debug($"{Data.FilePath} => {Data.NewFilePath}");
                 }
                 else if (CheckWhiteFileList(NewFileName))
                 {
                     TaskData Data = new TaskData(TaskData.TaskNameList.Rename, FilePath,
                                                 DateTime.Now.ToString("yyyy-MM-dd-HH:mm:ss"), NewFilePath);
                     TaskSQL.Insert(Data);
-                    log.DebugFormat("[{0}:{1}] {2} => {3}", CLASS_NAME, FUNCTION_NAME, Data.FilePath, Data.NewFilePath);
+                    log.Debug($"{Data.FilePath} => {Data.NewFilePath}");
                     return true;
                 }
             }
@@ -434,8 +414,6 @@ namespace IfsSync2Filter
 
         private void NotifyRenameOrMoveFile(object Sender, CbmonitorNotifyRenameOrMoveFileEventArgs args)
         {
-            const string FUNCTION_NAME = "NotifyRenameOrMoveFile";
-
             string FilePath = ChangeHardLinkDriveName(args.FileName);
             string NewFilePath = ChangeHardLinkDriveName(args.NewFileName);
 
@@ -444,22 +422,21 @@ namespace IfsSync2Filter
             string Msg;
             switch (Event)
             {
-                case FilterEventHandler.EventList.Rename     : RenameBackup(FilePath, NewFilePath); Msg = string.Format("Rename      : {0} => {1}", FilePath, NewFilePath); break;
-                case FilterEventHandler.EventList.SaveFile   : CreateBackup(FilePath);              Msg = string.Format("SaveFile    : {0}", FilePath, NewFilePath); break;
-                case FilterEventHandler.EventList.SaveNewFile: CreateBackup(NewFilePath);           Msg = string.Format("SaveNewFile : {1}", FilePath, NewFilePath); break;
-                case FilterEventHandler.EventList.Delete     : DeleteBackup(FilePath);              Msg = string.Format("Delete      : {0}", FilePath, NewFilePath); break;
+                case FilterEventHandler.EventList.Rename     : RenameBackup(FilePath, NewFilePath); Msg = $"Rename      : {FilePath} => {NewFilePath}"; break;
+                case FilterEventHandler.EventList.SaveFile   : CreateBackup(FilePath);              Msg = $"SaveFile    : {FilePath}"; break;
+                case FilterEventHandler.EventList.SaveNewFile: CreateBackup(NewFilePath);           Msg = $"SaveNewFile : {FilePath}"; break;
+                case FilterEventHandler.EventList.Delete     : DeleteBackup(FilePath);              Msg = $"Delete      : {FilePath}"; break;
                 case FilterEventHandler.EventList.None       : 
                 default: return; 
             }
 
-            log.DebugFormat("[{0}:{1}] {2}", CLASS_NAME, FUNCTION_NAME, Msg);
+            log.Debug(Msg);
         }
         private void NotifyCreateFile(object Sender, CbmonitorNotifyCreateFileEventArgs args)
         {
             if (!CheckIsFolder(args.FileName))
             {
-                const string FUNCTION_NAME = "NotifyCreateFile";
-                log.DebugFormat("[{0}:{1}] {2}", CLASS_NAME, FUNCTION_NAME, args.FileName);
+                log.Debug(args.FileName);
                 CreateBackup(args.FileName);
             }
         }
@@ -467,23 +444,20 @@ namespace IfsSync2Filter
 
         private void NotifySetFileSize(object Sender, CbmonitorNotifySetFileSizeEventArgs args)
         {
-            const string FUNCTION_NAME = "NotifySetFileSize";
-            log.DebugFormat("[{0}:{1}] {2}", CLASS_NAME, FUNCTION_NAME, args.FileName);
+            log.Debug(args.FileName);
 
             WriteFileEventCheck(args.FileName, args.Size);
         }
         private void NotifyGetFileSizes(object Sender, CbmonitorNotifyGetFileSizesEventArgs args)
         {
-            const string FUNCTION_NAME = "NotifyGetFileSizes";
-            log.DebugFormat("[{0}:{1}] {2}", CLASS_NAME, FUNCTION_NAME, args.FileName);
+            log.Debug(args.FileName);
 
             string ProcessName = ((Cbmonitor)Sender).GetOriginatorProcessName();
             if (ProcessName.EndsWith(MSMPENG, StringComparison.OrdinalIgnoreCase)) WriteFileEventCheck(args.FileName, args.Size);
         }
         private void NotifyWriteFile(object Sender, CbmonitorNotifyWriteFileEventArgs args)
         {
-            const string FUNCTION_NAME = "NotifyWriteFile";
-            log.DebugFormat("[{0}:{1}] {2}", CLASS_NAME, FUNCTION_NAME, args.FileName);
+            log.Debug(args.FileName);
 
             foreach (var item in NotifyWriteFileList)
             {
@@ -500,26 +474,23 @@ namespace IfsSync2Filter
         #region File Delete Event
         private void NotifyDeleteFile(object Sender, CbmonitorNotifyDeleteFileEventArgs args)
         {
-            const string FUNCTION_NAME = "NotifyDeleteFile";
-            log.DebugFormat("[{0}:{1}] {2} ", CLASS_NAME, FUNCTION_NAME, args.FileName);
+            log.Debug(args.FileName);
             DeleteBackup(args.FileName);
         }
 
         private void NotifyCanFileBeDeleted(object Sender, CbmonitorNotifyCanFileBeDeletedEventArgs args)
         {
-            const string FUNCTION_NAME = "NotifyCanFileBeDeleted";
-
             if (!args.CanDelete)
             {
                 int index = DeleteStacks.IndexOf(args.FileName);
                 if (index < 0)
                 {
-                    //log.DebugFormat("[{0}:{1}] Add to delete list : {2}", CLASS_NAME, FUNCTION_NAME, args.FileName);
+                    //log.Debug("Add to delete list : {2}", args.FileName);
                     DeleteStacks.Add(args.FileName);
                 }
                 else
                 {
-                    log.DebugFormat("[{0}:{1}] delete : {2}", CLASS_NAME, FUNCTION_NAME, args.FileName);
+                    log.Debug($"delete : {args.FileName}");
                     DeleteStacks.RemoveAt(index);
                     DeleteBackup(args.FileName);
                 }

@@ -35,7 +35,6 @@ namespace IfsSync2UI
 {
     public partial class MainWindow : Window
     {
-        private static readonly string CLASS_NAME = "MainWindow";
         private const double MaxAngle = 360;
         private const string NULL_STORAGE_NAME = "N/A";
 
@@ -124,7 +123,6 @@ namespace IfsSync2UI
         }
         private void TabInit()
         {
-            const string FUNCTION_NAME = "TabInit";
             //Set Job
             List<JobData> JobList;
             try
@@ -160,11 +158,11 @@ namespace IfsSync2UI
                         item.Header = Job.JobName;
                         MainTab.Items.Add(item);
                     });
-                    log.InfoFormat("[{0}:{1}] Load JobData : {2}", CLASS_NAME, FUNCTION_NAME, Job.JobName);
+                    log.Info($"Load JobData : {Job.JobName}");
                 }
                 catch (Exception ex)
                 {
-                    log.ErrorFormat("[{0}:{1}:{2}] {3}", CLASS_NAME, FUNCTION_NAME, "Exception", ex.Message);
+                    log.Error(ex);
                 }
             }
 
@@ -360,8 +358,6 @@ namespace IfsSync2UI
         }
         private bool CreateJob(string _JobName, JobData.PolicyNameList _Policy)
         {
-            const string FUNCTION_NAME = "CreateJob";
-
             if (Utility.FileNameSpecialCharactersErrorCheck(_JobName))
             {
                 Utility.ErrorMessageBox("Job 이름에 다음문자를 사용할 수 없습니다.\n[\\, /, :, *, ?, \", <, >, |]", Title);
@@ -393,12 +389,12 @@ namespace IfsSync2UI
                 });
 
                 //B_NewJob.IsEnabled = false;
-                log.InfoFormat("Create New Job : {0}", Data.JobName);
+                log.Info($"Create New Job : {Data.JobName}");
                 return true;
             }
             catch (Exception ex)
             {
-                log.ErrorFormat("[{0}:{1}:{2}] {3}", CLASS_NAME, FUNCTION_NAME, "Exception", ex.Message);
+                log.Error(ex);
                 return false;
             }
         }
@@ -477,7 +473,6 @@ namespace IfsSync2UI
 
         private void Btn_DeleteJobList(object sender, RoutedEventArgs e)
         {
-            const string FUNCTION_NAME = "Btn_DeleteJobList";
             Button button = (Button)sender;
 
             string JobName = button.Tag.ToString();
@@ -501,7 +496,7 @@ namespace IfsSync2UI
             }
             catch (Exception ex)
             {
-                log.ErrorFormat("[{0}:{1}:{2}] {3}", CLASS_NAME, FUNCTION_NAME, "Exception", ex.Message);
+                log.Error(ex);
             }
             if (DeleteFlag) {
                 SeletedBtn = null;
@@ -693,22 +688,13 @@ namespace IfsSync2UI
         
         private static bool CheckConnect(AmazonS3Client Client)
         {
-            const string FUNCTION_NAME = "CheckConnect";
             try
             {
                 var response = Client.ListBuckets();
                 return true;
             }
-            catch (AmazonS3Exception e)
-            {
-                log.ErrorFormat("[{0}:{1}:{2}]{3}", CLASS_NAME, FUNCTION_NAME, "AmazonS3Exception", e.Message);
-                return false;
-            }
-            catch (Exception e)
-            {
-                log.ErrorFormat("[{0}:{1}:{2}]{3}", CLASS_NAME, FUNCTION_NAME, "Exception", e.Message);
-                return false;
-            }
+            catch (AmazonS3Exception e) { log.Error(e); return false; }
+            catch (Exception e) { log.Error(e); return false; }
         }
         private bool RegionEndpointCheck(string SystemName)
         {
@@ -719,8 +705,6 @@ namespace IfsSync2UI
 
         private bool LoginTest(UserData User)
         {
-            const string FUNCTION_NAME = "LoginTest";
-
             try
             {
                 AmazonS3Config config;
@@ -736,18 +720,18 @@ namespace IfsSync2UI
                 AmazonS3Client Client = new AmazonS3Client(User.AccessKey, User.AccessSecret, config);
                 if (CheckConnect(Client))
                 {
-                    log.InfoFormat("[{0}:{1}] Login Success : {2}", CLASS_NAME, FUNCTION_NAME, User.UserName);
+                    log.Info($"Login Success : {User.UserName}");
                     return true;
                 }
                 else
                 {
-                    log.InfoFormat("[{0}:{1}] Login Fail : {2}", CLASS_NAME, FUNCTION_NAME, User.UserName);
+                    log.Info($"Login Fail : {User.UserName}");
                     return false;
                 }
             }
             catch (AmazonS3Exception e)
             {
-                log.FatalFormat("[{0}:{1}:{2}] Login fail : {3}", CLASS_NAME, FUNCTION_NAME, e.Message);
+                log.Fatal(e);
                 return false;
             }
         }
@@ -843,7 +827,6 @@ namespace IfsSync2UI
             if (string.IsNullOrWhiteSpace(T_EditMainIP .Text)) { Utility.ErrorMessageBox("IP Address is Empty", Title); return; }
             if (string.IsNullOrWhiteSpace(T_PortNumber .Text)) { Utility.ErrorMessageBox("Port Number is Empty", Title); return; }
             if (string.IsNullOrWhiteSpace(T_AditPCName .Text)) { Utility.ErrorMessageBox("PCName is Empty", Title); return; }
-            const string FUNCTION_NAME = "Btn_Edit1Save";
 
             string StorageName = T_StorageName.Text;
             string S3FileManagerURL = T_S3FileManagerURL.Text;
@@ -867,8 +850,8 @@ namespace IfsSync2UI
                 }
                 catch (Exception ex)
                 {
-                    log.ErrorFormat("[{0}:{1}:{2}] Global User Get Error : {3}", CLASS_NAME, FUNCTION_NAME, "Exception", ex.Message);
-                    Utility.ErrorMessageBox(string.Format("Global User Get Error : {0}", ex.Message), Title);
+                    log.Error(ex);
+                    Utility.ErrorMessageBox($"Global User Get Error : {ex.Message}", Title);
                     return;
                 }
                 WatcherConfigs.IP = Address;
@@ -918,7 +901,6 @@ namespace IfsSync2UI
         private void Btn_Edit1(object sender, RoutedEventArgs e)
         {
             ToggleButtonAllClose((ToggleButton)sender); 
-            const string FUNCTION_NAME = "Btn_Edit1";
             try
             {
                 T_StorageName.Focus();
@@ -936,7 +918,7 @@ namespace IfsSync2UI
             }
             catch(Exception ex)
             {
-                log.ErrorFormat("[{0}:{1}:{2}] {3}", CLASS_NAME, FUNCTION_NAME, "Exception", ex.Message);
+                log.Error(ex);
             }
         }
 
@@ -1023,8 +1005,6 @@ namespace IfsSync2UI
         {
             if (index >= StorageUIList.Count) return;
 
-            const String FUNCTION_NAME = "DeleteStorage";
-
             int UserID = StorageList[index].ID;
             string HostName = StorageList[index].HostName;
 
@@ -1057,7 +1037,7 @@ namespace IfsSync2UI
                     }
                 }catch(Exception e)
                 {
-                    log.ErrorFormat("[{0}:{1}:{2}] {3}", CLASS_NAME, FUNCTION_NAME, "Exception", e.Message);
+                    log.Error(e);
                 }
             }
             //User 삭제

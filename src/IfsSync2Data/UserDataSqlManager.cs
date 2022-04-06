@@ -20,7 +20,6 @@ namespace IfsSync2Data
 {
     public class UserDataSqlManager
     {
-        private const string CLASS_NAME = "JobDataSqlManager";
         /******************** User List Attribute ********************************/
         private const string STR_NORMAL_USER_TABLE_NAME = "NormalUserList";
         private const string STR_GLOBAL_USER_TABLE_NAME = "GlobalUserList";
@@ -42,31 +41,29 @@ namespace IfsSync2Data
 
         public UserDataSqlManager(string RootPath)
         {
-            const string FUNCTION_NAME = "Init";
             FilePath = MainData.CreateDBFileName(RootPath, MainData.USER_DB_FILE_NAME);
             try
             {
                 SqliteMutex = new Mutex(false, MainData.MUTEX_NAME_USER_SQL, out bool CreatedNew);
 
-                if (!CreatedNew) log.DebugFormat("[{0}:{1}] Mutex({3})", CLASS_NAME, FUNCTION_NAME, "Mutex", MainData.MUTEX_NAME_USER_SQL);
-                else log.DebugFormat("[{0}:{1}] Mutex({3}) create", CLASS_NAME, FUNCTION_NAME, "Mutex", MainData.MUTEX_NAME_USER_SQL);
+                if (!CreatedNew) log.Debug($"Mutex({MainData.MUTEX_NAME_USER_SQL})");
+                else log.Debug($"Mutex({MainData.MUTEX_NAME_USER_SQL}) create");
             }
             catch(Exception e)
             {
-                log.ErrorFormat("[{0}:{1}:{2}] Mutex({3}) fail : ", CLASS_NAME, FUNCTION_NAME, "Exception", MainData.MUTEX_NAME_USER_SQL, e.Message);
+                log.Error($"Mutex({MainData.MUTEX_NAME_USER_SQL})", e);
             }
         }
 
         private bool CreateDBFile()
         {
-            const string FUNCTION_NAME = "CreateDBFile";
             try
             {
                 MainData.CreateDirectory(FilePath);
                 SQLiteConnection.CreateFile(FilePath);
 
                 SqliteMutex.WaitOne();
-                using (SQLiteConnection conn = new SQLiteConnection(string.Format("Data Source={0};Version=3;", FilePath)))
+                using (SQLiteConnection conn = new SQLiteConnection($"Data Source={FilePath};Version=3;"))
                 {
                     conn.Open();
                     SQLiteCommand cmd = new SQLiteCommand(conn)
@@ -74,87 +71,53 @@ namespace IfsSync2Data
                         CommandText =
                                     //Global User List
                                     string.Format(
-                        "Create Table '{0}'(" + //STR_GLOBAL_USER_TABLE_NAME
-                                     "'{1}' INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT," + //STR_USER_ID
-                                     "'{2}' TEXT, "          + //STR_USER_HOSTNAME
-                                     "'{3}' TEXT NOT NULL, " + //STR_USER_USERNAME
-                                     "'{4}' TEXT NOT NULL, " + //STR_USER_URL
-                                     "'{5}' TEXT NOT NULL, " + //STR_USER_ACCESSKEY
-                                     "'{6}' TEXT NOT NULL, " + //STR_USER_ACCESSSECRET
-                                     "'{7}' TEXT NOT NULL, " + //STR_USER_STORAGE_NAME
-                                     "'{8}' TEXT, "          + //STR_S3_FILEMANAGER_URL
-                                     "'{9}' BOOL NOT NULL DEFAULT TRUE, " + //STR_USER_DEBUG
-                                     "'{10}' BOOL NOT NULL DEFAULT FALSE);",  //STR_USER_UPDATEFLAG
-                                     STR_GLOBAL_USER_TABLE_NAME,
-                                     STR_USER_ID,
-                                     STR_USER_HOSTNAME,
-                                     STR_USER_USERNAME,
-                                     STR_USER_URL,
-                                     STR_USER_ACCESSKEY,
-                                     STR_USER_ACCESSSECRET,
-                                     STR_USER_STORAGE_NAME,
-                                     STR_S3_FILEMANAGER_URL,
-                                     STR_USER_DEBUG,
-                                     STR_USER_UPDATEFLAG) +
+                        $"Create Table '{STR_GLOBAL_USER_TABLE_NAME}'(" + 
+                                     $"'{STR_USER_ID}' INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT," + 
+                                     $"'{STR_USER_HOSTNAME}' TEXT, " + 
+                                     $"'{STR_USER_USERNAME}' TEXT NOT NULL, " + 
+                                     $"'{STR_USER_URL}' TEXT NOT NULL, " + 
+                                     $"'{STR_USER_ACCESSKEY}' TEXT NOT NULL, " + 
+                                     $"'{STR_USER_ACCESSSECRET}' TEXT NOT NULL, " + 
+                                     $"'{STR_USER_STORAGE_NAME}' TEXT NOT NULL, " + 
+                                     $"'{STR_S3_FILEMANAGER_URL}' TEXT, " + 
+                                     $"'{STR_USER_DEBUG}' BOOL NOT NULL DEFAULT TRUE, " + 
+                                     $"'{STR_USER_UPDATEFLAG}' BOOL NOT NULL DEFAULT FALSE);") +
                                     //User List
                                     string.Format(
-                        "Create Table '{0}'(" + //STR_NORMAL_USER_TABLE_NAME
-                                     "'{1}' INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT," + //STR_USER_ID
-                                     "'{2}' TEXT, "          + //STR_USER_HOSTNAME
-                                     "'{3}' TEXT NOT NULL, " + //STR_USER_USERNAME
-                                     "'{4}' TEXT NOT NULL, " + //STR_USER_URL
-                                     "'{5}' TEXT NOT NULL, " + //STR_USER_ACCESSKEY
-                                     "'{6}' TEXT NOT NULL, " + //STR_USER_ACCESSSECRET
-                                     "'{7}' TEXT NOT NULL, " + //STR_USER_STORAGE_NAME
-                                     "'{8}' TEXT, " + //STR_S3_FILEMANAGER_URL
-                                     "'{9}' BOOL NOT NULL DEFAULT TRUE, " + //STR_USER_DEBUG
-                                     "'{10}' BOOL NOT NULL DEFAULT FALSE);",  //STR_USER_UPDATEFLAG
-                                     STR_NORMAL_USER_TABLE_NAME,
-                                     STR_USER_ID,
-                                     STR_USER_HOSTNAME,
-                                     STR_USER_USERNAME,
-                                     STR_USER_URL,
-                                     STR_USER_ACCESSKEY,
-                                     STR_USER_ACCESSSECRET,
-                                     STR_USER_STORAGE_NAME,
-                                     STR_S3_FILEMANAGER_URL,
-                                     STR_USER_DEBUG,
-                                     STR_USER_UPDATEFLAG)
+                        $"Create Table '{STR_NORMAL_USER_TABLE_NAME}'(" + 
+                                     $"'{STR_USER_ID}' INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT," + 
+                                     $"'{STR_USER_HOSTNAME}' TEXT, " + 
+                                     $"'{STR_USER_USERNAME}' TEXT NOT NULL, " + 
+                                     $"'{STR_USER_URL}' TEXT NOT NULL, " + 
+                                     $"'{STR_USER_ACCESSKEY}' TEXT NOT NULL, " + 
+                                     $"'{STR_USER_ACCESSSECRET}' TEXT NOT NULL, " + 
+                                     $"'{STR_USER_STORAGE_NAME}' TEXT NOT NULL, " + 
+                                     $"'{STR_S3_FILEMANAGER_URL}' TEXT, " + 
+                                     $"'{STR_USER_DEBUG}' BOOL NOT NULL DEFAULT TRUE, " + 
+                                     $"'{STR_USER_UPDATEFLAG}' BOOL NOT NULL DEFAULT FALSE);")
                     };
                     cmd.ExecuteNonQuery();
                     conn.Close();
-                    log.DebugFormat("[{0}:{1}] Success : {2}", CLASS_NAME, FUNCTION_NAME, cmd.CommandText);
+                    log.Debug($"Success : {cmd.CommandText}");
                 }
                 return true;
             }
-            catch (SQLiteException e)
-            {
-                log.ErrorFormat("[{0}:{1}:{2}] {3}", CLASS_NAME, FUNCTION_NAME, "SQLiteException", e.Message);
-                return false;
-            }
-            catch (Exception e)
-            {
-                log.ErrorFormat("[{0}:{1}:{2}] {3}", CLASS_NAME, FUNCTION_NAME, "Exception", e.Message);
-                return false;
-            }
-            finally
-            {
-                SqliteMutex.ReleaseMutex();
-            }
+            catch (SQLiteException e) { log.Error(e); throw e; }
+            catch (Exception e) { log.Error(e); throw e; }
+            finally { SqliteMutex.ReleaseMutex(); }
         }
 
         public bool InsertUser(UserData Data, bool Global)
         {
-            const string FUNCTION_NAME = "InsertUser";
             if (!File.Exists(FilePath)) if (!CreateDBFile()) return false;
 
             try
             {
                 SqliteMutex.WaitOne();
-                SQLiteConnection conn = new SQLiteConnection(string.Format("Data Source={0};Version=3;", FilePath));
+                SQLiteConnection conn = new SQLiteConnection($"Data Source={FilePath};Version=3;");
                 if (conn == null)
                 {
-                    log.ErrorFormat("[{0}:{1}:{2}] SQLiteConnection fail", CLASS_NAME, FUNCTION_NAME, "SQLiteConnection");
+                    log.Error($"SQLiteConnection fail");
                     return false;
                 }
 
@@ -183,37 +146,16 @@ namespace IfsSync2Data
 
                 int result = cmd.ExecuteNonQuery();
                 conn.Close();
-
-                if (result > 0)
-                {
-                    log.DebugFormat("[{0}:{1}] Success : {2}", CLASS_NAME, FUNCTION_NAME, cmd.CommandText);
-                    return true;
-                }
-                else
-                {
-                    log.ErrorFormat("[{0}:{1}:{2}] Fail : ", CLASS_NAME, FUNCTION_NAME, "ExecuteNonQuery", cmd.CommandText);
-                    return false;
-                }
+                if (result > 0) { log.Debug($"Success({result}): {cmd.CommandText}"); return true; }
+                else            { log.Error($"Failed({result}) : {cmd.CommandText}"); return false; }
             }
-            catch (SQLiteException e)
-            {
-                log.ErrorFormat("[{0}:{1}:{2}] {3}", CLASS_NAME, FUNCTION_NAME, "SQLiteException", e.Message);
-                return false;
-            }
-            catch (Exception e)
-            {
-                log.ErrorFormat("[{0}:{1}:{2}] {3}", CLASS_NAME, FUNCTION_NAME, "Exception", e.Message);
-                return false;
-            }
-            finally
-            {
-                SqliteMutex.ReleaseMutex();
-            }
+            catch (SQLiteException e) { log.Error(e); throw e; }
+            catch (Exception e) { log.Error(e); throw e; }
+            finally { SqliteMutex.ReleaseMutex(); }
         }
 
         public List<UserData> GetUsers(bool Global)
         {
-            const string FUNCTION_NAME = "GetUsers";
             if (!File.Exists(FilePath)) CreateDBFile();
             try
             {
@@ -221,13 +163,13 @@ namespace IfsSync2Data
 
                 SqliteMutex.WaitOne();
 
-                using (SQLiteConnection conn = new SQLiteConnection(string.Format("Data Source={0};Version=3;", FilePath)))
+                using (SQLiteConnection conn = new SQLiteConnection($"Data Source={FilePath};Version=3;"))
                 {
                     if (conn == null)
                     {
-                        string msg = string.Format("[{0}:{1}:{2}] SQLiteConnection fail", CLASS_NAME, FUNCTION_NAME, "SQLiteConnection");
+                        string msg = "SQLiteConnection fail";
 
-                        log.ErrorFormat(msg);
+                        log.Error(msg);
                         throw new Exception(msg);
                     }
                     conn.Open();
@@ -238,7 +180,7 @@ namespace IfsSync2Data
 
                     SQLiteCommand cmd = new SQLiteCommand(conn)
                     {
-                        CommandText = string.Format("SELECT * FROM '{0}'", TableName)
+                        CommandText = $"SELECT * FROM '{TableName}'"
                     };
                     SQLiteDataReader Rdr = cmd.ExecuteReader();
 
@@ -261,28 +203,16 @@ namespace IfsSync2Data
                     }
                     Rdr.Close();
                     conn.Close();
-                    log.DebugFormat("[{0}:{1}] {2} Count : {3}", CLASS_NAME, FUNCTION_NAME, TableName, Items.Count);
+                    log.Debug($"{TableName} Count : {Items.Count}");
                 }
                 return Items;
             }
-            catch (SQLiteException e)
-            {
-                log.ErrorFormat("[{0}:{1}:{2}] {3}", CLASS_NAME, FUNCTION_NAME, "SQLiteException", e.Message);
-                throw e;
-            }
-            catch (Exception e)
-            {
-                log.ErrorFormat("[{0}:{1}:{2}] {3}", CLASS_NAME, FUNCTION_NAME, "Exception", e.Message);
-                throw e;
-            }
-            finally
-            {
-                SqliteMutex.ReleaseMutex();
-            }
+            catch (SQLiteException e) { log.Error(e); throw e; }
+            catch (Exception e) { log.Error(e); throw e; }
+            finally { SqliteMutex.ReleaseMutex(); }
         }
         public List<UserData> GetUsers(string HostName)
         {
-            const string FUNCTION_NAME = "GetUsers";
             if (!File.Exists(FilePath)) CreateDBFile();
             try
             {
@@ -290,13 +220,13 @@ namespace IfsSync2Data
 
                 SqliteMutex.WaitOne();
 
-                using (SQLiteConnection conn = new SQLiteConnection(string.Format("Data Source={0};Version=3;", FilePath)))
+                using (SQLiteConnection conn = new SQLiteConnection($"Data Source={FilePath};Version=3;"))
                 {
                     if (conn == null)
                     {
-                        string msg = string.Format("[{0}:{1}:{2}] SQLiteConnection fail", CLASS_NAME, FUNCTION_NAME, "SQLiteConnection");
+                        string msg = "SQLiteConnection fail";
 
-                        log.ErrorFormat(msg);
+                        log.Error(msg);
                         throw new Exception(msg);
                     }
                     conn.Open();
@@ -327,28 +257,16 @@ namespace IfsSync2Data
                     }
                     Rdr.Close();
                     conn.Close();
-                    log.DebugFormat("[{0}:{1}] Count({2}) : {3}", CLASS_NAME, FUNCTION_NAME, HostName, Items.Count);
+                    log.Debug($"Count({HostName}) : {Items.Count}");
                 }
                 return Items;
             }
-            catch (SQLiteException e)
-            {
-                log.ErrorFormat("[{0}:{1}:{2}] {3}", CLASS_NAME, FUNCTION_NAME, "SQLiteException", e.Message);
-                throw e;
-            }
-            catch (Exception e)
-            {
-                log.ErrorFormat("[{0}:{1}:{2}] {3}", CLASS_NAME, FUNCTION_NAME, "Exception", e.Message);
-                throw e;
-            }
-            finally
-            {
-                SqliteMutex.ReleaseMutex();
-            }
+            catch (SQLiteException e) { log.Error(e); throw e; }
+            catch (Exception e) { log.Error(e); throw e; }
+            finally { SqliteMutex.ReleaseMutex(); }
         }
         public UserData GetUserToID(int ID, bool Global)
         {
-            const string FUNCTION_NAME = "GetUserToID";
             try
             {
                 FileInfo file = new FileInfo(FilePath);
@@ -356,11 +274,11 @@ namespace IfsSync2Data
 
                 SqliteMutex.WaitOne();
 
-                using (SQLiteConnection conn = new SQLiteConnection(string.Format("Data Source={0};Version=3;", FilePath)))
+                using (SQLiteConnection conn = new SQLiteConnection($"Data Source={FilePath};Version=3;"))
                 {
                     if (conn == null)
                     {
-                        log.ErrorFormat("[{0}:{1}:{2}] SQLiteConnection fail", CLASS_NAME, FUNCTION_NAME, "SQLiteConnection");
+                        log.Error($"SQLiteConnection fail");
                         throw new Exception();
                     }
                     conn.Open();
@@ -393,34 +311,17 @@ namespace IfsSync2Data
                     };
                     Rdr.Close();
                     conn.Close();
-                    log.DebugFormat("[{0}:{1}] Success User : {2}", CLASS_NAME, FUNCTION_NAME, Data.UserName);
+                    log.Debug($"Success User : {Data.UserName}");
                     return Data;
                 }
             }
-            catch (SQLiteException e)
-            {
-                log.ErrorFormat("[{0}:{1}:{2}] {3}", CLASS_NAME, FUNCTION_NAME, "SQLiteException", e.Message);
-                throw new Exception();
-            }
-            catch (AbandonedMutexException e)
-            {
-                log.ErrorFormat("[{0}:{1}:{2}] {3}", CLASS_NAME, FUNCTION_NAME, "FileNotFoundException", e.Message);
-                throw new Exception();
-            }
-            catch (Exception e)
-            {
-                log.ErrorFormat("[{0}:{1}:{2}] {3}", CLASS_NAME, FUNCTION_NAME, "Exception", e.Message);
-                throw new Exception();
-            }
-            finally
-            {
-                SqliteMutex.ReleaseMutex();
-            }
+            catch (SQLiteException e) { log.Error(e); throw e; }
+            catch (AbandonedMutexException e) { log.Error(e); throw e; }
+            catch (Exception e) { log.Error(e); throw e; }
+            finally { SqliteMutex.ReleaseMutex(); }
         }
         public bool IsUserName(string UserName, bool Global)
         {
-
-            const string FUNCTION_NAME = "IsUserName";
             try
             {
                 FileInfo file = new FileInfo(FilePath);
@@ -428,11 +329,11 @@ namespace IfsSync2Data
 
                 SqliteMutex.WaitOne();
 
-                using (SQLiteConnection conn = new SQLiteConnection(string.Format("Data Source={0};Version=3;", FilePath)))
+                using (SQLiteConnection conn = new SQLiteConnection($"Data Source={FilePath};Version=3;"))
                 {
                     if (conn == null)
                     {
-                        log.ErrorFormat("[{0}:{1}:{2}] SQLiteConnection fail", CLASS_NAME, FUNCTION_NAME, "SQLiteConnection");
+                        log.Error($"SQLiteConnection fail");
                         return false;
                     }
                     conn.Open();
@@ -450,56 +351,40 @@ namespace IfsSync2Data
 
                     if (result > 0)
                     {
-                        log.DebugFormat("[{0}:{1}] Exists User({3}) : {2}", CLASS_NAME, FUNCTION_NAME, UserName, result);
+                        log.Debug($"Exists User({result}) : {UserName}");
                         return true;
                     }
                     else
                     {
-                        log.DebugFormat("[{0}:{1}] Not Exists User({3}) : {2}", CLASS_NAME, FUNCTION_NAME, cmd.CommandText, result);
+                        log.Debug($"Not Exists User({result}) : {cmd.CommandText}");
                         return false;
                     }
                 }
             }
-            catch (SQLiteException e)
-            {
-                log.ErrorFormat("[{0}:{1}:{2}] {3}", CLASS_NAME, FUNCTION_NAME, "SQLiteException", e.Message);
-                return false;
-            }
-            catch (AbandonedMutexException e)
-            {
-                log.ErrorFormat("[{0}:{1}:{2}] {3}", CLASS_NAME, FUNCTION_NAME, "FileNotFoundException", e.Message);
-                return false;
-            }
-            catch (Exception e)
-            {
-                log.ErrorFormat("[{0}:{1}:{2}] {3}", CLASS_NAME, FUNCTION_NAME, "Exception", e.Message);
-                return false;
-            }
-            finally
-            {
-                SqliteMutex.ReleaseMutex();
-            }
+            catch (SQLiteException e) { log.Error(e); throw e; }
+            catch (AbandonedMutexException e) { log.Error(e); throw e; }
+            catch (Exception e) { log.Error(e); throw e; }
+            finally { SqliteMutex.ReleaseMutex(); }
         }
 
         public bool DeleteUserToID(int ID, bool Global)
         {
-            const string FUNCTION_NAME = "DeleteUser";
             try
             {
                 FileInfo file = new FileInfo(FilePath);
                 if (!file.Exists)
                 {
-                    log.ErrorFormat("[{0}:{1}:{2}] {3} Not Exists", CLASS_NAME, FUNCTION_NAME, "FileInfo", FilePath);
+                    log.Error($"{FilePath} Not Exists");
                     return false;
                 }
 
                 SqliteMutex.WaitOne();
 
-                using (SQLiteConnection conn = new SQLiteConnection(string.Format("Data Source={0};Version=3;", FilePath)))
+                using (SQLiteConnection conn = new SQLiteConnection($"Data Source={FilePath};Version=3;"))
                 {
                     if (conn == null)
                     {
-                        log.ErrorFormat("[{0}:{1}:{2}] SQLiteConnection fail", CLASS_NAME, FUNCTION_NAME, "SQLiteConnection");
+                        log.Error($"SQLiteConnection fail");
                         throw new Exception();
                     }
                     conn.Open();
@@ -516,51 +401,31 @@ namespace IfsSync2Data
                     int result = cmd.ExecuteNonQuery();
                     conn.Close();
 
-                    if (result > 0)
-                    {
-                        log.DebugFormat("[{0}:{1}] Delete Success UserID : {2}", CLASS_NAME, FUNCTION_NAME, ID);
-                        return true;
-                    }
-                    else
-                    {
-                        log.ErrorFormat("[{0}:{1}] Delete Fail UserID : {2}", CLASS_NAME, FUNCTION_NAME, ID);
-                        return false;
-                    }
+                    if (result > 0) { log.Debug($"Delete Success UserID : {ID}"); return true; }
+                    else            { log.Error($"Delete Fail UserID : {ID}"); return false; }
                 }
             }
-            catch (SQLiteException e)
-            {
-                log.ErrorFormat("[{0}:{1}:{2}] {3}", CLASS_NAME, FUNCTION_NAME, "SQLiteException", e.Message);
-                return false;
-            }
-            catch (Exception e)
-            {
-                log.ErrorFormat("[{0}:{1}:{2}] {3}", CLASS_NAME, FUNCTION_NAME, "Exception", e.Message);
-                return false;
-            }
-            finally
-            {
-                SqliteMutex.ReleaseMutex();
-            }
+            catch (SQLiteException e) { log.Error(e); throw e; }
+            catch (Exception e) { log.Error(e); throw e; }
+            finally { SqliteMutex.ReleaseMutex(); }
         }
         public bool UpdateUser(UserData Data, bool Global)
         {
-            const string FUNCTION_NAME = "UpdateUser";
             try
             {
                 FileInfo file = new FileInfo(FilePath);
                 if (!file.Exists)
                 {
-                    log.ErrorFormat("[{0}:{1}:{2}] {3} Not Exists", CLASS_NAME, FUNCTION_NAME, "FileInfo", FilePath);
+                    log.Error($"{FilePath} Not Exists");
                     return false;
                 }
                 SqliteMutex.WaitOne();
 
-                using (SQLiteConnection conn = new SQLiteConnection(string.Format("Data Source={0};Version=3;", FilePath)))
+                using (SQLiteConnection conn = new SQLiteConnection($"Data Source={FilePath};Version=3;"))
                 {
                     if (conn == null)
                     {
-                        log.ErrorFormat("[{0}:{1}:{2}] SQLiteConnection fail", CLASS_NAME, FUNCTION_NAME, "SQLiteConnection");
+                        log.Error($"SQLiteConnection fail");
                         throw new Exception();
                     }
                     conn.Open();
@@ -594,51 +459,31 @@ namespace IfsSync2Data
                     int result = cmd.ExecuteNonQuery();
                     conn.Close();
 
-                    if (result > 0)
-                    {
-                        log.DebugFormat("[{0}:{1}] Update Success User : {2}", CLASS_NAME, FUNCTION_NAME, Data.UserName);
-                        return true;
-                    }
-                    else
-                    {
-                        log.ErrorFormat("[{0}:{1}] Update Fail User : {2}", CLASS_NAME, FUNCTION_NAME, Data.UserName);
-                        return false;
-                    }
+                    if (result > 0) { log.Debug($"Update Success User : {Data.UserName}"); return true; }
+                    else            { log.Error($"Update Fail User : {Data.UserName}"); return false; }
                 }
             }
-            catch (SQLiteException e)
-            {
-                log.ErrorFormat("[{0}:{1}:{2}] {3}", CLASS_NAME, FUNCTION_NAME, "SQLiteException", e.Message);
-                return false;
-            }
-            catch (Exception e)
-            {
-                log.ErrorFormat("[{0}:{1}:{2}] {3}", CLASS_NAME, FUNCTION_NAME, "Exception", e.Message);
-                return false;
-            }
-            finally
-            {
-                SqliteMutex.ReleaseMutex();
-            }
+            catch (SQLiteException e) { log.Error(e); throw e; }
+            catch (Exception e) { log.Error(e); throw e; }
+            finally { SqliteMutex.ReleaseMutex(); }
         }
         public bool UpdateUserStorageName(int ID, string StorageName, bool Global)
         {
-            const string FUNCTION_NAME = "UpdateUserStorageName";
             try
             {
                 FileInfo file = new FileInfo(FilePath);
                 if (!file.Exists)
                 {
-                    log.ErrorFormat("[{0}:{1}:{2}] {3} Not Exists", CLASS_NAME, FUNCTION_NAME, "FileInfo", FilePath);
+                    log.Error($"{FilePath} Not Exists");
                     return false;
                 }
                 SqliteMutex.WaitOne();
 
-                using (SQLiteConnection conn = new SQLiteConnection(string.Format("Data Source={0};Version=3;", FilePath)))
+                using (SQLiteConnection conn = new SQLiteConnection($"Data Source={FilePath};Version=3;"))
                 {
                     if (conn == null)
                     {
-                        log.ErrorFormat("[{0}:{1}:{2}] SQLiteConnection fail", CLASS_NAME, FUNCTION_NAME, "SQLiteConnection");
+                        log.Error($"SQLiteConnection fail");
                         throw new Exception();
                     }
                     conn.Open();
@@ -660,51 +505,31 @@ namespace IfsSync2Data
                     int result = cmd.ExecuteNonQuery();
                     conn.Close();
 
-                    if (result > 0)
-                    {
-                        log.DebugFormat("[{0}:{1}] Update Success User : {2}", CLASS_NAME, FUNCTION_NAME, StorageName);
-                        return true;
-                    }
-                    else
-                    {
-                        log.ErrorFormat("[{0}:{1}] Update Fail User : {2}", CLASS_NAME, FUNCTION_NAME, StorageName);
-                        return false;
-                    }
+                    if (result > 0) { log.Debug($"Update Success User : {StorageName}"); return true; }
+                    else            { log.Error($"Update Fail User : {StorageName}"); return false; }
                 }
             }
-            catch (SQLiteException e)
-            {
-                log.ErrorFormat("[{0}:{1}:{2}] {3}", CLASS_NAME, FUNCTION_NAME, "SQLiteException", e.Message);
-                return false;
-            }
-            catch (Exception e)
-            {
-                log.ErrorFormat("[{0}:{1}:{2}] {3}", CLASS_NAME, FUNCTION_NAME, "Exception", e.Message);
-                return false;
-            }
-            finally
-            {
-                SqliteMutex.ReleaseMutex();
-            }
+            catch (SQLiteException e) { log.Error(e); throw e; }
+            catch (Exception e) { log.Error(e); throw e; }
+            finally { SqliteMutex.ReleaseMutex(); }
         }
         public bool UpdateUserS3Proxy(int ID, string S3Proxy, bool Global)
         {
-            const string FUNCTION_NAME = "UpdateUserS3Proxy";
             try
             {
                 FileInfo file = new FileInfo(FilePath);
                 if (!file.Exists)
                 {
-                    log.ErrorFormat("[{0}:{1}:{2}] {3} Not Exists", CLASS_NAME, FUNCTION_NAME, "FileInfo", FilePath);
+                    log.Error($"{FilePath} Not Exists");
                     return false;
                 }
                 SqliteMutex.WaitOne();
 
-                using (SQLiteConnection conn = new SQLiteConnection(string.Format("Data Source={0};Version=3;", FilePath)))
+                using (SQLiteConnection conn = new SQLiteConnection($"Data Source={FilePath};Version=3;"))
                 {
                     if (conn == null)
                     {
-                        log.ErrorFormat("[{0}:{1}:{2}] SQLiteConnection fail", CLASS_NAME, FUNCTION_NAME, "SQLiteConnection");
+                        log.Error($"SQLiteConnection fail");
                         throw new Exception();
                     }
                     conn.Open();
@@ -715,62 +540,37 @@ namespace IfsSync2Data
 
                     SQLiteCommand cmd = new SQLiteCommand(conn)
                     {
-                        CommandText = string.Format(
-                                    "UPDATE '{0}' SET {1} = '{2}' " +
-                                               "WHERE {3} = '{4}';",
-                                    TableName,
-                                    STR_USER_URL, S3Proxy,
-                                    STR_USER_ID, ID)
+                        CommandText = $"UPDATE '{TableName}' SET {STR_USER_URL} = '{S3Proxy}' WHERE {STR_USER_ID} = '{ID}';"
                     };
 
                     int result = cmd.ExecuteNonQuery();
                     conn.Close();
 
-                    if (result > 0)
-                    {
-                        log.DebugFormat("[{0}:{1}] Update Success User : {2}", CLASS_NAME, FUNCTION_NAME, S3Proxy);
-                        return true;
-                    }
-                    else
-                    {
-                        log.ErrorFormat("[{0}:{1}] Update Fail User : {2}", CLASS_NAME, FUNCTION_NAME, S3Proxy);
-                        return false;
-                    }
+                    if (result > 0) { log.Debug($"Update Success User : {S3Proxy}"); return true; }
+                    else            { log.Error($"Update Fail User : {S3Proxy}"); return false; }
                 }
             }
-            catch (SQLiteException e)
-            {
-                log.ErrorFormat("[{0}:{1}:{2}] {3}", CLASS_NAME, FUNCTION_NAME, "SQLiteException", e.Message);
-                return false;
-            }
-            catch (Exception e)
-            {
-                log.ErrorFormat("[{0}:{1}:{2}] {3}", CLASS_NAME, FUNCTION_NAME, "Exception", e.Message);
-                return false;
-            }
-            finally
-            {
-                SqliteMutex.ReleaseMutex();
-            }
+            catch (SQLiteException e) { log.Error(e); throw e; }
+            catch (Exception e) { log.Error(e); throw e; }
+            finally { SqliteMutex.ReleaseMutex(); }
         }
         public bool UpdateUserS3FileManagerURL(int ID, string S3FileManagerURL, bool Global)
         {
-            const string FUNCTION_NAME = "UpdateUserStorageName";
             try
             {
                 FileInfo file = new FileInfo(FilePath);
                 if (!file.Exists)
                 {
-                    log.ErrorFormat("[{0}:{1}:{2}] {3} Not Exists", CLASS_NAME, FUNCTION_NAME, "FileInfo", FilePath);
+                    log.Error($"{FilePath} Not Exists");
                     return false;
                 }
                 SqliteMutex.WaitOne();
 
-                using (SQLiteConnection conn = new SQLiteConnection(string.Format("Data Source={0};Version=3;", FilePath)))
+                using (SQLiteConnection conn = new SQLiteConnection($"Data Source={FilePath};Version=3;"))
                 {
                     if (conn == null)
                     {
-                        log.ErrorFormat("[{0}:{1}:{2}] SQLiteConnection fail", CLASS_NAME, FUNCTION_NAME, "SQLiteConnection");
+                        log.Error($"SQLiteConnection fail");
                         throw new Exception();
                     }
                     conn.Open();
@@ -781,63 +581,38 @@ namespace IfsSync2Data
 
                     SQLiteCommand cmd = new SQLiteCommand(conn)
                     {
-                        CommandText = string.Format(
-                                    "UPDATE '{0}' SET {1} = '{2}' " +
-                                               "WHERE {3} = '{4}';",
-                                    TableName,
-                                    STR_S3_FILEMANAGER_URL, S3FileManagerURL,
-                                    STR_USER_ID, ID)
+                        CommandText = $"UPDATE '{TableName}' SET {STR_S3_FILEMANAGER_URL} = '{S3FileManagerURL}`'  WHERE {STR_USER_ID} = '{ID}';"
                     };
 
                     int result = cmd.ExecuteNonQuery();
                     conn.Close();
 
-                    if (result > 0)
-                    {
-                        log.DebugFormat("[{0}:{1}] Update Success User : {2}", CLASS_NAME, FUNCTION_NAME, S3FileManagerURL);
-                        return true;
-                    }
-                    else
-                    {
-                        log.ErrorFormat("[{0}:{1}] Update Fail User : {2}", CLASS_NAME, FUNCTION_NAME, S3FileManagerURL);
-                        return false;
-                    }
+                    if (result > 0) { log.Debug($"Update Success User : {S3FileManagerURL}"); return true; }
+                    else            { log.Error($"Update Fail User : {S3FileManagerURL}"); return false; }
                 }
             }
-            catch (SQLiteException e)
-            {
-                log.ErrorFormat("[{0}:{1}:{2}] {3}", CLASS_NAME, FUNCTION_NAME, "SQLiteException", e.Message);
-                return false;
-            }
-            catch (Exception e)
-            {
-                log.ErrorFormat("[{0}:{1}:{2}] {3}", CLASS_NAME, FUNCTION_NAME, "Exception", e.Message);
-                return false;
-            }
-            finally
-            {
-                SqliteMutex.ReleaseMutex();
-            }
+            catch (SQLiteException e) { log.Error(e); throw e; }
+            catch (Exception e) { log.Error(e); throw e; }
+            finally { SqliteMutex.ReleaseMutex(); }
         }
 
         public bool UpdateUserCheck(UserData Data, bool Global)
         {
-            const string FUNCTION_NAME = "UpdateUserCheck";
             try
             {
                 FileInfo file = new FileInfo(FilePath);
                 if (!file.Exists)
                 {
-                    log.ErrorFormat("[{0}:{1}:{2}] {3} Not Exists", CLASS_NAME, FUNCTION_NAME, "FileInfo", FilePath);
+                    log.Error($"{FilePath} Not Exists");
                     return false;
                 }
                 SqliteMutex.WaitOne();
 
-                using (SQLiteConnection conn = new SQLiteConnection(string.Format("Data Source={0};Version=3;", FilePath)))
+                using (SQLiteConnection conn = new SQLiteConnection($"Data Source={FilePath};Version=3;"))
                 {
                     if (conn == null)
                     {
-                        log.ErrorFormat("[{0}:{1}:{2}] SQLiteConnection fail", CLASS_NAME, FUNCTION_NAME, "SQLiteConnection");
+                        log.Error($"SQLiteConnection fail");
                         throw new Exception();
                     }
                     conn.Open();
@@ -859,32 +634,13 @@ namespace IfsSync2Data
                     int result = cmd.ExecuteNonQuery();
                     conn.Close();
 
-                    if (result > 0)
-                    {
-                        log.DebugFormat("[{0}:{1}] Delete Success User : {2}", CLASS_NAME, FUNCTION_NAME, Data.UserName);
-                        return true;
-                    }
-                    else
-                    {
-                        log.ErrorFormat("[{0}:{1}] Delete Fail User : {2}", CLASS_NAME, FUNCTION_NAME, Data.UserName);
-                        return false;
-                    }
+                    if (result > 0) { log.Debug($"Delete Success User : {Data.UserName}"); return true; }
+                    else { log.Error($"Delete Fail User : {Data.UserName}"); return false; }
                 }
             }
-            catch (SQLiteException e)
-            {
-                log.ErrorFormat("[{0}:{1}:{2}] {3}", CLASS_NAME, FUNCTION_NAME, "SQLiteException", e.Message);
-                return false;
-            }
-            catch (Exception e)
-            {
-                log.ErrorFormat("[{0}:{1}:{2}] {3}", CLASS_NAME, FUNCTION_NAME, "Exception", e.Message);
-                return false;
-            }
-            finally
-            {
-                SqliteMutex.ReleaseMutex();
-            }
+            catch (SQLiteException e) { log.Error(e); throw e; }
+            catch (Exception e) { log.Error(e); throw e; }
+            finally { SqliteMutex.ReleaseMutex(); }
         }
     }
 }

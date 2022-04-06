@@ -20,7 +20,6 @@ namespace IfsSync2Filter
 {
     public class Filter
     {
-        private static readonly string CLASS_NAME = "Filter";
         private static readonly int FILTER_CHECK_DELAY = 5000;
         private static readonly ILog log = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
 
@@ -89,7 +88,7 @@ namespace IfsSync2Filter
         public void Stop()
         {
             FilterThreadAllDelete();
-            log.InfoFormat("[{0}:{1}]end", CLASS_NAME, "Stop");
+            log.Info("Stop");
         }
 
         private void FilterThreadAliveInit()

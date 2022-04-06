@@ -19,7 +19,6 @@ namespace IfsSync2Sender
     class Sender
     {
         private static readonly ILog log = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
-        private static readonly string CLASS_NAME = "Sender";
 
         //SQL
         private readonly string RootPath;
@@ -42,7 +41,6 @@ namespace IfsSync2Sender
 
         public void Once(int FetchCount, int SenderDelay)
         {
-            const string FUNCTION_NAME = "Once";
             UserDataUpdate();
             SenderThreadInit(FetchCount, SenderDelay);
             SenderQuitCheck();
@@ -99,7 +97,7 @@ namespace IfsSync2Sender
                 }
                 catch (Exception e)
                 {
-                    log.ErrorFormat("[{0}:{1}:{2}] JobName({3}) : {4}", CLASS_NAME, FUNCTION_NAME, "Exception", Job.JobName, e.Message);
+                    log.Error("JobName({Job.JobName})", e);
                 }
             }
 
@@ -137,14 +135,13 @@ namespace IfsSync2Sender
         }
         private void SenderQuitCheck()
         {
-            const string FUNCTION_NAME = "SenderQuitCheck";
             for (int i = SenderList.Count - 1; i >= 0; i--)
             {
                 //End Check
                 if (SenderList[i].Quit)
                 {
                     SenderList[i].Close();
-                    log.DebugFormat("[{0}:{1}] JobName({2}) Delete", CLASS_NAME, FUNCTION_NAME, SenderList[i].Job.JobName);
+                    log.Debug($"JobName({SenderList[i].Job.JobName}) Delete");
                     SenderList.RemoveAt(i);
                 }
             }

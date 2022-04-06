@@ -180,10 +180,8 @@ namespace IfsSync2UI
         }
         public void Delete()
         {
-            const string FUNCTION_NAME = "Delete";
-            
             if (Job.ID > 0) JobSQL.Delete(Job.ID);
-            log.InfoFormat("[{0}:{1}] Deleted : {2}", CLASS_NAME, FUNCTION_NAME, Job.JobName);
+            log.Info($"Deleted : {Job.JobName}");
         }
         private void ChangeDatas(bool Changed)
         {
@@ -404,8 +402,6 @@ namespace IfsSync2UI
 
         public void LoadDrive()
         {
-            const string FUNCTION_NAME = "LoadDrive";
-
             TreeNode root = new TreeNode()
             {
                 Name = Root,
@@ -455,7 +451,7 @@ namespace IfsSync2UI
             }
             
             root.Initialize();
-            log.InfoFormat("[{0}:{1}] Load root directory", CLASS_NAME, FUNCTION_NAME);
+            log.Info("Load root directory");
 
             string userName = "Default";
 
@@ -473,7 +469,7 @@ namespace IfsSync2UI
                 FileIcon = Utility.GetIconImageSource(myUserPath), 
             };
             GetPCSubDirectories(myUserItem);
-            log.InfoFormat("[{0}:{1}] Load my user directory", CLASS_NAME, FUNCTION_NAME);
+            log.Info("Load my user directory");
 
             Treelist.Clear();
             Treelist.Add(myUserItem);
@@ -481,7 +477,6 @@ namespace IfsSync2UI
         }
         private void GetPCSubDirectories(TreeNode node)
         {
-            const string FUNCTION_NAME = "LoadDrive";
             if (node == null) return;
             if (node.Children.Count > 0) return;
 
@@ -512,7 +507,7 @@ namespace IfsSync2UI
             }
             catch (Exception e)
             {
-                log.DebugFormat("[{0}:{1}:{2}] {3}", CLASS_NAME, FUNCTION_NAME, "Exception", e.Message);
+                log.Debug(e);
             }
         }
 
@@ -529,8 +524,6 @@ namespace IfsSync2UI
 
         private void AddCheckFromTree(string DirPath)
         {
-            const string FUNCTION_NAME = "AddCheckFromTree";
-            
             foreach (TreeNode Node in Treelist)
             {
                 if (Node.FullPath == DirPath)
@@ -545,7 +538,7 @@ namespace IfsSync2UI
                     if (CheckCheckBox(Node, DirPath)) return;
                 }
             }
-            log.InfoFormat("[{0}:{1}] {2}", CLASS_NAME, FUNCTION_NAME, DirPath);
+            log.Info(DirPath);
         }
         private bool CheckCheckBox(TreeNode Node, string DirPath)
         {
@@ -579,7 +572,6 @@ namespace IfsSync2UI
         }
         private void RemoveCheckFromTree(string DirPath)
         {
-            const string FUNCTION_NAME = "RemoveCheckFromTree";
             foreach (var node in Treelist)
             {
                 if (node.FullPath == DirPath)
@@ -595,7 +587,7 @@ namespace IfsSync2UI
                     if (UncheckCheckBox(node, DirPath)) return;
                 }
             }
-            log.InfoFormat("[{0}:{1}] {2}", CLASS_NAME, FUNCTION_NAME, DirPath);
+            log.Info(DirPath);
         }
         private bool UncheckCheckBox(TreeNode Node, string DirPath)
         {
@@ -645,8 +637,6 @@ namespace IfsSync2UI
 
         private bool AddPath(string DirPath)
         {
-            const string FUNCTION_NAME = "AddPath";
-
             try
             {
                 if (DirPath == Root) { }
@@ -658,7 +648,7 @@ namespace IfsSync2UI
             }
             catch(Exception e)
             {
-                log.ErrorFormat("[{0}:{1}:{2}] {3}", CLASS_NAME, FUNCTION_NAME, "Exception", e.Message);
+                log.Error(e);
             }
 
             ChangeDatas(true);
@@ -667,8 +657,6 @@ namespace IfsSync2UI
         
         private bool DeletePath(string DirPath)
         {
-            const string FUNCTION_NAME = "DelPath";
-
             try
             {
                 if (Job.DeleteDirectory(DirPath))
@@ -687,13 +675,12 @@ namespace IfsSync2UI
             }
             catch (Exception e)
             {
-                log.ErrorFormat("[{0}:{1}:{2}] {3}", CLASS_NAME, FUNCTION_NAME, "Exception", e.Message);
+                log.Error(e);
             }
             return false;
         }
         private void DelSubPath(string MainPath)
         {
-            const string FUNCTION_NAME = "DelSubPath";
             if(Job.Path.Count > 0)
             {
                 try
@@ -705,7 +692,7 @@ namespace IfsSync2UI
                 }
                 catch(Exception e)
                 {
-                    log.ErrorFormat("[{0}:{1}:{2}] {3}", CLASS_NAME, FUNCTION_NAME, "Exception", e.Message);
+                    log.Error(e);
                 }
             }
         }
@@ -780,8 +767,6 @@ namespace IfsSync2UI
 
         private void ListViewAdd(string DirPath)
         {
-            const string FUNCTION_NAME = "ListViewAdd";
-
             DirectoryList.Add(new DirectoryData
             {
                 DirectoryIcon = Utility.GetIconImageSource(DirPath),
@@ -791,7 +776,7 @@ namespace IfsSync2UI
                 IsCounting = false
             });
             AutoSizeColumns();
-            log.InfoFormat("[{0}:{1}] {2}", CLASS_NAME, FUNCTION_NAME, DirPath);
+            log.Info(DirPath);
         }
         public void AutoSizeColumns()
         {
@@ -888,7 +873,7 @@ namespace IfsSync2UI
             }
             catch (Exception ex)
             {
-                log.Error("[Btn_AddExtension]" + ex.ToString());
+                log.Error(ex);
             }
         }
         private void Btn_DelExtension(object sender, RoutedEventArgs e)
@@ -906,7 +891,7 @@ namespace IfsSync2UI
             }
             catch(Exception ex)
             {
-                log.Error("[Btn_DelExtension]" + ex.ToString());
+                log.Error(ex);
             }
             ChangeDatas(true);
             UpdateButton();
@@ -990,9 +975,7 @@ namespace IfsSync2UI
 
         private bool AnalysisRun()
         {
-            const string FUNCTION_NAME = "AnalysisRun";
-
-            log.InfoFormat("[{0}:{1}] Start", CLASS_NAME, FUNCTION_NAME);
+            log.Info("Start");
             TaskSQL.InsertLog("Analysis Start!");
             Analysis.Start();
             Stopwatch sw = new Stopwatch();
@@ -1002,8 +985,6 @@ namespace IfsSync2UI
 
             //Analysis Init
             ButtonLock(false);
-
-           // Analysis.TotalCount = sum;
 
             //Analysis
             List<string> ExtensionList = new List<string>(Job.WhiteFileExt);
@@ -1019,7 +1000,7 @@ namespace IfsSync2UI
                 } 
                 catch(Exception e)
                 {
-                    log.ErrorFormat("[{0}:{1}:{2}] {3}", CLASS_NAME, FUNCTION_NAME, "Exception", e.Message);
+                    log.Error(e);
                 }
             }
 
@@ -1031,17 +1012,14 @@ namespace IfsSync2UI
             if (Analysis.IsQuit) return false;
             Analysis.End();
 
-            log.InfoFormat("[{0}:{1}] End. Time : {2}ms", CLASS_NAME, FUNCTION_NAME, sw.ElapsedMilliseconds.ToString());
-            TaskSQL.InsertLog(string.Format("Analysis End. Time : {0}ms", sw.ElapsedMilliseconds.ToString()));
-            TaskSQL.InsertLog(string.Format("Upload File Count : {0}\tUpload File Size : {1}", Analysis.UploadFileCount, MainData.SizeToString(Analysis.UploadFileSize)));
-
-            //MessageBox.Show(string.Format("Upload File Count : {0}\nUpload File Size : {1:#,###}KB", Analysis.UploadFileCount, Analysis.UploadFileSize/1024), FUNCTION_NAME);
+            log.Info($"End. Time : {sw.ElapsedMilliseconds.ToString()}ms");
+            TaskSQL.InsertLog($"Analysis End. Time : {sw.ElapsedMilliseconds.ToString()}ms");
+            TaskSQL.InsertLog($"Upload File Count : {Analysis.UploadFileCount}\tUpload File Size : {MainData.SizeToString(Analysis.UploadFileSize)}");
             return true;
         }
 
         private void SubDirectory(string ParentDirectory, List<string> ExtensionList)
         {
-            //const string FUNCTION_NAME = "SubDirectory";
             DirectoryInfo dInfoParent = new DirectoryInfo(ParentDirectory);
 
             if (!dInfoParent.Exists) return;
@@ -1055,11 +1033,11 @@ namespace IfsSync2UI
         }
         private void AddBackupFile(string ParentDirectory, List<string> ExtensionList)
         {
-            //const string FUNCTION_NAME = "SubDirectory";
             //add File List
             string[] files = Directory.GetFiles(ParentDirectory);
 
-            foreach (string file in files)    // 파일 나열
+            // 파일 나열
+            foreach (string file in files)
             {
 
                 if (Analysis.IsQuit) break;
@@ -1172,15 +1150,13 @@ namespace IfsSync2UI
             if (Job.Path.Count == 0) { Utility.ErrorMessageBox("Directory List is empty!", CLASS_NAME); return; }
             if (Pathcheck(out string ErrorPath)) { Utility.ErrorMessageBox(string.Format("[{0}] is not exists!", ErrorPath), CLASS_NAME); return; }
 
-            const string FUNCTION_NAME = "Btn_Analysis";
-
             if (AnalysisThread != null) AnalysisThread = null;
             AnalysisThread = new Thread(() => AnalysisRun());
 
-            if (AnalysisThread != null) log.InfoFormat("[{0}:{1}] Analysis Thread : {2}", CLASS_NAME, FUNCTION_NAME, Job.JobName);
+            if (AnalysisThread != null) log.Info($"Analysis Thread : {Job.JobName}");
             else
             {
-                log.FatalFormat("[{0}:{1}:{2}] Create thread fail", CLASS_NAME, FUNCTION_NAME, "new Thread");
+                log.FatalFormat("Create thread fail");
                 ((MainWindow)Application.Current.MainWindow).Close();
             }
 

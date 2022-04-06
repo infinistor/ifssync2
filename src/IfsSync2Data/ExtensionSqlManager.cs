@@ -20,8 +20,6 @@ namespace IfsSync2Data
 {
     class ExtensionSqlManager
     {
-        private const string CLASS_NAME = "ExtensionSqlManager";
-
         /************************ Attribute ****************************/
         private const string STR_EXT_TABLE_NAME = "ExtensionList";
         private const string STR_EXT_ID = "ID";
@@ -35,71 +33,52 @@ namespace IfsSync2Data
         public ExtensionSqlManager(string RootPath)
         {
             FilePath = MainData.CreateDBFileName(RootPath, MainData.EXTENSION_NAME);
-            const string FUNCTION_NAME = "Init";
             try
             {
                 SqliteMutex = new Mutex(false, MainData.MUTEX_NAME_JOB_SQL, out bool CreatedNew);
 
-                if (!CreatedNew) log.DebugFormat("[{0}:{1}] Mutex({3})", CLASS_NAME, FUNCTION_NAME, "Mutex", MainData.MUTEX_NAME_JOB_SQL);
-                else log.DebugFormat("[{0}:{1}] Mutex({3}) create", CLASS_NAME, FUNCTION_NAME, "Mutex", MainData.MUTEX_NAME_JOB_SQL);
+                if (!CreatedNew) log.Debug($"Mutex({MainData.MUTEX_NAME_JOB_SQL})");
+                else log.Debug($"Mutex({MainData.MUTEX_NAME_JOB_SQL}) create");
             }
             catch (Exception e)
             {
-                log.ErrorFormat("[{0}:{1}:{2}] Mutex({3}) fail : ", CLASS_NAME, FUNCTION_NAME, "Exception", MainData.MUTEX_NAME_JOB_SQL, e.Message);
+                log.Error($"Mutex({MainData.MUTEX_NAME_JOB_SQL}) fail", e);
             }
         }
 
         private bool CreateDBFile()
         {
-            const string FUNCTION_NAME = "CreateDBFile";
             try
             {
                 MainData.CreateDirectory(FilePath); 
                 SQLiteConnection.CreateFile(FilePath);
 
                 SqliteMutex.WaitOne();
-                SQLiteConnection conn = new SQLiteConnection(string.Format("Data Source={0};Version=3;", FilePath));
+                SQLiteConnection conn = new SQLiteConnection($"Data Source={FilePath};Version=3;");
                 conn.Open();
                 SQLiteCommand cmd = new SQLiteCommand(conn)
                 {
-                    CommandText =
                     //GlobalScheduleList
-                    string.Format("\n" +
-                    "Create Table '{0}'(" + //STR_EXT_TABLE_NAME
-                                 "'{1}' INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT, " +//STR_EXT_ID
-                                 "'{2}' TEXT NOT NULL, " + //STR_EXT_EXTENSION
-                                 "'{3}' TEXT NULL);"     , //STR_EXT_GROUP
-                                 STR_EXT_TABLE_NAME,
-                                 STR_EXT_ID,
-                                 STR_EXT_EXTENSION,
-                                 STR_EXT_GROUP)
+                    CommandText ="\n" +
+                    $"Create Table '{STR_EXT_TABLE_NAME}'(" +
+                                 $"'{STR_EXT_ID}' INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT, " +
+                                 $"'{STR_EXT_EXTENSION}' TEXT NOT NULL, " +
+                                 $"'{STR_EXT_GROUP}' TEXT NULL);"
                 };
 
                 cmd.ExecuteNonQuery();
                 conn.Close();
 
-                log.DebugFormat("[{0}:{1}] Success : {2}", CLASS_NAME, FUNCTION_NAME, cmd.CommandText);
+                log.Debug($"Success : {cmd.CommandText}");
                 return true;
             }
-            catch (SQLiteException e)
-            {
-                log.ErrorFormat("[{0}:{1}:{2}] {3}", CLASS_NAME, FUNCTION_NAME, "SQLiteException", e.Message);
-                return false;
-            }
-            catch (Exception e)
-            {
-                log.ErrorFormat("[{0}:{1}:{2}] {3}", CLASS_NAME, FUNCTION_NAME, "Exception", e.Message);
-                return false;
-            }
-            finally
-            {
-                SqliteMutex.ReleaseMutex();
-            }
+            catch (SQLiteException e) { log.Error(e); return false; }
+            catch (Exception e) { log.Error(e); return false; }
+            finally { SqliteMutex.ReleaseMutex(); }
         }
 
         public List<string> GetExtensionList()
         {
-            const string FUNCTION_NAME = "GetExtensionList";
             if (!File.Exists(FilePath)) DefaultExtensionList();
             try
             {
@@ -107,12 +86,12 @@ namespace IfsSync2Data
 
                 SqliteMutex.WaitOne();
 
-                SQLiteConnection conn = new SQLiteConnection(string.Format("Data Source={0};Version=3;", FilePath));
+                SQLiteConnection conn = new SQLiteConnection($"Data Source={FilePath};Version=3;");
                 if (conn == null)
                 {
-                    string msg = string.Format("[{0}:{1}:{2}] SQLiteConnection fail", CLASS_NAME, FUNCTION_NAME, "SQLiteConnection");
+                    string msg = "SQLiteConnection fail";
 
-                    log.ErrorFormat(msg);
+                    log.Error(msg);
                     throw new Exception(msg);
                 }
                 conn.Open();
@@ -131,87 +110,60 @@ namespace IfsSync2Data
                 Rdr.Close();
 
                 conn.Close();
-                log.DebugFormat("[{0}:{1}] {2} : {3}", CLASS_NAME, FUNCTION_NAME, STR_EXT_EXTENSION, items.Count);
+                log.Debug($"{STR_EXT_EXTENSION} : {items.Count}");
                 return items;
             }
-            catch (SQLiteException e)
-            {
-                log.ErrorFormat("[{0}:{1}:{2}] {3}", CLASS_NAME, FUNCTION_NAME, "SQLiteException", e.Message);
-                throw e;
-            }
-            catch (Exception e)
-            {
-                log.ErrorFormat("[{0}:{1}:{2}] {3}", CLASS_NAME, FUNCTION_NAME, "Exception", e.Message);
-                throw e;
-            }
-            finally
-            {
-                SqliteMutex.ReleaseMutex();
-            }
+            catch (SQLiteException e) { log.Error(e); throw e; }
+            catch (Exception e) { log.Error(e); throw e; }
+            finally { SqliteMutex.ReleaseMutex(); }
         }
         
         public bool Insert(string Extension)
         {
-            const string FUNCTION_NAME = "Insert";
             if (!File.Exists(FilePath)) if (!CreateDBFile()) return false;
 
             try
             {
                 SqliteMutex.WaitOne();
-                SQLiteConnection conn = new SQLiteConnection(string.Format("Data Source={0};Version=3;", FilePath));
+                SQLiteConnection conn = new SQLiteConnection($"Data Source={FilePath};Version=3;");
                 if (conn == null)
                 {
-                    log.ErrorFormat("[{0}:{1}:{2}] SQLiteConnection fail", CLASS_NAME, FUNCTION_NAME, "SQLiteConnection");
+                    log.Error("SQLiteConnection fail");
                     return false;
                 }
                 conn.Open();
 
-                SQLiteCommand cmd = new SQLiteCommand(conn)
-                {
-                    CommandText = string.Format("INSERT INTO '{0}' ({1}) VALUES ('{2}');", STR_EXT_TABLE_NAME, STR_EXT_EXTENSION, Extension)
-                };
+                SQLiteCommand cmd = new SQLiteCommand(conn) { CommandText = $"INSERT INTO '{STR_EXT_TABLE_NAME}' ({STR_EXT_EXTENSION}) VALUES ('{Extension}');" };
 
                 int result = cmd.ExecuteNonQuery();
                 conn.Close();
                 if (result > 0)
                 {
-                    log.DebugFormat("[{0}:{1}] Success : {2}", CLASS_NAME, FUNCTION_NAME, cmd.CommandText);
+                    log.Debug($"Success : {cmd.CommandText}");
                     return true;
                 }
                 else
                 {
-                    log.ErrorFormat("[{0}:{1}:{2}] Fail : ", CLASS_NAME, FUNCTION_NAME, "ExecuteNonQuery", cmd.CommandText);
+                    log.Error($"Failed : {cmd.CommandText}");
                     return false;
                 }
             }
-            catch (SQLiteException e)
-            {
-                log.ErrorFormat("[{0}:{1}:{2}] {3}", CLASS_NAME, FUNCTION_NAME, "SQLiteException", e.Message);
-                return false;
-            }
-            catch (Exception e)
-            {
-                log.ErrorFormat("[{0}:{1}:{2}] {3}", CLASS_NAME, FUNCTION_NAME, "Exception", e.Message);
-                return false;
-            }
-            finally
-            {
-                SqliteMutex.ReleaseMutex();
-            }
+            catch (SQLiteException e) { log.Error(e); return false; }
+            catch (Exception e) { log.Error(e); return false; }
+            finally { SqliteMutex.ReleaseMutex(); }
         }
         public bool Insert(List<string> ExtensionList)
 
         {
-            const string FUNCTION_NAME = "Insert";
             if (!File.Exists(FilePath)) if (!CreateDBFile()) return false;
 
             try
             {
                 SqliteMutex.WaitOne();
-                SQLiteConnection conn = new SQLiteConnection(string.Format("Data Source={0};Version=3;", FilePath));
+                SQLiteConnection conn = new SQLiteConnection($"Data Source={FilePath};Version=3;");
                 if (conn == null)
                 {
-                    log.ErrorFormat("[{0}:{1}:{2}] SQLiteConnection fail", CLASS_NAME, FUNCTION_NAME, "SQLiteConnection");
+                    log.Error("SQLiteConnection fail");
                     return false;
                 }
                 conn.Open();
@@ -233,43 +185,31 @@ namespace IfsSync2Data
                 conn.Close();
                 if (result > 0)
                 {
-                    log.DebugFormat("[{0}:{1}] Success({3}) : {2}", CLASS_NAME, FUNCTION_NAME, cmd.CommandText, result);
+                    log.Debug($"Success({result}) : {cmd.CommandText}");
                     return true;
                 }
                 else
                 {
-                    log.ErrorFormat("[{0}:{1}:{2}] Fail : ", CLASS_NAME, FUNCTION_NAME, "ExecuteNonQuery", cmd.CommandText);
+                    log.Error($"Failed({result}) : {cmd.CommandText}");
                     return false;
                 }
             }
-            catch (SQLiteException e)
-            {
-                log.ErrorFormat("[{0}:{1}:{2}] {3}", CLASS_NAME, FUNCTION_NAME, "SQLiteException", e.Message);
-                return false;
-            }
-            catch (Exception e)
-            {
-                log.ErrorFormat("[{0}:{1}:{2}] {3}", CLASS_NAME, FUNCTION_NAME, "Exception", e.Message);
-                return false;
-            }
-            finally
-            {
-                SqliteMutex.ReleaseMutex();
-            }
+            catch (SQLiteException e) { log.Error(e); return false; }
+            catch (Exception e) { log.Error(e); return false; }
+            finally { SqliteMutex.ReleaseMutex(); }
         }
         public bool Delete(string Extension)
         {
-            const string FUNCTION_NAME = "Delete";
             if (!File.Exists(FilePath)) return false;
 
             try
             {
                 SqliteMutex.WaitOne();
 
-                SQLiteConnection conn = new SQLiteConnection(string.Format("Data Source={0};Version=3;", FilePath));
+                SQLiteConnection conn = new SQLiteConnection($"Data Source={FilePath};Version=3;");
                 if (conn == null)
                 {
-                    log.ErrorFormat("[{0}:{1}:{2}] SQLiteConnection fail", CLASS_NAME, FUNCTION_NAME, "SQLiteConnection");
+                    log.Error("SQLiteConnection fail");
                     return false;
                 }
 
@@ -282,46 +222,33 @@ namespace IfsSync2Data
 
                 int result = cmd.ExecuteNonQuery();
                 conn.Close();
-
                 if (result > 0)
                 {
-                    log.DebugFormat("[{0}:{1}] Success : {2}", CLASS_NAME, FUNCTION_NAME, Extension);
+                    log.Debug($"Success({result}) : {cmd.CommandText}");
                     return true;
                 }
                 else
                 {
-                    log.ErrorFormat("[{0}:{1}:{2}] Fail : ", CLASS_NAME, FUNCTION_NAME, "ExecuteNonQuery", Extension);
+                    log.Error($"Failed({result}) : {cmd.CommandText}");
                     return false;
                 }
             }
-            catch (SQLiteException e)
-            {
-                log.ErrorFormat("[{0}:{1}:{2}] {3}", CLASS_NAME, FUNCTION_NAME, "SQLiteException", e.Message);
-                return false;
-            }
-            catch (Exception e)
-            {
-                log.ErrorFormat("[{0}:{1}:{2}] {3}", CLASS_NAME, FUNCTION_NAME, "Exception", e.Message);
-                return false;
-            }
-            finally
-            {
-                SqliteMutex.ReleaseMutex();
-            }
+            catch (SQLiteException e) { log.Error(e); return false; }
+            catch (Exception e) { log.Error(e); return false; }
+            finally { SqliteMutex.ReleaseMutex(); }
         }
 
         public bool Check(string Extension)
         {
-            const string FUNCTION_NAME = "Check";
             if (!File.Exists(FilePath)) if (!CreateDBFile()) return false;
 
             try
             {
                 SqliteMutex.WaitOne();
-                SQLiteConnection conn = new SQLiteConnection(string.Format("Data Source={0};Version=3;", FilePath));
+                SQLiteConnection conn = new SQLiteConnection($"Data Source={FilePath};Version=3;");
                 if (conn == null)
                 {
-                    log.ErrorFormat("[{0}:{1}:{2}] SQLiteConnection fail", CLASS_NAME, FUNCTION_NAME, "SQLiteConnection");
+                    log.Error("SQLiteConnection fail");
                     return false;
                 }
                 conn.Open();
@@ -336,29 +263,18 @@ namespace IfsSync2Data
                 conn.Close();
                 if (result > 0)
                 {
-                    log.DebugFormat("[{0}:{1}] Success({3}) : {2}", CLASS_NAME, FUNCTION_NAME, cmd.CommandText, result);
+                    log.Debug($"Success({result}) : {cmd.CommandText}");
                     return true;
                 }
                 else
                 {
-                    log.ErrorFormat("[{0}:{1}:{2}] Fail({4}) : {3}", CLASS_NAME, FUNCTION_NAME, "ExecuteNonQuery", cmd.CommandText, result);
+                    log.Error($"Failed({result}) : {cmd.CommandText}");
                     return false;
                 }
             }
-            catch (SQLiteException e)
-            {
-                log.ErrorFormat("[{0}:{1}:{2}] {3}", CLASS_NAME, FUNCTION_NAME, "SQLiteException", e.Message);
-                return false;
-            }
-            catch (Exception e)
-            {
-                log.ErrorFormat("[{0}:{1}:{2}] {3}", CLASS_NAME, FUNCTION_NAME, "Exception", e.Message);
-                return false;
-            }
-            finally
-            {
-                SqliteMutex.ReleaseMutex();
-            }
+            catch (SQLiteException e) { log.Error(e); return false; }
+            catch (Exception e) { log.Error(e); return false; }
+            finally { SqliteMutex.ReleaseMutex(); }
         }
 
         private bool DefaultExtensionList()

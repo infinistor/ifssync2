@@ -24,7 +24,6 @@ namespace IfsSync2UI
     /// </summary>
     public partial class S3Browser : Window
     {
-        private static readonly string CLASS_NAME = "S3Browser";
 
         private readonly ChromiumWebBrowser browser;
 
@@ -62,21 +61,19 @@ namespace IfsSync2UI
 
         private void Browser_LoadingStateChanged(object sender, LoadingStateChangedEventArgs e)
         {
-            const string FUNCTION_NAME = "Browser_LoadingStateChanged";
             if (!e.IsLoading)
             {
                 try
                 {
-                    browser.ExecuteScriptAsync(string.Format("document.getElementById('{0}').value = '{1}'", "s3AuthURL", URL));
-                    browser.ExecuteScriptAsync(string.Format("document.getElementById('{0}').value = '{1}'", "s3AccessKey", AccessKey));
-                    browser.ExecuteScriptAsync(string.Format("document.getElementById('{0}').value = '{1}'", "s3AccessSecret", SecretKey));
+                    browser.ExecuteScriptAsync($"document.getElementById('s3AuthURL').value = '{URL}'");
+                    browser.ExecuteScriptAsync($"document.getElementById('s3AccessKey').value = '{AccessKey}'");
+                    browser.ExecuteScriptAsync($"document.getElementById('s3AccessSecret').value = '{SecretKey}'");
                     browser.ExecuteScriptAsync("submitFormS3();");
                 }
                 catch (Exception ex)
                 {
-                    log.ErrorFormat("[{0}:{1}:{2}] {3}", CLASS_NAME, FUNCTION_NAME, "Exception", ex.Message);
+                    log.Error(ex);
                     Dispatcher.Invoke(delegate { Utility.ErrorMessageBox("S3 File Manager URL정보가 올바르지 않습니다.", Title); Close(); });
-                    
                 }
             }
         }

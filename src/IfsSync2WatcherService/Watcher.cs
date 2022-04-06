@@ -12,7 +12,6 @@ using log4net;
 using log4net.Config;
 using System.Reflection;
 using IfsSync2Data;
-using System.Diagnostics;
 using System.Collections.Generic;
 using System;
 
@@ -22,7 +21,6 @@ namespace IfsSync2WatcherService
 {
     class Watcher
     {
-        private readonly string CLASS_NAME = "Watcher";
         private readonly ILog log = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
         private readonly WatcherConfig WatcherConfigs;
         private readonly FilterConfig   FilterConfigs;
@@ -45,8 +43,6 @@ namespace IfsSync2WatcherService
 
         public void CheckOnce()
         {
-            const string FUNCTION_NAME = "CheckOnce";
-            
             if (WatcherConfigs.IP !="")
             {
                 string URL = MainData.CreateAddress(WatcherConfigs.IP, WatcherConfigs.Port);
@@ -56,7 +52,7 @@ namespace IfsSync2WatcherService
                     List<UserData> GlobalUserList = UserSQL.GetUsers(true);
                     if (GlobalUserList.Count == 0)
                     {
-                        log.ErrorFormat("[{0}:{1}:{2}] Global User is empty!", CLASS_NAME, FUNCTION_NAME, "Exception");
+                        log.Error("Global User is empty!");
                         return;
                     }
 
@@ -64,7 +60,7 @@ namespace IfsSync2WatcherService
                 }
                 catch(Exception e)
                 {
-                    log.ErrorFormat("[{0}:{1}:{2}] Global User Error : {3}", CLASS_NAME, FUNCTION_NAME, "Exception", e.Message);
+                    log.Error("Global User Error", e);
                     return;
                 }
 
@@ -75,7 +71,7 @@ namespace IfsSync2WatcherService
                 }
                 catch(Exception e)
                 {
-                    log.ErrorFormat("[{0}:{1}:{2}] CheckUpdate Error : {3}", CLASS_NAME, FUNCTION_NAME, "Exception", e.Message);
+                    log.Error("CheckUpdate Error", e);
                 }
 
                 //글로벌 잡 가져오기
@@ -136,7 +132,7 @@ namespace IfsSync2WatcherService
                 }
                 catch (Exception e)
                 {
-                    log.ErrorFormat("[{0}:{1}:{2}] Global Job Get Error : {3}", CLASS_NAME, FUNCTION_NAME, "Exception", e.Message);
+                    log.Error("Global Job Get Error", e);
                     return;
                 }
 
@@ -150,9 +146,9 @@ namespace IfsSync2WatcherService
                 };
 
                 if (!IFSSyncUtility.SendAlive(URL, GlobalUser.UserName, Alive, out string Error))
-                    log.ErrorFormat("[{0}:{1}:{2}] Alive send fail : {3}", CLASS_NAME, FUNCTION_NAME, "Exception", Error);
+                    log.Error($"Alive send fail {Error}");
                 else
-                    log.InfoFormat("[{0}:{1}] Alive send OK", CLASS_NAME, FUNCTION_NAME);
+                    log.Info("Alive send OK");
 
                 //Alive init
                 FilterConfigs.Alive = false;

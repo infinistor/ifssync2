@@ -22,11 +22,8 @@ using System.Windows.Shapes;
 using System.Windows.Media;
 using Amazon.S3;
 using System.Windows.Input;
-using System.Timers;
 using System.Windows.Controls.Primitives;
 using System.Threading;
-using CefSharp.Wpf;
-using CefSharp;
 using Amazon;
 
 [assembly: XmlConfigurator(ConfigFile = "IfsSync2UILogConfig.xml", Watch = true)]
@@ -50,7 +47,6 @@ namespace IfsSync2UI
 
         private readonly WatcherConfig WatcherConfigs;
 
-        private S3Browser browser = null;
         /***************************** SQL ************************************/
         private readonly JobDataSqlManager JobSQL;
         private readonly UserDataSqlManager UserSQL;
@@ -1139,7 +1135,6 @@ namespace IfsSync2UI
                 JobTab temp = item.Content as JobTab;
                 temp.Close();
             }
-            if (browser != null) browser.Close();
         }
         private void MainTab_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
@@ -1184,58 +1179,11 @@ namespace IfsSync2UI
 
         private void JobListDoubleClickEvent(object sender, MouseButtonEventArgs e)
         {
-            // MessageBox.Show("이 기능은 현재 점검중입니다");
-            // return;
-            
-            if (L_JobList.SelectedIndex < 0) return;
-            int index = L_JobList.SelectedIndex + 1 - GlobalCount;
-            MainTab.SelectedIndex = index;
-
-            //Console.WriteLine(index);
-
-            //string StorageName = JobDetailList[index].StorageName;
-            //Console.WriteLine(StorageName);
-            //int count = 0;
-
-            //if(MainStorage.StorageName == StorageName)
-            //{
-            //    if (browser == null)
-            //    {
-            //        Console.WriteLine("Create browser");
-            //        browser = new S3Browser(MainStorage.S3FileManagerURL, MainStorage.URL, MainStorage.AccessKey, MainStorage.AccessSecret);
-            //        browser.Show();
-            //        return;
-            //    }
-            //    else
-            //    {
-            //        browser.Close();
-            //        browser = new S3Browser(MainStorage.S3FileManagerURL, MainStorage.URL, MainStorage.AccessKey, MainStorage.AccessSecret);
-            //        browser.Show();
-            //        return;
-            //    }
-            //}
-
-            //foreach (StorageData Storage in StorageList)
-            //{
-            //    Console.WriteLine("Storage : {0}", count++);
-            //    if (Storage.StorageName == StorageName)
-            //    {
-            //        if(browser == null)
-            //        {
-            //            Console.WriteLine("Create browser");
-            //            browser = new S3Browser(Storage.S3FileManagerURL, Storage.URL, Storage.AccessKey, Storage.AccessSecret);
-            //            browser.Show();
-            //            break;
-            //        }
-            //        else
-            //        {
-            //            browser.Close();
-            //            browser = new S3Browser(Storage.S3FileManagerURL, Storage.URL, Storage.AccessKey, Storage.AccessSecret);
-            //            browser.Show();
-            //            break;
-            //        }
-            //    }
-            //}
+            if (L_JobList.SelectedIndex >= 0)
+            {
+                int index = L_JobList.SelectedIndex + 1 - GlobalCount;
+                MainTab.SelectedIndex = index;
+            }
         }
     }
 }

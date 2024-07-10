@@ -13,149 +13,148 @@ using System;
 
 namespace IfsSync2Data
 {
-    class TrayIconConfig
-    {
-        private const string REMAINING  = "Remaining";
-        private const string REMAINING_SIZE  = "RemainingSize";
-        private const string UPLOAD_COUNT = "UploadCount";
-        private const string UPLOAD_FAIL_COUNT = "UploadFailCount";
-        private const string FILE_SIZE  = "FileSize";
-        private const string DELAY      = "UpdateDelay";
-        private const string IOCN_PATH = "IconPath";
-        private const string ROOT_PATH = "RootPath";
-        /***************************************************************/
-        private static readonly int DEFAULT_DELAY = 5000;
-        /***************************************************************/
-        private readonly RegistryKey TrayIconKey = null;
+	class TrayIconConfig
+	{
+		const string REMAINING = "Remaining";
+		const string REMAINING_SIZE = "RemainingSize";
+		const string UPLOAD_COUNT = "UploadCount";
+		const string UPLOAD_FAIL_COUNT = "UploadFailCount";
+		const string FILE_SIZE = "FileSize";
+		const string DELAY = "UpdateDelay";
+		const string ICON_PATH = "IconPath";
+		const string ROOT_PATH = "RootPath";
+		static readonly int DEFAULT_DELAY = 5000;
+		readonly RegistryKey TrayIconKey = null;
 
-        public long Remaining
-        {
-            get
-            {
-                long value = 0;
-                try { value = Convert.ToInt64(TrayIconKey.GetValue(REMAINING)); } catch { }
-                return value;
-            }
-            set
-            {
-                TrayIconKey.SetValue(REMAINING, value, RegistryValueKind.QWord);
-            }
-        }
-        public long RemainingSize
-        {
-            get
-            {
-                long value = 0;
-                try { value = Convert.ToInt64(TrayIconKey.GetValue(REMAINING_SIZE)); } catch { }
-                return value;
-            }
-            set
-            {
-                TrayIconKey.SetValue(REMAINING_SIZE, value, RegistryValueKind.QWord);
-            }
-        }
-        public long UploadCount
-        {
-            get
-            {
-                long value = 0;
-                try { value = Convert.ToInt64(TrayIconKey.GetValue(UPLOAD_COUNT)); } catch { }
-                return value;
-            }
-            set
-            {
-                TrayIconKey.SetValue(UPLOAD_COUNT, value, RegistryValueKind.QWord);
-            }
-        }
-        public long UploadFailCount
-        {
-            get
-            {
-                long value = 0;
-                try { value = Convert.ToInt64(TrayIconKey.GetValue(UPLOAD_FAIL_COUNT)); } catch { }
-                return value;
-            }
-            set
-            {
-                TrayIconKey.SetValue(UPLOAD_FAIL_COUNT, value, RegistryValueKind.QWord);
-            }
-        }
-        public long FileSize {
-            get
-            {
-                long value = 0;
-                try { value = Convert.ToInt64(TrayIconKey.GetValue(FILE_SIZE)); } catch { }
-                return value;
-            }
-            set
-            {
-                TrayIconKey.SetValue(FILE_SIZE, value, RegistryValueKind.QWord);
-            }
-        }
-        public int Delay
-        {
-            get
-            {
-                int value = 0;
-                try { value = Convert.ToInt32(TrayIconKey.GetValue(DELAY)); } catch { }
-                return value;
-            }
-            set
-            {
-                TrayIconKey.SetValue(DELAY, value, RegistryValueKind.DWord);
-            }
-        }
-        public string IconPath
-        {
-            get { return TrayIconKey.GetValue(IOCN_PATH).ToString(); }
-            set { TrayIconKey.SetValue(IOCN_PATH, value, RegistryValueKind.String); }
-        }
-        public string RootPath
-        {
-            get { return TrayIconKey.GetValue(ROOT_PATH).ToString(); }
-            set { TrayIconKey.SetValue(ROOT_PATH, value, RegistryValueKind.String); }
-        }
-        public void AddFileSize(int _FileSize)
-        {
-            if (UploadCount >= int.MaxValue / 2) UploadCount = 0;
-            if (FileSize >= int.MaxValue / 2) FileSize = 0;
-            UploadCount++;
-            FileSize += _FileSize;
-        }
-        public void Init()
-        {
-            UploadCount = 0;
-            FileSize = 0;
-        }
-        public TrayIconConfig(bool Write = false)
-        {
-            TrayIconKey = Registry.LocalMachine.OpenSubKey(MainData.TRAYICON_CONFIG_PATH, Write);
-            if (TrayIconKey == null)
-            {
-                TrayIconKey = Registry.LocalMachine.CreateSubKey(MainData.TRAYICON_CONFIG_PATH);
+		public long Remaining
+		{
+			get
+			{
+				long value = 0;
+				try { value = Convert.ToInt64(TrayIconKey.GetValue(REMAINING)); } catch { }
+				return value;
+			}
+			set
+			{
+				TrayIconKey.SetValue(REMAINING, value, RegistryValueKind.QWord);
+			}
+		}
+		public long RemainingSize
+		{
+			get
+			{
+				long value = 0;
+				try { value = Convert.ToInt64(TrayIconKey.GetValue(REMAINING_SIZE)); } catch { }
+				return value;
+			}
+			set
+			{
+				TrayIconKey.SetValue(REMAINING_SIZE, value, RegistryValueKind.QWord);
+			}
+		}
+		public long UploadCount
+		{
+			get
+			{
+				long value = 0;
+				try { value = Convert.ToInt64(TrayIconKey.GetValue(UPLOAD_COUNT)); } catch { }
+				return value;
+			}
+			set
+			{
+				TrayIconKey.SetValue(UPLOAD_COUNT, value, RegistryValueKind.QWord);
+			}
+		}
+		public long UploadFailCount
+		{
+			get
+			{
+				long value = 0;
+				try { value = Convert.ToInt64(TrayIconKey.GetValue(UPLOAD_FAIL_COUNT)); } catch { }
+				return value;
+			}
+			set
+			{
+				TrayIconKey.SetValue(UPLOAD_FAIL_COUNT, value, RegistryValueKind.QWord);
+			}
+		}
+		public long FileSize
+		{
+			get
+			{
+				long value = 0;
+				try { value = Convert.ToInt64(TrayIconKey.GetValue(FILE_SIZE)); } catch { }
+				return value;
+			}
+			set
+			{
+				TrayIconKey.SetValue(FILE_SIZE, value, RegistryValueKind.QWord);
+			}
+		}
+		public int Delay
+		{
+			get
+			{
+				int value = 0;
+				try { value = Convert.ToInt32(TrayIconKey.GetValue(DELAY)); } catch { }
+				return value;
+			}
+			set
+			{
+				TrayIconKey.SetValue(DELAY, value, RegistryValueKind.DWord);
+			}
+		}
+		public string IconPath
+		{
+			get { return TrayIconKey.GetValue(ICON_PATH).ToString(); }
+			set { TrayIconKey.SetValue(ICON_PATH, value, RegistryValueKind.String); }
+		}
+		public string RootPath
+		{
+			get { return TrayIconKey.GetValue(ROOT_PATH).ToString(); }
+			set { TrayIconKey.SetValue(ROOT_PATH, value, RegistryValueKind.String); }
+		}
+		public void AddFileSize(int _FileSize)
+		{
+			if (UploadCount >= int.MaxValue / 2) UploadCount = 0;
+			if (FileSize >= int.MaxValue / 2) FileSize = 0;
+			UploadCount++;
+			FileSize += _FileSize;
+		}
+		public void Init()
+		{
+			UploadCount = 0;
+			FileSize = 0;
+		}
+		public TrayIconConfig(bool Write = false)
+		{
+			TrayIconKey = Registry.LocalMachine.OpenSubKey(MainData.TRAY_ICON_CONFIG_PATH, Write);
+			if (TrayIconKey == null)
+			{
+				TrayIconKey = Registry.LocalMachine.CreateSubKey(MainData.TRAY_ICON_CONFIG_PATH);
 
-                TrayIconKey.SetValue(REMAINING, 0, RegistryValueKind.QWord);
-                TrayIconKey.SetValue(REMAINING_SIZE, 0, RegistryValueKind.QWord);
-                TrayIconKey.SetValue(UPLOAD_COUNT, 0, RegistryValueKind.QWord);
-                TrayIconKey.SetValue(FILE_SIZE, 0, RegistryValueKind.QWord);
-                TrayIconKey.SetValue(UPLOAD_FAIL_COUNT, 0, RegistryValueKind.QWord);
-                TrayIconKey.SetValue(DELAY, DEFAULT_DELAY, RegistryValueKind.DWord);
-                TrayIconKey.SetValue(IOCN_PATH, "", RegistryValueKind.String);
-                TrayIconKey.SetValue(ROOT_PATH, "", RegistryValueKind.String);
-            }
-        }
+				TrayIconKey.SetValue(REMAINING, 0, RegistryValueKind.QWord);
+				TrayIconKey.SetValue(REMAINING_SIZE, 0, RegistryValueKind.QWord);
+				TrayIconKey.SetValue(UPLOAD_COUNT, 0, RegistryValueKind.QWord);
+				TrayIconKey.SetValue(FILE_SIZE, 0, RegistryValueKind.QWord);
+				TrayIconKey.SetValue(UPLOAD_FAIL_COUNT, 0, RegistryValueKind.QWord);
+				TrayIconKey.SetValue(DELAY, DEFAULT_DELAY, RegistryValueKind.DWord);
+				TrayIconKey.SetValue(ICON_PATH, "", RegistryValueKind.String);
+				TrayIconKey.SetValue(ROOT_PATH, "", RegistryValueKind.String);
+			}
+		}
 
-        public void Clear()
-        {
-            Remaining = 0;
-            UploadCount = 0;
-            UploadFailCount = 0;
-            FileSize = 0;
-        }
-        public void Close() { if(TrayIconKey != null) TrayIconKey.Close(); }
-        public void Delete()
-        {
-            TrayIconKey.DeleteSubKeyTree(MainData.TRAYICON_CONFIG_PATH);
-        }
-    }
+		public void Clear()
+		{
+			Remaining = 0;
+			UploadCount = 0;
+			UploadFailCount = 0;
+			FileSize = 0;
+		}
+		public void Close() { TrayIconKey?.Close(); }
+		public void Delete()
+		{
+			TrayIconKey.DeleteSubKeyTree(MainData.TRAY_ICON_CONFIG_PATH);
+		}
+	}
 }

@@ -74,7 +74,7 @@ namespace IfsSync2Data
                 string url = URL + MainData.CURL_GET_S3_VOLUME_SIZE;
                 HttpWebRequest request = (HttpWebRequest)WebRequest.Create(url);
                 request.Method = MainData.CURL_STR_GET_METHOD;
-                request.ContentType = MainData.CURL_STR_CONTENTTYPE;
+                request.ContentType = MainData.CURL_STR_CONTENT_TYPE;
                 request.Timeout = MainData.CURL_TIMEOUT_DELAY;
                 ServerCertificateValidationCallback();
 
@@ -185,7 +185,7 @@ namespace IfsSync2Data
 
                 HttpWebRequest request = (HttpWebRequest)WebRequest.Create(URL);
                 request.Method = MainData.CURL_STR_POST_METHOD;
-                request.ContentType = MainData.CURL_STR_CONTENTTYPE;
+                request.ContentType = MainData.CURL_STR_CONTENT_TYPE;
                 request.Timeout = MainData.CURL_TIMEOUT_DELAY;
                 //Error evasion
                 ServerCertificateValidationCallback();
@@ -264,7 +264,7 @@ namespace IfsSync2Data
 
                 HttpWebRequest request = (HttpWebRequest)WebRequest.Create(URL);
                 request.Method = MainData.CURL_STR_POST_METHOD;
-                request.ContentType = MainData.CURL_STR_CONTENTTYPE;
+                request.ContentType = MainData.CURL_STR_CONTENT_TYPE;
                 request.Timeout = MainData.CURL_TIMEOUT_DELAY;
                 //Error evasion
                 ServerCertificateValidationCallback();

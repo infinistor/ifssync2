@@ -21,70 +21,69 @@ using Microsoft.Win32;
 
 namespace IfsSync2TrayIcon
 {
-    class Program
-    {
-        private static readonly ILog log = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
-        private static readonly TrayIconConfig TrayIconConfigs = new TrayIconConfig(true);
+	class Program
+	{
+		private static readonly ILog log = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
+		private static readonly TrayIconConfig TrayIconConfigs = new TrayIconConfig(true);
 
-        static void Main()
-        {
-            Mutex mutex = new Mutex(true, MainData.MUTEX_NAME_TRAYICON, out bool CreateNew);
+		static void Main()
+		{
+			Mutex mutex = new Mutex(true, MainData.MUTEX_NAME_TRAY_ICON, out bool CreateNew);
 
-            if(!CreateNew)
-            {
-                log.Error("Prevent duplicate execution");
-                return;
-            }
-            MainUtility.DeleteOldLogs(MainData.GetLogFolder("TrayIcon"));
+			if (!CreateNew)
+			{
+				log.Error("Prevent duplicate execution");
+				return;
+			}
+			MainUtility.DeleteOldLogs(MainData.GetLogFolder("TrayIcon"));
 
-            TrayIconManager TrayIcon = new TrayIconManager();
+			TrayIconManager TrayIcon = new TrayIconManager();
 
-            while (true)
-            {
-                try
-                {
-                    if (TrayIcon.SetTray()) break;
-                    Delay(TrayIconConfigs.Delay);
-                }
-                catch (Exception e)
-                {
-                    log.Error("SetTray Failed.", e);
-                }
-            }
+			while (true)
+			{
+				try
+				{
+					if (TrayIcon.SetTray()) break;
+					Delay(TrayIconConfigs.Delay);
+				}
+				catch (Exception e)
+				{
+					log.Error("SetTray Failed.", e);
+				}
+			}
 
-            while (true)
-            {
-                try { TrayIcon.UpdateTray(); }
-                catch(Exception e)
-                { 
-                    log.Error("UpdateTray Failed.", e);
-                    break;
-                }
-                Delay(TrayIconConfigs.Delay);
-            }
+			while (true)
+			{
+				try { TrayIcon.UpdateTray(); }
+				catch (Exception e)
+				{
+					log.Error("UpdateTray Failed.", e);
+					break;
+				}
+				Delay(TrayIconConfigs.Delay);
+			}
 
-            try { TrayIcon.Close(); }
-            catch (Exception e)
-            {
-                log.Error("Close Failed.", e);
-            }
-            
-        }
+			try { TrayIcon.Close(); }
+			catch (Exception e)
+			{
+				log.Error("Close Failed.", e);
+			}
 
-        private static DateTime Delay(int MS)
-        {
+		}
 
-            DateTime ThisMoment = DateTime.Now;
-            TimeSpan duration = new TimeSpan(0, 0, 0, 0, MS);
-            DateTime AfterWards = ThisMoment.Add(duration);
-            while (AfterWards >= ThisMoment)
-            {
-                Application.DoEvents();
-                ThisMoment = DateTime.Now;
-                Thread.Sleep(100);
-            }
-            return DateTime.Now;
-        }
+		private static void Delay(int MS)
+		{
 
-    }
+			DateTime ThisMoment = DateTime.Now;
+			TimeSpan duration = new TimeSpan(0, 0, 0, 0, MS);
+			DateTime AfterWards = ThisMoment.Add(duration);
+			while (AfterWards >= ThisMoment)
+			{
+				Application.DoEvents();
+				ThisMoment = DateTime.Now;
+				Thread.Sleep(100);
+			}
+		}
+
+	}
 }

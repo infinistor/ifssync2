@@ -135,15 +135,15 @@ namespace IfsSync2Init
             SenderConfigs.Close();
             TrayIconConfigs.Close();
 
-            RegistryKey NetDriverSetting = Registry.LocalMachine.OpenSubKey(MainData.NETDIRVER_REGISTRY_PATH, true);
-            NetDriverSetting.SetValue(MainData.NETDRIVER_ENABLELINKEDCONNECTIONS, 1, RegistryValueKind.DWord);
+            RegistryKey NetDriverSetting = Registry.LocalMachine.OpenSubKey(MainData.NET_DRIVER_REGISTRY_PATH, true);
+            NetDriverSetting.SetValue(MainData.NET_DRIVER_ENABLE_LINKED_CONNECTIONS, 1, RegistryValueKind.DWord);
             NetDriverSetting.Close();
             Console.WriteLine("Registry Setting End!");
 
             Console.WriteLine("Task Schedule Add.");
             SetTask(MainData.FILTER_NAME, TargetPath, false);
             SetTask(MainData.SENDER_NAME, TargetPath);
-            SetTask(MainData.TRAYICON_NAME, TargetPath, false);
+            SetTask(MainData.TRAY_ICON_NAME, TargetPath, false);
             Console.WriteLine("Task Schedule Add End!");
 
             string CmdCreate = string.Format("sc create \"{0}\" binpath= \"{1}\" start= auto",
@@ -162,14 +162,14 @@ namespace IfsSync2Init
             Console.WriteLine("Task Schedule Delete.");
             DelTask(MainData.FILTER_NAME);
             DelTask(MainData.SENDER_NAME);
-            DelTask(MainData.TRAYICON_NAME);
+            DelTask(MainData.TRAY_ICON_NAME);
             Console.WriteLine("Task Schedule Delete End!");
 
             Console.WriteLine("ProcessKill.");
             ProcessKill(MainData.UI_NAME);
             ProcessKill(MainData.FILTER_NAME);
             ProcessKill(MainData.SENDER_NAME);
-            ProcessKill(MainData.TRAYICON_NAME);
+            ProcessKill(MainData.TRAY_ICON_NAME);
             Console.WriteLine("ProcessKill End!");
 
             Console.WriteLine("Registry Delete.");

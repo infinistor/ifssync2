@@ -134,7 +134,7 @@ namespace IfsSync2WatcherService
 
                 HttpWebRequest request = (HttpWebRequest)WebRequest.Create(URL);
                 request.Method = MainData.CURL_STR_POST_METHOD;
-                request.ContentType = MainData.CURL_STR_CONTENTTYPE;
+                request.ContentType = MainData.CURL_STR_CONTENT_TYPE;
                 request.Timeout = MainData.CURL_TIMEOUT_DELAY;
                 //Error evasion
                 ServerCertificateValidationCallback.Ignore();
@@ -197,7 +197,7 @@ namespace IfsSync2WatcherService
 
                 HttpWebRequest request = (HttpWebRequest)WebRequest.Create(URL);
                 request.Method = MainData.CURL_STR_GET_METHOD;
-                request.ContentType = MainData.CURL_STR_CONTENTTYPE;
+                request.ContentType = MainData.CURL_STR_CONTENT_TYPE;
                 request.Timeout = MainData.CURL_TIMEOUT_DELAY;
                 ServerCertificateValidationCallback.Ignore();
                 
@@ -336,7 +336,7 @@ namespace IfsSync2WatcherService
 
                 HttpWebRequest request = (HttpWebRequest)WebRequest.Create(url);
                 request.Method = MainData.CURL_STR_POST_METHOD;
-                request.ContentType = MainData.CURL_STR_CONTENTTYPE;
+                request.ContentType = MainData.CURL_STR_CONTENT_TYPE;
                 request.Timeout = MainData.CURL_TIMEOUT_DELAY;
                 //request.Headers.Add("Authorization", "BASIC SGVsbG8=");
                 ServerCertificateValidationCallback.Ignore();
@@ -406,7 +406,7 @@ namespace IfsSync2WatcherService
 
             HttpWebRequest request = (HttpWebRequest)WebRequest.Create(url);
             request.Method = MainData.CURL_STR_POST_METHOD;
-            request.ContentType = MainData.CURL_STR_CONTENTTYPE;
+            request.ContentType = MainData.CURL_STR_CONTENT_TYPE;
             request.Timeout = MainData.CURL_TIMEOUT_DELAY;
 
             ServerCertificateValidationCallback.Ignore();

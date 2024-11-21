@@ -9,117 +9,66 @@
 * KSAN 개발팀은 사전 공지, 허락, 동의 없이 KSAN 개발에 관련된 모든 결과물에 대한 LICENSE 방식을 변경 할 권리가 있습니다.
 */
 using Microsoft.Win32;
-using System;
 
 namespace IfsSync2Data
 {
-    class InstantData
-    {
+	public class InstantData
+	{
+		#region Define
+		const string ANALYSIS = "Analysis";
+		const string RUNNING = "Running";
+		const string TOTAL = "TotalCount";
+		const string UPLOAD = "UploadCount";
+		const string PERCENT = "PercentCount";
+		#endregion
 
-        private const string ANALYSIS  = "Analysis";
-        private const string RUNNING   = "Running";
-        private const string TOTAL  = "TotalCount";
-        private const string UPLOAD = "UploadCount";
-        private const string PERCENT = "PercentCount";
-        /***************************************************************/
-        private const int MY_TRUE = 1;
-        private const int MY_FALSE = 0;
-        /***************************************************************/
-        private readonly RegistryKey InstantKey = null;
+		readonly RegistryKey _instantKey = null;
 
-        public bool Analysis
-        {
-            get
-            {
-                int value = MY_FALSE;
-                try { value = Convert.ToInt32(InstantKey.GetValue(ANALYSIS)); } catch { return false; }
+#pragma warning disable CA1416
+		public bool Analysis
+		{
+			get => int.TryParse(_instantKey.GetValue(ANALYSIS).ToString(), out int value) && value == MainData.MY_TRUE;
+			set => _instantKey.SetValue(ANALYSIS, value ? MainData.MY_TRUE : MainData.MY_FALSE, RegistryValueKind.DWord);
+		}
+		public bool Running
+		{
+			get => int.TryParse(_instantKey.GetValue(RUNNING).ToString(), out int value) && value == MainData.MY_TRUE;
+			set => _instantKey.SetValue(RUNNING, value ? MainData.MY_TRUE : MainData.MY_FALSE, RegistryValueKind.DWord);
+		}
 
-                if (value == MY_FALSE) return false;
-                else return true;
-            }
-            set
-            {
-                int temp = MY_FALSE;
-                if (value) temp = MY_TRUE;
+		public long Total
+		{
+			get => long.TryParse(_instantKey.GetValue(TOTAL).ToString(), out long value) ? value : 0;
+			set => _instantKey.SetValue(TOTAL, value, RegistryValueKind.QWord);
+		}
+		public long Upload
+		{
+			get => long.TryParse(_instantKey.GetValue(UPLOAD).ToString(), out long value) ? value : 0;
+			set => _instantKey.SetValue(UPLOAD, value, RegistryValueKind.QWord);
+		}
+		public long Percent
+		{
+			get => long.TryParse(_instantKey.GetValue(PERCENT).ToString(), out long value) ? value : 0;
+			set => _instantKey.SetValue(PERCENT, value, RegistryValueKind.QWord);
+		}
 
-                InstantKey.SetValue(ANALYSIS, temp, RegistryValueKind.DWord);
-            }
-        }
-        public bool Running
-        {
-            get
-            {
-                int value = MY_FALSE;
-                try { value = Convert.ToInt32(InstantKey.GetValue(RUNNING)); } catch { return false; }
+		public InstantData()
+		{
+			_instantKey = Registry.LocalMachine.OpenSubKey(MainData.INSTANT_REGISTRY_ROOT_NAME, true);
+			if (_instantKey == null)
+			{
+				_instantKey = Registry.LocalMachine.CreateSubKey(MainData.INSTANT_REGISTRY_ROOT_NAME, true);
+				_instantKey.SetValue(ANALYSIS, MainData.MY_TRUE, RegistryValueKind.DWord);
+				_instantKey.SetValue(TOTAL, 0, RegistryValueKind.QWord);
+				_instantKey.SetValue(UPLOAD, 0, RegistryValueKind.QWord);
+				_instantKey.SetValue(PERCENT, 0, RegistryValueKind.QWord);
+			}
+		}
+#pragma warning restore CA1416
 
-                if (value == MY_FALSE) return false;
-                else return true;
-            }
-            set
-            {
-                int temp = MY_FALSE;
-                if (value) temp = MY_TRUE;
-
-                InstantKey.SetValue(RUNNING, temp, RegistryValueKind.DWord);
-            }
-        }
-
-        public long Total
-        {
-            get
-            {
-                long value = 0;
-                try { value = Convert.ToInt64(InstantKey.GetValue(TOTAL)); } catch { }
-                return value;
-            }
-            set
-            {
-                InstantKey.SetValue(TOTAL, value, RegistryValueKind.QWord);
-            }
-        }
-        public long Upload
-        {
-            get
-            {
-                long value = 0;
-                try { value = Convert.ToInt64(InstantKey.GetValue(UPLOAD)); } catch { }
-                return value;
-            }
-            set
-            {
-                InstantKey.SetValue(UPLOAD, value, RegistryValueKind.QWord);
-            }
-        }
-        public long Percent
-        {
-            get
-            {
-                long value = 0;
-                try { value = Convert.ToInt64(InstantKey.GetValue(PERCENT)); } catch { }
-                return value;
-            }
-            set
-            {
-                InstantKey.SetValue(PERCENT, value, RegistryValueKind.QWord);
-            }
-        }
-
-        public InstantData()
-        {
-            InstantKey = Registry.LocalMachine.OpenSubKey(MainData.INSTANT_REGISTRY_ROOT_NAME, true);
-            if (InstantKey == null)
-            {
-                InstantKey = Registry.LocalMachine.CreateSubKey(MainData.INSTANT_REGISTRY_ROOT_NAME, true);
-                InstantKey.SetValue(ANALYSIS, MY_TRUE, RegistryValueKind.DWord);
-                InstantKey.SetValue(TOTAL, 0, RegistryValueKind.QWord);
-                InstantKey.SetValue(UPLOAD, 0, RegistryValueKind.QWord);
-                InstantKey.SetValue(PERCENT, 0, RegistryValueKind.QWord);
-            }
-        }
-
-        public void Clear()
-        {
-            Total = Upload = Percent = 0;
-        }
-    }
+		public void Clear()
+		{
+			Total = Upload = Percent = 0;
+		}
+	}
 }

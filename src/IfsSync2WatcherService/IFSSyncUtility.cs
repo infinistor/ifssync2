@@ -21,438 +21,438 @@ using System.Collections.Generic;
 
 namespace IfsSync2WatcherService
 {
-    class IFSSyncUtility
-    {
-        private const string STR_IP       = "ip";
-        private const string STR_HOSTNAME = "hostname";
-        private const string STR_PORT     = "port";
-        private const string STR_MAC      = "mac";
-        private const string STR_OS       = "os";
-        private const string STR_GROUP    = "group";
-        private const string STR_PCNAME   = "pcName";
+	class IFSSyncUtility
+	{
+		private const string STR_IP = "ip";
+		private const string STR_HOSTNAME = "hostname";
+		private const string STR_PORT = "port";
+		private const string STR_MAC = "mac";
+		private const string STR_OS = "os";
+		private const string STR_GROUP = "group";
+		private const string STR_PCNAME = "pcName";
 
 
-        private const int PORT_NUMBER = 58443;
-        
-        private const string STR_ERR_MSG       = "err_msg";
-        private const string STR_RET           = "ret";
+		private const int PORT_NUMBER = 58443;
 
-        private const string STR_USERID        = "userid";
-        private const string STR_S3PROXY       = "s3proxy";
-        private const string STR_ACCESS_KEY    = "access_key";
-        private const string STR_ACCESS_SECRET = "access_secret";
-        private const string STR_TENANT_KEY    = "tenant";
-        //private const string STR_TENANT_SECRET = "tenant_secret";
-        //private const string STR_TENANTID      = "tenantid";
+		private const string STR_ERR_MSG = "err_msg";
+		private const string STR_RET = "ret";
 
-        private const string STR_TARGET_USERID = "Target_Userid";
-        private const string STR_CONF          = "conf";
+		private const string STR_USERID = "userid";
+		private const string STR_S3PROXY = "s3proxy";
+		private const string STR_ACCESS_KEY = "access_key";
+		private const string STR_ACCESS_SECRET = "access_secret";
+		private const string STR_TENANT_KEY = "tenant";
 
-        private const string STR_SENDER_PAUSE      = "sender_pause";
-        private const string STR_SENDER_PAUSE_ON   = "ON";
-        private const string STR_SENDER_WAIT_MS    = "sender_wait_ms";
-        private const string STR_FETCH_COUNT       = "fetch_count";
-        private const string STR_DEBUG             = "debug";
-        private const string STR_SENDER_SCHEDULE   = "sender_schedule";
-        private const string STR_SENDER_SCHEDULE_ON= "ON";
-        private const string STR_SENDER_START_TIME = "sender_start_time";
-        private const string STR_SENDER_END_TIME   = "sender_end_time";
-        private const string STR_DELETE_COUNT      = "delete_count";
-        private const string STR_REV               = "rev";
+		private const string STR_TARGET_USERID = "Target_Userid";
+		private const string STR_CONF = "conf";
 
-        private const string STR_JOBS             = "jobs";
-        private const string STR_JOB_PATH         = "Path";
-        private const string STR_JOB_WHITEFILE    = "WhiteFile";
-        private const string STR_JOB_WHITEFILEEXT = "WhiteFileExt";
-        private const string STR_JOB_BLACKPATH    = "BlackPath";
-        private const string STR_JOB_BLACKFILE    = "BlackFile";
-        private const string STR_JOB_BLACKFILEEXT = "BlackFileExt";
-        private const string STR_JOB_REMOVE       = "Remove";
-        private const string STR_JOB_REMOVE_ENABLE= "enable";
+		private const string STR_SENDER_PAUSE = "sender_pause";
+		private const string STR_SENDER_PAUSE_ON = "ON";
+		private const string STR_SENDER_WAIT_MS = "sender_wait_ms";
+		private const string STR_FETCH_COUNT = "fetch_count";
+		private const string STR_DEBUG = "debug";
+		private const string STR_SENDER_SCHEDULE = "sender_schedule";
+		private const string STR_SENDER_SCHEDULE_ON = "ON";
+		private const string STR_SENDER_START_TIME = "sender_start_time";
+		private const string STR_SENDER_END_TIME = "sender_end_time";
+		private const string STR_DELETE_COUNT = "delete_count";
+		private const string STR_REV = "rev";
 
-        private const string STR_SENDER_ALIVE = "senderAlive";
-        private const string STR_LISTEN_ALIVE = "listenAlive";
-        private const string STR_INI_STATUS   = "iniStatus";
-        private const string STR_MON_REMAIN   = "monRemain";
-        private const string STR_FAIL_REMAIN  = "failRemain";
+		private const string STR_JOBS = "jobs";
+		private const string STR_JOB_PATH = "Path";
+		private const string STR_JOB_WHITEFILE = "WhiteFile";
+		private const string STR_JOB_WHITEFILEEXT = "WhiteFileExt";
+		private const string STR_JOB_BLACKPATH = "BlackPath";
+		private const string STR_JOB_BLACKFILE = "BlackFile";
+		private const string STR_JOB_BLACKFILEEXT = "BlackFileExt";
+		private const string STR_JOB_REMOVE = "Remove";
+		private const string STR_JOB_REMOVE_ENABLE = "enable";
 
-        private const string STR_USER = "user";
-        private const string STR_COMPANY = "company";
-        private const string STR_TYPE = "type";
-        private const string STR_VERSION = "Version";
+		private const string STR_SENDER_ALIVE = "senderAlive";
+		private const string STR_LISTEN_ALIVE = "listenAlive";
+		private const string STR_INI_STATUS = "iniStatus";
+		private const string STR_MON_REMAIN = "monRemain";
+		private const string STR_FAIL_REMAIN = "failRemain";
 
-        private const string STR_TYPE_DEFAULT = "DEF";
-        private const string STR_TYPE_SECURE = "SEC";//Secure Version
-        private const string STR_TYPE_NETWORK = "NET";
+		private const string STR_USER = "user";
+		private const string STR_COMPANY = "company";
+		private const string STR_TYPE = "type";
+		private const string STR_VERSION = "Version";
 
-        private const int DEFAULT_SENDER_DELAY = 1000;
-        private const int DEFAULT_FETCH_COUNT = 1000;
-        private const int DEFAULT_DELETE_COUNT = 1000;
+		private const string STR_TYPE_DEFAULT = "DEF";
+		private const string STR_TYPE_SECURE = "SEC";//Secure Version
+		private const string STR_TYPE_NETWORK = "NET";
 
-        private static string GetMacAddress()
-        {
-            return NetworkInterface.GetAllNetworkInterfaces()[0].GetPhysicalAddress().ToString();
-        }
-        private static string GetIPAddress()
-        {
-            string IP = string.Empty;
-            IPAddress[] Host = Dns.GetHostAddresses(Dns.GetHostName());
-            foreach (var Item in Host)
-            {
-                if (Item.AddressFamily == System.Net.Sockets.AddressFamily.InterNetwork)
-                {
-                    IP = Item.ToString();
-                    break;
-                }
-            }
-            return IP;
-        }
-        public static UserData GetGlobalUser(string _URL, string PcName)
-        {
-            try
-            {
-                string URL;
-                if (_URL.EndsWith("/")) URL = _URL + MainData.WATCHER_SERVICE_GET_USER;
-                else URL = _URL + "/" + MainData.WATCHER_SERVICE_GET_USER;
-                
-                OperatingSystem os = Environment.OSVersion;
-                string data = string.Format("{{" +
-                                "\"{0}\":\"{1}\", " +
-                                "\"{2}\":\"{3}\", " +
-                                "\"{4}\":\"{5}\", " +
-                                "\"{6}\":\"{7}\", " +
-                                "\"{8}\":\"{9}\", " +
-                                "\"{10}\":\"{11}\"," +
-                                "\"{12}\":\"{13}\"}}",
-                                STR_IP, GetIPAddress(),
-                                STR_HOSTNAME, Dns.GetHostName(),
-                                STR_PORT, PORT_NUMBER,
-                                STR_MAC, GetMacAddress(),
-                                STR_OS, os.Platform.ToString().ToUpper().Substring(0, 3),
-                                STR_GROUP, "0",
-                                STR_PCNAME, PcName);
+		private const int DEFAULT_SENDER_DELAY = 1000;
+		private const int DEFAULT_FETCH_COUNT = 1000;
+		private const int DEFAULT_DELETE_COUNT = 1000;
 
-                HttpWebRequest request = (HttpWebRequest)WebRequest.Create(URL);
-                request.Method = MainData.CURL_STR_POST_METHOD;
-                request.ContentType = MainData.CURL_STR_CONTENT_TYPE;
-                request.Timeout = MainData.CURL_TIMEOUT_DELAY;
-                //Error evasion
-                ServerCertificateValidationCallback.Ignore();
-                // POST할 데이타를 Request Stream에 쓴다
-                byte[] bytes = Encoding.ASCII.GetBytes(data);
-                request.ContentLength = bytes.Length; // 바이트수 지정
+		private static string GetMacAddress()
+		{
+			return NetworkInterface.GetAllNetworkInterfaces()[0].GetPhysicalAddress().ToString();
+		}
+		private static string GetIPAddress()
+		{
+			string IP = string.Empty;
+			IPAddress[] Host = Dns.GetHostAddresses(Dns.GetHostName());
+			foreach (var Item in Host)
+			{
+				if (Item.AddressFamily == System.Net.Sockets.AddressFamily.InterNetwork)
+				{
+					IP = Item.ToString();
+					break;
+				}
+			}
+			return IP;
+		}
+		public static UserData GetGlobalUser(string _URL, string PcName)
+		{
+			try
+			{
+				string URL;
+				if (_URL.EndsWith("/")) URL = _URL + MainData.WATCHER_SERVICE_GET_USER;
+				else URL = _URL + "/" + MainData.WATCHER_SERVICE_GET_USER;
 
-                using (Stream reqStream = request.GetRequestStream())
-                {
-                    reqStream.Write(bytes, 0, bytes.Length);
-                }
+				OperatingSystem os = Environment.OSVersion;
+				string data = string.Format("{{" +
+								"\"{0}\":\"{1}\", " +
+								"\"{2}\":\"{3}\", " +
+								"\"{4}\":\"{5}\", " +
+								"\"{6}\":\"{7}\", " +
+								"\"{8}\":\"{9}\", " +
+								"\"{10}\":\"{11}\"," +
+								"\"{12}\":\"{13}\"}}",
+								STR_IP, GetIPAddress(),
+								STR_HOSTNAME, Dns.GetHostName(),
+								STR_PORT, PORT_NUMBER,
+								STR_MAC, GetMacAddress(),
+								STR_OS, os.Platform.ToString().ToUpper()[..3],
+								STR_GROUP, "0",
+								STR_PCNAME, PcName);
 
-                // Response 처리
-                string responseText = string.Empty;
-                using (WebResponse resp = request.GetResponse())
-                {
-                    Stream respStream = resp.GetResponseStream();
-                    using (StreamReader sr = new StreamReader(respStream)) { responseText = sr.ReadToEnd(); };
-                };
+				HttpWebRequest request = (HttpWebRequest)WebRequest.Create(URL);
+				request.Method = MainData.CURL_STR_POST_METHOD;
+				request.ContentType = MainData.CURL_STR_CONTENT_TYPE;
+				request.Timeout = MainData.CURL_TIMEOUT_DELAY;
+				//Error evasion
+				ServerCertificateValidationCallback.Ignore();
+				// POST할 데이타를 Request Stream에 쓴다
+				byte[] bytes = Encoding.ASCII.GetBytes(data);
+				request.ContentLength = bytes.Length; // 바이트수 지정
 
-                JObject UserObj = JObject.Parse(responseText);
+				using (Stream reqStream = request.GetRequestStream())
+				{
+					reqStream.Write(bytes, 0, bytes.Length);
+				}
+
+				// Response 처리
+				string responseText = string.Empty;
+				using (WebResponse resp = request.GetResponse())
+				{
+					Stream respStream = resp.GetResponseStream();
+					using (StreamReader sr = new StreamReader(respStream)) { responseText = sr.ReadToEnd(); };
+				};
+
+				JObject UserObj = JObject.Parse(responseText);
 
 
-                if(!int.TryParse(UserObj[STR_RET].ToString(), out int ret))
-                {
-                    throw new Exception(STR_RET + " is Not int");
-                }
-                if (ret != 0)
-                {
-                    string ErrorMsg = UserObj[STR_ERR_MSG].ToString();
-                    throw new Exception(ErrorMsg);
-                }
+				if (!int.TryParse(UserObj[STR_RET].ToString(), out int ret))
+				{
+					throw new Exception(STR_RET + " is Not int");
+				}
+				if (ret != 0)
+				{
+					string ErrorMsg = UserObj[STR_ERR_MSG].ToString();
+					throw new Exception(ErrorMsg);
+				}
 
-                //Get User Data
-                UserData User = new UserData()
-                {
-                    URL = UserObj[STR_S3PROXY].ToString(),
-                    UserName = UserObj[STR_USERID].ToString(),
-                    AccessKey = UserObj[STR_ACCESS_KEY].ToString(),
-                    AccessSecret = UserObj[STR_ACCESS_SECRET].ToString(),
-                    StorageName = UserObj[STR_TENANT_KEY].ToString(),
-                    Debug = false
-                };
+				//Get User Data
+				UserData User = new UserData()
+				{
+					URL = UserObj[STR_S3PROXY].ToString(),
+					UserName = UserObj[STR_USERID].ToString(),
+					AccessKey = UserObj[STR_ACCESS_KEY].ToString(),
+					SecretKey = UserObj[STR_ACCESS_SECRET].ToString(),
+					StorageName = UserObj[STR_TENANT_KEY].ToString(),
+					Debug = false
+				};
 
-                return User;
-            }
-            catch(Exception e)
-            {
-                throw e;
-            }
-        }
-        public static GlobalConfigData GetGlobalConfig(string _URL, string UserName, int UserID)
-        {
-            GlobalConfigData Config = new GlobalConfigData();
-            try
-            {
-                string URL;
-                if(_URL.EndsWith("/")) URL = _URL + MainData.WATCHER_SERVICE_GET_JOBS + UserName;
-                else                   URL = _URL + "/" + MainData.WATCHER_SERVICE_GET_JOBS + UserName;
+				return User;
+			}
+			catch (Exception e)
+			{
+				throw e;
+			}
+		}
+		public static GlobalConfigData GetGlobalConfig(string _URL, string UserName, int UserID)
+		{
+			GlobalConfigData Config = new GlobalConfigData();
+			try
+			{
+				string URL;
+				if (_URL.EndsWith("/")) URL = _URL + MainData.WATCHER_SERVICE_GET_JOBS + UserName;
+				else URL = _URL + "/" + MainData.WATCHER_SERVICE_GET_JOBS + UserName;
 
-                HttpWebRequest request = (HttpWebRequest)WebRequest.Create(URL);
-                request.Method = MainData.CURL_STR_GET_METHOD;
-                request.ContentType = MainData.CURL_STR_CONTENT_TYPE;
-                request.Timeout = MainData.CURL_TIMEOUT_DELAY;
-                ServerCertificateValidationCallback.Ignore();
-                
-                // Response 처리
-                string responseText = string.Empty;
-                using (WebResponse resp = request.GetResponse())
-                {
-                    Stream respStream = resp.GetResponseStream();
-                    using (StreamReader sr = new StreamReader(respStream)) { responseText = sr.ReadToEnd(); }
-                }
+				HttpWebRequest request = (HttpWebRequest)WebRequest.Create(URL);
+				request.Method = MainData.CURL_STR_GET_METHOD;
+				request.ContentType = MainData.CURL_STR_CONTENT_TYPE;
+				request.Timeout = MainData.CURL_TIMEOUT_DELAY;
+				ServerCertificateValidationCallback.Ignore();
 
-                JObject jobj = JObject.Parse(responseText);
+				// Response 처리
+				string responseText = string.Empty;
+				using (WebResponse resp = request.GetResponse())
+				{
+					Stream respStream = resp.GetResponseStream();
+					using StreamReader sr = new StreamReader(respStream);
+					responseText = sr.ReadToEnd();
+				}
 
-                if(!int.TryParse(jobj[STR_RET].ToString(), out int ret))
-                {
-                    throw new Exception(STR_RET + " is Not int");
-                }
-                if (ret != 0)
-                {
-                    string ErrorMsg = jobj[STR_ERR_MSG].ToString();
-                    throw new Exception(ErrorMsg);
-                }
+				JObject jobj = JObject.Parse(responseText);
 
-                string TargetUserid = jobj[STR_TARGET_USERID].ToString();
+				if (!int.TryParse(jobj[STR_RET].ToString(), out int ret))
+				{
+					throw new Exception(STR_RET + " is Not int");
+				}
+				if (ret != 0)
+				{
+					string ErrorMsg = jobj[STR_ERR_MSG].ToString();
+					throw new Exception(ErrorMsg);
+				}
 
-                if (int.TryParse(jobj[STR_CONF][STR_SENDER_WAIT_MS].ToString(), out int SenderDelay)) Config.SenderDelay = SenderDelay;
-                else Config.SenderDelay = DEFAULT_SENDER_DELAY;
-                
-                if (int.TryParse(jobj[STR_CONF][STR_FETCH_COUNT].ToString(), out int FetchCount)) Config.FetchCount = FetchCount;
-                else Config.FetchCount = DEFAULT_FETCH_COUNT;
+				string TargetUserid = jobj[STR_TARGET_USERID].ToString();
 
-                if (int.TryParse(jobj[STR_CONF][STR_DELETE_COUNT].ToString(), out int DeleteCount)) Config.DeleteCount = DeleteCount;
-                else Config.DeleteCount = DEFAULT_DELETE_COUNT;
+				if (int.TryParse(jobj[STR_CONF][STR_SENDER_WAIT_MS].ToString(), out int SenderDelay)) Config.SenderDelay = SenderDelay;
+				else Config.SenderDelay = DEFAULT_SENDER_DELAY;
 
-                if (STR_SENDER_PAUSE_ON.Equals(jobj[STR_CONF][STR_SENDER_PAUSE].ToString())) Config.SenderPause = true;
-                else Config.SenderPause = false;
+				if (int.TryParse(jobj[STR_CONF][STR_FETCH_COUNT].ToString(), out int FetchCount)) Config.FetchCount = FetchCount;
+				else Config.FetchCount = DEFAULT_FETCH_COUNT;
 
-                Config.S3Proxy = jobj[STR_CONF][STR_S3PROXY].ToString();
+				if (int.TryParse(jobj[STR_CONF][STR_DELETE_COUNT].ToString(), out int DeleteCount)) Config.DeleteCount = DeleteCount;
+				else Config.DeleteCount = DEFAULT_DELETE_COUNT;
 
-                string Rev = jobj[STR_CONF][STR_REV].ToString();
-                string Debug = jobj[STR_CONF][STR_DEBUG].ToString();
+				if (STR_SENDER_PAUSE_ON.Equals(jobj[STR_CONF][STR_SENDER_PAUSE].ToString())) Config.SenderPause = true;
+				else Config.SenderPause = false;
 
-                string SenderSchedule = jobj[STR_CONF][STR_SENDER_SCHEDULE].ToString();
-                string SenderStartTime = jobj[STR_CONF][STR_SENDER_START_TIME].ToString();
-                string SenderEndTime = jobj[STR_CONF][STR_SENDER_END_TIME].ToString();
+				Config.S3Proxy = jobj[STR_CONF][STR_S3PROXY].ToString();
 
-                JArray JobArray = JArray.Parse(jobj[STR_CONF][STR_JOBS].ToString());
+				string Rev = jobj[STR_CONF][STR_REV].ToString();
+				string Debug = jobj[STR_CONF][STR_DEBUG].ToString();
 
-                List<JobData> JobList = new List<JobData>();
+				string SenderSchedule = jobj[STR_CONF][STR_SENDER_SCHEDULE].ToString();
+				string SenderStartTime = jobj[STR_CONF][STR_SENDER_START_TIME].ToString();
+				string SenderEndTime = jobj[STR_CONF][STR_SENDER_END_TIME].ToString();
 
-                if (!TargetUserid.Equals(UserName)) 
-                    throw new Exception(string.Format("UserName Error : {0} != {1}", UserName, TargetUserid));
+				JArray JobArray = JArray.Parse(jobj[STR_CONF][STR_JOBS].ToString());
 
-                foreach (var Job in JobArray)
-                {
-                    JobData jobData = new JobData
-                    {
-                        IsGlobalUser = true,
-                        UserID = UserID
-                    };
+				List<JobData> JobList = new List<JobData>();
 
-                    //JArray PathArray = JArray.Parse(Job[STR_JOB_PATH].ToString());
-                    //foreach (var Path in PathArray) jobData.Path.Add(Path.ToString());
-                    jobData.Path.Add(Job[STR_JOB_PATH].ToString());
+				if (!TargetUserid.Equals(UserName))
+					throw new Exception(string.Format("UserName Error : {0} != {1}", UserName, TargetUserid));
 
-                    JArray WhiteFileArray = JArray.Parse(Job[STR_JOB_WHITEFILE].ToString());
-                    foreach (var WhiteFile in WhiteFileArray) jobData.WhiteFile.Add(WhiteFile.ToString());
+				foreach (var Job in JobArray)
+				{
+					JobData jobData = new JobData
+					{
+						IsGlobalUser = true,
+						UserID = UserID
+					};
 
-                    JArray WhiteFileExtArray = JArray.Parse(Job[STR_JOB_WHITEFILEEXT].ToString());
-                    foreach (var WhiteFileExt in WhiteFileExtArray) jobData.WhiteFileExt.Add(WhiteFileExt.ToString());
+					//JArray PathArray = JArray.Parse(Job[STR_JOB_PATH].ToString());
+					//foreach (var Path in PathArray) jobData.Path.Add(Path.ToString());
+					jobData.Path.Add(Job[STR_JOB_PATH].ToString());
 
-                    JArray BlackPathArray = JArray.Parse(Job[STR_JOB_BLACKPATH].ToString());
-                    foreach (var BlackPath in BlackPathArray) jobData.BlackPath.Add(BlackPath.ToString());
+					JArray WhiteFileArray = JArray.Parse(Job[STR_JOB_WHITEFILE].ToString());
+					foreach (var WhiteFile in WhiteFileArray) jobData.WhiteFile.Add(WhiteFile.ToString());
 
-                    JArray BlackFileArray = JArray.Parse(Job[STR_JOB_BLACKFILE].ToString());
-                    foreach (var BlackFile in BlackFileArray) jobData.BlackFile.Add(BlackFile.ToString());
+					JArray WhiteFileExtArray = JArray.Parse(Job[STR_JOB_WHITEFILEEXT].ToString());
+					foreach (var WhiteFileExt in WhiteFileExtArray) jobData.WhiteFileExt.Add(WhiteFileExt.ToString());
 
-                    JArray BlackFileExtArray = JArray.Parse(Job[STR_JOB_BLACKFILEEXT].ToString());
-                    foreach (var BlackFileExt in BlackFileExtArray) jobData.BlackFileExt.Add(BlackFileExt.ToString());
+					JArray BlackPathArray = JArray.Parse(Job[STR_JOB_BLACKPATH].ToString());
+					foreach (var BlackPath in BlackPathArray) jobData.BlackPath.Add(BlackPath.ToString());
 
-                    if (Job[STR_JOB_REMOVE].ToString().Equals(STR_JOB_REMOVE_ENABLE)) jobData.Remove = true;
-                    else jobData.Remove = false;
+					JArray BlackFileArray = JArray.Parse(Job[STR_JOB_BLACKFILE].ToString());
+					foreach (var BlackFile in BlackFileArray) jobData.BlackFile.Add(BlackFile.ToString());
 
-                    if (SenderSchedule.Equals(STR_SENDER_SCHEDULE_ON))
-                    {
-                        jobData.Policy = JobData.PolicyNameList.Schedule;
+					JArray BlackFileExtArray = JArray.Parse(Job[STR_JOB_BLACKFILEEXT].ToString());
+					foreach (var BlackFileExt in BlackFileExtArray) jobData.BlackFileExt.Add(BlackFileExt.ToString());
 
-                        GetStringToTime(SenderStartTime, out int StartHours, out int StartMins);
-                        GetStringToTime(SenderEndTime, out int EndHours, out int EndMins);
+					if (Job[STR_JOB_REMOVE].ToString().Equals(STR_JOB_REMOVE_ENABLE)) jobData.Remove = true;
+					else jobData.Remove = false;
 
-                        Schedule schedule = new Schedule();
-                        schedule.SetAtTime(StartHours, StartMins);
-                        schedule.AddWeek(Schedule.EVERY);
+					if (SenderSchedule.Equals(STR_SENDER_SCHEDULE_ON))
+					{
+						jobData.Policy = JobData.PolicyName.Schedule;
 
-                        if (StartHours > EndHours) schedule.ForHours = (Schedule.MaxHours - StartHours) + EndHours;
+						GetStringToTime(SenderStartTime, out int StartHours, out int StartMins);
+						GetStringToTime(SenderEndTime, out int EndHours, out int EndMins);
 
-                        jobData.ScheduleList.Add(schedule);
-                    }
-                    else
-                        jobData.Policy = JobData.PolicyNameList.RealTime;
+						Schedule schedule = new Schedule();
+						schedule.SetAtTime(StartHours, StartMins);
+						schedule.AddWeek(Schedule.EVERY);
 
-                    JobList.Add(jobData);
-                    Config.JobList = JobList;
-                }
-                
-                return Config;
-            }
-            catch (Exception e)
-            {
-                throw e;
-            }
-        }
-        public static bool SendAlive(string URL, string ID, AliveData Data, out string Error)
-        {
-            try
-            {
-                OperatingSystem os = Environment.OSVersion;
-                string url = URL + MainData.WATCHER_SERVICE_PUT_ALIVE;
-                string data = string.Format("{{" +
-                                "\"{0}\":\"{1}\", " +
-                                "\"{2}\":\"{3}\", " +
-                                "\"{4}\":\"{5}\", " +
-                                "\"{6}\":\"{7}\", " +
-                                "\"{8}\":\"{9}\", " +
-                                "\"{10}\":\"{11}\", " +
-                                "\"{12}\":\"{13}\", " +
-                                "\"{14}\":\"{15}\"}}",
-                                STR_USERID, ID,
-                                STR_OS, os.Platform.ToString().ToUpper().Substring(0, 3),
-                                STR_SENDER_ALIVE, Data.SenderAlive,
-                                STR_LISTEN_ALIVE, Data.ListenAlive,
-                                STR_INI_STATUS, Data.IniStatus,
-                                STR_MON_REMAIN, Data.MonRemain,
-                                STR_FAIL_REMAIN, Data.FailRemain,
-                                STR_PCNAME, Environment.MachineName);
+						if (StartHours > EndHours) schedule.ForHours = (Schedule.MaxHours - StartHours) + EndHours;
 
-                HttpWebRequest request = (HttpWebRequest)WebRequest.Create(url);
-                request.Method = MainData.CURL_STR_POST_METHOD;
-                request.ContentType = MainData.CURL_STR_CONTENT_TYPE;
-                request.Timeout = MainData.CURL_TIMEOUT_DELAY;
-                //request.Headers.Add("Authorization", "BASIC SGVsbG8=");
-                ServerCertificateValidationCallback.Ignore();
-                // POST할 데이타를 Request Stream에 쓴다
-                byte[] bytes = Encoding.ASCII.GetBytes(data);
-                request.ContentLength = bytes.Length; // 바이트수 지정
+						jobData.ScheduleList.Add(schedule);
+					}
+					else
+						jobData.Policy = JobData.PolicyName.RealTime;
 
-                using (Stream reqStream = request.GetRequestStream()) { reqStream.Write(bytes, 0, bytes.Length); }
+					JobList.Add(jobData);
+					Config.JobList = JobList;
+				}
 
-                // Response 처리
-                string responseText = string.Empty;
-                using (WebResponse resp = request.GetResponse())
-                {
-                    Stream respStream = resp.GetResponseStream();
-                    using (StreamReader sr = new StreamReader(respStream)) { responseText = sr.ReadToEnd(); }
-                }
-                JObject jobj = JObject.Parse(responseText);
+				return Config;
+			}
+			catch (Exception e)
+			{
+				throw e;
+			}
+		}
+		public static bool SendAlive(string URL, string ID, AliveData Data, out string Error)
+		{
+			try
+			{
+				OperatingSystem os = Environment.OSVersion;
+				string url = URL + MainData.WATCHER_SERVICE_PUT_ALIVE;
+				string data = string.Format("{{" +
+								"\"{0}\":\"{1}\", " +
+								"\"{2}\":\"{3}\", " +
+								"\"{4}\":\"{5}\", " +
+								"\"{6}\":\"{7}\", " +
+								"\"{8}\":\"{9}\", " +
+								"\"{10}\":\"{11}\", " +
+								"\"{12}\":\"{13}\", " +
+								"\"{14}\":\"{15}\"}}",
+								STR_USERID, ID,
+								STR_OS, os.Platform.ToString().ToUpper()[..3],
+								STR_SENDER_ALIVE, Data.SenderAlive,
+								STR_LISTEN_ALIVE, Data.ListenAlive,
+								STR_INI_STATUS, Data.IniStatus,
+								STR_MON_REMAIN, Data.MonRemain,
+								STR_FAIL_REMAIN, Data.FailRemain,
+								STR_PCNAME, Environment.MachineName);
+
+				HttpWebRequest request = (HttpWebRequest)WebRequest.Create(url);
+				request.Method = MainData.CURL_STR_POST_METHOD;
+				request.ContentType = MainData.CURL_STR_CONTENT_TYPE;
+				request.Timeout = MainData.CURL_TIMEOUT_DELAY;
+				//request.Headers.Add("Authorization", "BASIC SGVsbG8=");
+				ServerCertificateValidationCallback.Ignore();
+				// POST할 데이타를 Request Stream에 쓴다
+				byte[] bytes = Encoding.ASCII.GetBytes(data);
+				request.ContentLength = bytes.Length; // 바이트수 지정
+
+				using (Stream reqStream = request.GetRequestStream()) { reqStream.Write(bytes, 0, bytes.Length); }
+
+				// Response 처리
+				string responseText = string.Empty;
+				using (WebResponse resp = request.GetResponse())
+				{
+					Stream respStream = resp.GetResponseStream();
+					using StreamReader sr = new StreamReader(respStream);
+					responseText = sr.ReadToEnd();
+				}
+				JObject jobj = JObject.Parse(responseText);
 
 
-                if(!int.TryParse(jobj[STR_RET].ToString(), out int ret))
-                {
-                    Error = STR_RET + " is Not int";
-                    return false;
-                }
+				if (!int.TryParse(jobj[STR_RET].ToString(), out int ret))
+				{
+					Error = STR_RET + " is Not int";
+					return false;
+				}
 
-                if (ret != 0)
-                {
-                    Error = jobj[STR_ERR_MSG].ToString();
-                    return false;
-                }
-                else
-                {
-                    Error = string.Empty;
-                    return true;
-                }
-            }
-            catch(Exception e)
-            {
-                Error = e.Message;
-                return false;
-            }
-            
-        }
-        private static void GetStringToTime(string StrTime, out int Hours, out int Mins)
-        {
-            string[] result = StrTime.Split(':');
+				if (ret != 0)
+				{
+					Error = jobj[STR_ERR_MSG].ToString();
+					return false;
+				}
+				else
+				{
+					Error = string.Empty;
+					return true;
+				}
+			}
+			catch (Exception e)
+			{
+				Error = e.Message;
+				return false;
+			}
 
-            Hours = Convert.ToInt32(result[0]);
-            Mins = Convert.ToInt32(result[1]);
-        }
+		}
+		private static void GetStringToTime(string StrTime, out int Hours, out int Mins)
+		{
+			string[] result = StrTime.Split(':');
 
-        public static void CheckUpdate(string URL, string ID, string Version)
-        {
-            OperatingSystem os = Environment.OSVersion;
-            string url = URL + MainData.WATCHER_SERVICE_VERSION_CHECK;
-            string data = string.Format("{{" +
-                            "\"{0}\":\"{1}\", " +
-                            "\"{2}\":\"{3}\", " +
-                            "\"{4}\":\"{5}\", " +
-                            "\"{6}\":\"{7}\", " +
-                            "\"{8}\":\"{9}\"}} ",
-                            STR_USER, ID,
-                            STR_OS, os.Platform.ToString().ToLower().Substring(0, 3),
-                            STR_COMPANY, MainData.COMPANY_NAME,
-                            STR_TYPE, "SEC",
-                            STR_VERSION, Version);
+			Hours = Convert.ToInt32(result[0]);
+			Mins = Convert.ToInt32(result[1]);
+		}
 
-            HttpWebRequest request = (HttpWebRequest)WebRequest.Create(url);
-            request.Method = MainData.CURL_STR_POST_METHOD;
-            request.ContentType = MainData.CURL_STR_CONTENT_TYPE;
-            request.Timeout = MainData.CURL_TIMEOUT_DELAY;
+		public static void CheckUpdate(string URL, string ID, string Version)
+		{
+			OperatingSystem os = Environment.OSVersion;
+			string url = URL + MainData.WATCHER_SERVICE_VERSION_CHECK;
+			string data = string.Format("{{" +
+							"\"{0}\":\"{1}\", " +
+							"\"{2}\":\"{3}\", " +
+							"\"{4}\":\"{5}\", " +
+							"\"{6}\":\"{7}\", " +
+							"\"{8}\":\"{9}\"}} ",
+							STR_USER, ID,
+							STR_OS, os.Platform.ToString().ToLower()[..3],
+							STR_COMPANY, MainData.COMPANY_NAME,
+							STR_TYPE, "SEC",
+							STR_VERSION, Version);
 
-            ServerCertificateValidationCallback.Ignore();
-            // POST할 데이타를 Request Stream에 쓴다
-            byte[] bytes = Encoding.ASCII.GetBytes(data);
-            request.ContentLength = bytes.Length; // 바이트수 지정
+			HttpWebRequest request = (HttpWebRequest)WebRequest.Create(url);
+			request.Method = MainData.CURL_STR_POST_METHOD;
+			request.ContentType = MainData.CURL_STR_CONTENT_TYPE;
+			request.Timeout = MainData.CURL_TIMEOUT_DELAY;
 
-            using (Stream reqStream = request.GetRequestStream())
-            {
-                reqStream.Write(bytes, 0, bytes.Length);
-            }
-            //Response 처리
-            string responseText = string.Empty;
-            using (WebResponse resp = request.GetResponse())
-            {
-                Stream respStream = resp.GetResponseStream();
-                using (StreamReader sr = new StreamReader(respStream)) responseText = sr.ReadToEnd();
-            }
+			ServerCertificateValidationCallback.Ignore();
+			// POST할 데이타를 Request Stream에 쓴다
+			byte[] bytes = Encoding.ASCII.GetBytes(data);
+			request.ContentLength = bytes.Length; // 바이트수 지정
 
-            JObject UserObj = JObject.Parse(responseText);
+			using (Stream reqStream = request.GetRequestStream())
+			{
+				reqStream.Write(bytes, 0, bytes.Length);
+			}
+			//Response 처리
+			string responseText = string.Empty;
+			using (WebResponse resp = request.GetResponse())
+			{
+				Stream respStream = resp.GetResponseStream();
+				using StreamReader sr = new StreamReader(respStream); responseText = sr.ReadToEnd();
+			}
 
-            if (!int.TryParse(UserObj[STR_RET].ToString(), out int ret))
-            {
-                throw new Exception(STR_RET + " is Not int");
-            }
-            if (ret != 0)
-            {
-                string ErrorMsg = UserObj[STR_ERR_MSG].ToString();
-                throw new Exception(ErrorMsg);
-            }
+			JObject UserObj = JObject.Parse(responseText);
 
-        }
-    }
-    
-    public class ServerCertificateValidationCallback
-    {
-        public static void Ignore()
-        {
-            if (ServicePointManager.ServerCertificateValidationCallback == null)
-            {
-                ServicePointManager.ServerCertificateValidationCallback +=
-                delegate (object obj, X509Certificate certificate, X509Chain chain, SslPolicyErrors errors)
-                {
-                    return true;
-                };
-            }
-        }
-    }
+			if (!int.TryParse(UserObj[STR_RET].ToString(), out int ret))
+			{
+				throw new Exception(STR_RET + " is Not int");
+			}
+			if (ret != 0)
+			{
+				string ErrorMsg = UserObj[STR_ERR_MSG].ToString();
+				throw new Exception(ErrorMsg);
+			}
+
+		}
+	}
+
+	public class ServerCertificateValidationCallback
+	{
+		public static void Ignore()
+		{
+			if (ServicePointManager.ServerCertificateValidationCallback == null)
+			{
+				ServicePointManager.ServerCertificateValidationCallback +=
+				delegate (object obj, X509Certificate certificate, X509Chain chain, SslPolicyErrors errors)
+				{
+					return true;
+				};
+			}
+		}
+	}
 }

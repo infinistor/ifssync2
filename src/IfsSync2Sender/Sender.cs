@@ -16,148 +16,148 @@ using log4net;
 
 namespace IfsSync2Sender
 {
-    class Sender
-    {
-        private static readonly ILog log = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
+	class Sender
+	{
+		private static readonly ILog log = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
 
-        //SQL
-        private readonly string RootPath;
-        private readonly JobDataSqlManager  JobSQL;
-        private readonly UserDataSqlManager UserSQL;
-        private readonly List<SenderThread> SenderList = new List<SenderThread>();
-        //User Data
-        private List<UserData> UserList;
-        private List<UserData> GlobalUserList;
+		//SQL
+		private readonly string RootPath;
+		private readonly JobDataSqlManager JobSQL;
+		private readonly UserDataSqlManager UserSQL;
+		private readonly List<SenderThread> SenderList = new List<SenderThread>();
+		//User Data
+		private List<UserData> UserList;
+		private List<UserData> GlobalUserList;
 
-        private bool Global { get; set; }
+		private bool Global { get; set; }
 
-        public Sender(string _RootPath, bool _Global)
-        {
-            Global = _Global;
-            RootPath = _RootPath;
-            JobSQL = new JobDataSqlManager(RootPath);
-            UserSQL = new UserDataSqlManager(RootPath);
-        }
+		public Sender(string _RootPath, bool _Global)
+		{
+			Global = _Global;
+			RootPath = _RootPath;
+			JobSQL = new JobDataSqlManager();
+			UserSQL = new UserDataSqlManager();
+		}
 
-        public void Once(int FetchCount, int SenderDelay)
-        {
-            UserDataUpdate();
-            SenderThreadInit(FetchCount, SenderDelay);
-            SenderQuitCheck();
+		public void Once(int FetchCount, int SenderDelay)
+		{
+			UserDataUpdate();
+			SenderThreadInit(FetchCount, SenderDelay);
+			SenderQuitCheck();
 
-            //Job Data
-            List<JobData> JobList = JobSQL.GetJobDatas(Global);
+			//Job Data
+			List<JobData> JobList = JobSQL.GetJobs(Global);
 
-            foreach (JobData Job in JobList)
-            {
-                try
-                {
-                    bool IsNewSender = true;
+			foreach (JobData Job in JobList)
+			{
+				try
+				{
+					bool IsNewSender = true;
 
-                    UserData User = GetUserData(UserList, GlobalUserList, Job.IsGlobalUser, Job.UserID);
+					UserData User = GetUserData(UserList, GlobalUserList, Job.IsGlobalUser, Job.UserID);
 
-                    if (User.ID == 0) continue;//User 데이터가 존재하지 않음
+					if (User.Id == 0) continue;//User 데이터가 존재하지 않음
 
-                    foreach (SenderThread Sender in SenderList)
-                    {
-                        if (Sender.IsAlive) continue;
-                        if (Job.ID == Sender.Job.ID)
-                        {
-                            //UserData Changed
-                            if (User.UpdateFlag) Sender.End();
-                            //JobData Changed
-                            else if(Job.SenderUpdate)
-                            {
-                                JobSQL.UpdateSenderCheck(Job, Global);
+					foreach (SenderThread Sender in SenderList)
+					{
+						if (Sender.IsAlive) continue;
+						if (Job.Id == Sender.Job.Id)
+						{
+							//UserData Changed
+							if (User.UpdateFlag) Sender.End();
+							//JobData Changed
+							else if (Job.SenderUpdate)
+							{
+								JobSQL.UpdateSenderCheck(Job, Global);
 
-                                if(!Sender.Stop) Sender.Stop = true;
-                                Sender.Job.CopyTo(Job);
-                                Sender.Stop = false;
+								if (!Sender.Stop) Sender.Stop = true;
+								Sender.Job.CopyTo(Job);
+								Sender.Stop = false;
 
-                                IsNewSender = false; 
-                                Sender.IsAlive = true;
-                            }
-                            else
-                            {
-                                
-                                IsNewSender = false;
-                                Sender.IsAlive = true;
-                                Sender.Job.IsInit = Job.IsInit;
-                            }
-                        }
-                    }
+								IsNewSender = false;
+								Sender.IsAlive = true;
+							}
+							else
+							{
 
-                    //실행 시간이 아님 
-                    if (!Job.CheckToSchedules()) continue;
+								IsNewSender = false;
+								Sender.IsAlive = true;
+								Sender.Job.IsInit = Job.IsInit;
+							}
+						}
+					}
 
-                    //Sender Create
-                    if (IsNewSender) SenderList.Add(new SenderThread(RootPath, Job, User, FetchCount, SenderDelay, Global));
-                    if (Job.SenderUpdate) JobSQL.UpdateSenderCheck(Job, Global);
+					//실행 시간이 아님 
+					if (!Job.CheckToSchedules()) continue;
 
-                }
-                catch (Exception e)
-                {
-                    log.Error("JobName({Job.JobName})", e);
-                }
-            }
+					//Sender Create
+					if (IsNewSender) SenderList.Add(new SenderThread(Job, User, FetchCount, SenderDelay, Global));
+					if (Job.SenderUpdate) JobSQL.UpdateSenderCheck(Job, Global);
 
-            for (int i = SenderList.Count - 1; i >= 0; i--)
-            {
-                //Alive Check
-                if (!SenderList[i].IsAlive) SenderList[i].End();
-            }
-            SenderQuitCheck();
-        }
+				}
+				catch (Exception e)
+				{
+					log.Error("JobName({Job.JobName})", e);
+				}
+			}
 
-        public void AllStop()
-        {
-            for (int i = SenderList.Count - 1; i >= 0; i--)
-                SenderList[i].End();
-        }
+			for (int i = SenderList.Count - 1; i >= 0; i--)
+			{
+				//Alive Check
+				if (!SenderList[i].IsAlive) SenderList[i].End();
+			}
+			SenderQuitCheck();
+		}
 
-        private void UserDataUpdate()
-        {
-            GlobalUserList = UserSQL.GetUsers(true);
-            UserList       = UserSQL.GetUsers(false);
+		public void AllStop()
+		{
+			for (int i = SenderList.Count - 1; i >= 0; i--)
+				SenderList[i].End();
+		}
 
-            foreach (var User in GlobalUserList) if (User.UpdateFlag) UserSQL.UpdateUserCheck(User, true);
-            foreach (var User in UserList      ) if (User.UpdateFlag) UserSQL.UpdateUserCheck(User, false);
-        }
+		private void UserDataUpdate()
+		{
+			GlobalUserList = UserSQL.GetUsers(true);
+			UserList = UserSQL.GetUsers(false);
 
-        private void SenderThreadInit(int FetchCount, int SenderDelay)
-        {
-            foreach (var Item in SenderList)
-            {
-                Item.Delay = SenderDelay;
-                Item.FetchCount = FetchCount;
-                Item.IsAlive = false;
-            }
-        }
-        private void SenderQuitCheck()
-        {
-            for (int i = SenderList.Count - 1; i >= 0; i--)
-            {
-                //End Check
-                if (SenderList[i].Quit)
-                {
-                    SenderList[i].Close();
-                    log.Debug($"JobName({SenderList[i].Job.JobName}) Delete");
-                    SenderList.RemoveAt(i);
-                }
-            }
-        }
-        static UserData GetUserData(List<UserData> UserList, List<UserData> GlobalUserList, bool IsGlobalUser, int UserID)
-        {
-            if (IsGlobalUser)
-            {
-                foreach (UserData User in GlobalUserList) if (User.ID == UserID) return User;
-            }
-            else
-            {
-                foreach (UserData User in UserList) if (User.ID == UserID) return User;
-            }
+			foreach (var User in GlobalUserList) if (User.UpdateFlag) UserSQL.UpdateUserCheck(User, true);
+			foreach (var User in UserList) if (User.UpdateFlag) UserSQL.UpdateUserCheck(User, false);
+		}
 
-            return new UserData();
-        }
-    }
+		private void SenderThreadInit(int FetchCount, int SenderDelay)
+		{
+			foreach (var Item in SenderList)
+			{
+				Item.Delay = SenderDelay;
+				Item.FetchCount = FetchCount;
+				Item.IsAlive = false;
+			}
+		}
+		private void SenderQuitCheck()
+		{
+			for (int i = SenderList.Count - 1; i >= 0; i--)
+			{
+				//End Check
+				if (SenderList[i].Quit)
+				{
+					SenderList[i].Close();
+					log.Debug($"JobName({SenderList[i].Job.JobName}) Delete");
+					SenderList.RemoveAt(i);
+				}
+			}
+		}
+		static UserData GetUserData(List<UserData> UserList, List<UserData> GlobalUserList, bool IsGlobalUser, int UserID)
+		{
+			if (IsGlobalUser)
+			{
+				foreach (UserData User in GlobalUserList) if (User.Id == UserID) return User;
+			}
+			else
+			{
+				foreach (UserData User in UserList) if (User.Id == UserID) return User;
+			}
+
+			return new UserData();
+		}
+	}
 }

@@ -237,7 +237,7 @@
                 <Label Grid.Row="0" Content="Extension List" Style="{StaticResource JobTitleStyle}"/>
                 <ListBox Grid.Row="1" Margin="5" x:Name="L_ExtensionList" KeyDown="ExtensionListKeyDownEvent" BorderBrush="#FFCECECE" SelectionMode="Extended" ItemsSource="{Binding}" Grid.ColumnSpan="2" />
                 <Label Grid.Row="3" Content="Selected Extension List" Style="{StaticResource JobTitleStyle}"/>
-                <ListBox Grid.Row="4" Margin="5" x:Name="L_SeletedExtensionList" BorderBrush="#FFCECECE" SelectionMode="Extended" ItemsSource="{Binding}" Grid.ColumnSpan="2"/>
+                <ListBox Grid.Row="4" Margin="5" x:Name="L_SelectedExtensionList" BorderBrush="#FFCECECE" SelectionMode="Extended" ItemsSource="{Binding}" Grid.ColumnSpan="2"/>
                 <Grid Grid.Row="2" Margin="25, 5, 25, 5">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*"/>

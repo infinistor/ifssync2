@@ -14,48 +14,45 @@ using IfsSync2Data;
 
 namespace IfsSync2WatcherService
 {
-    public partial class WatcherService : ServiceBase
-    {
-        private readonly Watcher BackupWatcher = new Watcher();
-        readonly Timer BackupThreadTimer;
-        private bool RunCheck = false;
-        private readonly WatcherConfig WatcherConfigs = new WatcherConfig();
-        public WatcherService()
-        {
-            InitializeComponent();
-            MainUtility.DeleteOldLogs(MainData.GetLogFolder("WatcherService"));
+	public partial class WatcherService : ServiceBase
+	{
+		readonly Timer BackupThreadTimer;
+		private bool RunCheck = false;
+		private readonly Watcher BackupWatcher = new();
+		private readonly WatcherConfig WatcherConfigs = new();
+		public WatcherService()
+		{
+			InitializeComponent();
+			MainUtility.DeleteOldLogs(MainData.GetLogFolder("WatcherService"));
 
-            BackupThreadTimer = new Timer
-            {
-                Interval = 5000
-            };
-            BackupThreadTimer.Elapsed += new ElapsedEventHandler(OnBackupThreadTimer);
-        }
+			BackupThreadTimer = new Timer { Interval = 5000 };
+			BackupThreadTimer.Elapsed += new ElapsedEventHandler(OnBackupThreadTimer);
+		}
 
-        public void OnBackupThreadTimer(object sender, ElapsedEventArgs args)
-        {
-            if (RunCheck) return;
-            RunCheck = true;
-            BackupThreadTimer.Interval = WatcherConfigs.WatcherCheckDelay;
-            BackupWatcher.CheckOnce();
-            RunCheck = false;
-        }
+		public void OnBackupThreadTimer(object sender, ElapsedEventArgs args)
+		{
+			if (RunCheck) return;
+			RunCheck = true;
+			BackupThreadTimer.Interval = WatcherConfigs.WatcherCheckDelay;
+			BackupWatcher.CheckOnce();
+			RunCheck = false;
+		}
 
-        protected override void OnStart(string[] args)
-        {
-            BackupThreadTimer.Start();
-        }
+		protected override void OnStart(string[] args)
+		{
+			BackupThreadTimer.Start();
+		}
 
-        protected override void OnPause()
-        {
-            BackupThreadTimer.Stop();
-            BackupWatcher.Stop();
-        }
+		protected override void OnPause()
+		{
+			BackupThreadTimer.Stop();
+			BackupWatcher.Stop();
+		}
 
-        protected override void OnStop()
-        {
-            BackupThreadTimer.Stop();
-            BackupWatcher.Stop();
-        }
-    }
+		protected override void OnStop()
+		{
+			BackupThreadTimer?.Stop();
+			BackupWatcher?.Stop();
+		}
+	}
 }

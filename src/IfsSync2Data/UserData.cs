@@ -11,49 +11,49 @@
 
 namespace IfsSync2Data
 {
-    public class UserData
-    {
-        public int    ID            { get; set; }
-        public string HostName      { get; set; }
-        public string URL           { get; set; }
-        public string UserName      { get; set; }
-        public string AccessKey     { get; set; }
-        public string AccessSecret  { get; set; }
-        public string S3FileManagerURL { get; set; }
-        public string StorageName     { get; set; }
-        public bool   Debug         { get; set; }
-        public bool   UpdateFlag    { get; set; }
-        public UserData()
-        {
-            ID               = 0;
-            HostName         = string.Empty;
-            URL              = string.Empty;
-            UserName         = string.Empty;
-            AccessKey        = string.Empty;
-            AccessSecret     = string.Empty;
-            S3FileManagerURL = string.Empty;
-            StorageName      = string.Empty;
-            Debug            = false;
-            UpdateFlag       = true;
-        }
+	public class UserData
+	{
+		public int Id { get; set; }
+		public string HostName { get; set; }
+		public string URL { get; set; }
+		public string UserName { get; set; }
+		public string AccessKey { get; set; }
+		public string SecretKey { get; set; }
+		public string S3FileManagerURL { get; set; }
+		public string StorageName { get; set; }
+		public bool Debug { get; set; }
+		public bool UpdateFlag { get; set; }
+		public UserData()
+		{
+			Id = 0;
+			HostName = string.Empty;
+			URL = string.Empty;
+			UserName = string.Empty;
+			AccessKey = string.Empty;
+			SecretKey = string.Empty;
+			S3FileManagerURL = string.Empty;
+			StorageName = string.Empty;
+			Debug = false;
+			UpdateFlag = true;
+		}
 
-        public UserData(UserData Data)
-        {
-            CopyTo(Data);
-        }
+		public UserData(UserData Data)
+		{
+			CopyTo(Data);
+		}
 
-        public void CopyTo(UserData Data)
-        {
-            ID               = Data.ID              ;
-            HostName         = Data.HostName        ;
-            URL              = Data.URL             ;
-            UserName         = Data.UserName        ;
-            AccessKey        = Data.AccessKey       ;
-            AccessSecret     = Data.AccessSecret    ;
-            S3FileManagerURL = Data.S3FileManagerURL;
-            StorageName      = Data.StorageName     ;
-            Debug            = Data.Debug           ;
-            UpdateFlag       = Data.UpdateFlag      ;
-        }
-    }
+		public void CopyTo(UserData Data)
+		{
+			Id = Data.Id;
+			HostName = Data.HostName;
+			URL = Data.URL;
+			UserName = Data.UserName;
+			AccessKey = Data.AccessKey;
+			SecretKey = Data.SecretKey;
+			S3FileManagerURL = Data.S3FileManagerURL;
+			StorageName = Data.StorageName;
+			Debug = Data.Debug;
+			UpdateFlag = Data.UpdateFlag;
+		}
+	}
 }

@@ -17,164 +17,159 @@ using System.Windows.Forms;
 
 namespace IfsSync2TrayIcon
 {
-    class TrayIconManager
-    {
+	class TrayIconManager
+	{
 
-        private readonly ILog log = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
-        private NotifyIcon Tray;
-        private readonly TrayIconConfig TrayIconConfigs = new TrayIconConfig(true);
-        private readonly SenderConfig SenderConfigs = new SenderConfig(true);
+		private readonly ILog log = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
+		private NotifyIcon Tray;
+		private readonly TrayIconConfig TrayIconConfigs = new TrayIconConfig(true);
+		private readonly SenderConfig SenderConfigs = new SenderConfig(true);
 
-        private string DetailMessage = string.Empty;
-        private string SummaryMessage = string.Empty;
-        private const int DefaultBalloonTipDelay = 5 * 1000; //5sec
-        public TrayIconManager()
-        {
-            Clear();
-        }
+		private string DetailMessage = string.Empty;
+		private string SummaryMessage = string.Empty;
+		private const int DefaultBalloonTipDelay = 5 * 1000; //5sec
+		public TrayIconManager()
+		{
+			Clear();
+		}
 
-        public bool SetTray()
-        {
-            //출처: https://overimagine.tistory.com/89 [Over Imagine]
-            //Set tray option
-            try
-            {
-                Tray = new NotifyIcon { Visible = true, Icon = new System.Drawing.Icon(TrayIconConfigs.IconPath) };
-                Tray.Click += delegate (object click, EventArgs e) { IconClickEvent(); };
-                
-                ContextMenu Menu = new ContextMenu();
-                MenuItem SenderStop = new MenuItem
-                {
-                    Index = 0,
-                    Text = "일시중지",
-                };
-                SenderStop.Click += SenderStop_Click;
-                if (SenderConfigs.Stop) SenderStop.Text = "재시작";
+		public bool SetTray()
+		{
+			//출처: https://overimagine.tistory.com/89 [Over Imagine]
+			//Set tray option
+			try
+			{
+				Tray = new NotifyIcon { Visible = true, Icon = new System.Drawing.Icon(TrayIconConfigs.IconPath) };
+				Tray.Click += delegate (object click, EventArgs e) { IconClickEvent(); };
 
-                Menu.MenuItems.Add(SenderStop);
-                Tray.ContextMenu = Menu;
+				var Menu = new ContextMenuStrip();
+				var SenderStop = new ToolStripMenuItem { Text = "일시중지", Name = "SenderStop"};
+				SenderStop.Click += SenderStop_Click;
+				if (SenderConfigs.Stop) SenderStop.Text = "재시작";
+				Menu.Items.Add(SenderStop);
+				Tray.ContextMenuStrip = Menu;
 
-                log.Info("Create Tray Icon");
+				log.Info("Create Tray Icon");
 
-                return true;
-            }
-            catch (Exception e)
-            {
-                log.Error("Tray registration failure.", e);
-                return false;
-            }
-        }
+				return true;
+			}
+			catch (Exception e)
+			{
+				log.Error("Tray registration failure.", e);
+				return false;
+			}
+		}
 
-        private void SenderStop_Click(object sender, EventArgs e)
-        {
-            MenuItem menu = sender as MenuItem;
-            if (SenderConfigs.Stop)
-            {
-                SenderConfigs.Stop = false;
-                menu.Text = "일시중지";
-            }
-            else
-            {
-                SenderConfigs.Stop = true;
-                menu.Text = "재시작";
-            }
-        }
-        private void IconClickEvent()
-        {
-            Console.WriteLine("Test");
-            try
-            {
-                Tray.ShowBalloonTip(DefaultBalloonTipDelay, "IfsSync2", SummaryMessage, ToolTipIcon.Info);
-            }
-            catch(Exception e)
-            {
-                log.Error("ShowBalloonTip failure.", e);
-            }
-        }
+		private void SenderStop_Click(object sender, EventArgs e)
+		{
+			var menu = sender as ContextMenuStrip;
+			if (SenderConfigs.Stop)
+			{
+				SenderConfigs.Stop = false;
+				menu.Text = "일시중지";
+			}
+			else
+			{
+				SenderConfigs.Stop = true;
+				menu.Text = "재시작";
+			}
+		}
+		private void IconClickEvent()
+		{
+			Console.WriteLine("Test");
+			try
+			{
+				Tray.ShowBalloonTip(DefaultBalloonTipDelay, "IfsSync2", SummaryMessage, ToolTipIcon.Info);
+			}
+			catch (Exception e)
+			{
+				log.Error("ShowBalloonTip failure.", e);
+			}
+		}
 
-        public void UpdateTray()
-        {
-            long MainRemaining = 0;
-            long MainRemainingSize = 0;
-            long MainUploadCount = 0;
-            long MainUploadFailCount = 0;
-            long MainUploadSize = 0;
+		public void UpdateTray()
+		{
+			long MainRemaining = 0;
+			long MainRemainingSize = 0;
+			long MainUploadCount = 0;
+			long MainUploadFailCount = 0;
+			long MainUploadSize = 0;
 
-            DetailMessage = string.Empty;
-            SummaryMessage = string.Empty;
-            try
-            {
-                RegistryKey UserKey = Registry.LocalMachine.OpenSubKey(MainData.REGISTRY_ROOT + "Job");
-                string[] UserKeyList = UserKey.GetSubKeyNames();
+			DetailMessage = string.Empty;
+			SummaryMessage = string.Empty;
+			try
+			{
+				RegistryKey UserKey = Registry.LocalMachine.OpenSubKey(MainData.REGISTRY_ROOT + "Job");
+				string[] UserKeyList = UserKey.GetSubKeyNames();
 
-                foreach (string UserName in UserKeyList)
-                {
-                    RegistryKey JobKey = Registry.LocalMachine.OpenSubKey(MainData.REGISTRY_ROOT + MainData.JOB_CONFIG_NAME + UserName);
+				foreach (string UserName in UserKeyList)
+				{
+					RegistryKey JobKey = Registry.LocalMachine.OpenSubKey(MainData.REGISTRY_ROOT + MainData.JOB_CONFIG_NAME + UserName);
 
-                    string[]JobKeyList = JobKey.GetSubKeyNames();
+					string[] JobKeyList = JobKey.GetSubKeyNames();
 
-                    foreach(string JobName in JobKeyList)
-                    {
-                        JobState State = new JobState(UserName, JobName);
+					foreach (string JobName in JobKeyList)
+					{
+						var State = new JobState(UserName, JobName);
 
-                        long Remaining       = State.RemainingCount;
-                        long RemainingSize   = State.RemainingSize;
-                        long UploadCount     = State.UploadCount;
-                        long UploadFailCount = State.UploadFailCount;
-                        long UploadSize      = State.UploadSize;
+						long Remaining = State.RemainingCount;
+						long RemainingSize = State.RemainingSize;
+						long UploadCount = State.UploadCount;
+						long UploadFailCount = State.UploadFailCount;
+						long UploadSize = State.UploadSize;
 
-                        DetailMessage += $"{State.JobName} : {State.Status}\nRemaining File : {Remaining} ({MainData.SizeToString(RemainingSize)})\nUpload File : {UploadCount} ({MainData.SizeToString(UploadSize)})\n";
+						DetailMessage += $"{State.JobName} : {State.Status}\nRemaining File : {Remaining} ({MainData.SizeToString(RemainingSize)})\nUpload File : {UploadCount} ({MainData.SizeToString(UploadSize)})\n";
 
-                        MainRemaining       += Remaining;
-                        MainRemainingSize   += RemainingSize;
-                        MainUploadCount     += UploadCount;
-                        MainUploadFailCount += UploadFailCount;
-                        MainUploadSize      += UploadSize;
-                    }
-                }
-            }
-            catch (Exception e)
-            {
-                log.Error("Registry Key Read Faill", e);
-            }
+						MainRemaining += Remaining;
+						MainRemainingSize += RemainingSize;
+						MainUploadCount += UploadCount;
+						MainUploadFailCount += UploadFailCount;
+						MainUploadSize += UploadSize;
+					}
+				}
+			}
+			catch (Exception e)
+			{
+				log.Error("Registry Key Read Faill", e);
+			}
 
-            TrayIconConfigs.Remaining       = MainRemaining;
-            TrayIconConfigs.RemainingSize   = MainRemainingSize;
-            TrayIconConfigs.UploadCount     = MainUploadCount;
-            TrayIconConfigs.UploadFailCount = MainUploadFailCount;
-            TrayIconConfigs.FileSize        = MainUploadSize;
+			TrayIconConfigs.Remaining = MainRemaining;
+			TrayIconConfigs.RemainingSize = MainRemainingSize;
+			TrayIconConfigs.UploadCount = MainUploadCount;
+			TrayIconConfigs.UploadFailCount = MainUploadFailCount;
+			TrayIconConfigs.FileSize = MainUploadSize;
 
-            //Tray.Text =
-            SummaryMessage = $"Remaining Files     : {MainRemaining}({MainData.SizeToString(MainRemainingSize)})\n" +
-                             $"Uploaded Files      : {MainUploadCount}({MainData.SizeToString(MainUploadSize)})\n" +
-                             $"Upload Failed Files : {MainUploadFailCount}\n";
-        }
+			//Tray.Text =
+			SummaryMessage = $"Remaining Files     : {MainRemaining}({MainData.SizeToString(MainRemainingSize)})\n" +
+							 $"Uploaded Files      : {MainUploadCount}({MainData.SizeToString(MainUploadSize)})\n" +
+							 $"Upload Failed Files : {MainUploadFailCount}\n";
+		}
 
-        private void Clear()
-        {
-            try
-            {
-                RegistryKey UserKey = Registry.LocalMachine.OpenSubKey(MainData.REGISTRY_ROOT + "Job");
-                string[] UserKeyList = UserKey.GetSubKeyNames();
+		private void Clear()
+		{
+			try
+			{
+				RegistryKey UserKey = Registry.LocalMachine.OpenSubKey(MainData.REGISTRY_ROOT + "Job");
+				string[] UserKeyList = UserKey.GetSubKeyNames();
 
-                foreach (string UserName in UserKeyList)
-                {
-                    RegistryKey JobKey = Registry.LocalMachine.OpenSubKey(MainData.REGISTRY_ROOT + MainData.JOB_CONFIG_NAME + UserName);
+				foreach (string UserName in UserKeyList)
+				{
+					RegistryKey JobKey = Registry.LocalMachine.OpenSubKey(MainData.REGISTRY_ROOT + MainData.JOB_CONFIG_NAME + UserName);
 
-                    string[] JobKeyList = JobKey.GetSubKeyNames();
+					string[] JobKeyList = JobKey.GetSubKeyNames();
 
-                    foreach (string JobName in JobKeyList) new JobState(UserName, JobName, true).UploadClear();
-                }
-            }
-            catch (Exception e)
-            {
-                log.Error("Registry Key Read Faill.", e);
-            }
-        }
+					foreach (string JobName in JobKeyList) new JobState(UserName, JobName, true).UploadClear();
+				}
+			}
+			catch (Exception e)
+			{
+				log.Error("Registry Key Read Faill.", e);
+			}
+		}
 
-        public void Close()
-        {
-            if (Tray != null) Tray.Dispose();
-        }
-    }
+		public void Close()
+		{
+			Tray?.Dispose();
+		}
+	}
 }

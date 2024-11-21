@@ -10,16 +10,19 @@
 */
 using System;
 using System.IO;
+using System.Net;
 
 namespace IfsSync2Data
 {
-    class MainUtility
-    {
+	/// <summary> 유틸리티 </summary>
+	public static class MainUtility
+	{
 		public const int DEFAULT_DELETE_DATE = 30;
 		//파일삭제 함수
 		public static void DeleteOldLogs(string dirPath, int DeleteDate = DEFAULT_DELETE_DATE)
 		{
-			DirectoryInfo dirInfo = new DirectoryInfo(dirPath);
+			var dirInfo = new DirectoryInfo(dirPath);
+			if (!dirInfo.Exists) return;
 			DateTime fileCreatedTime;
 			DateTime cmpTime = DateTime.Now.AddDays(DeleteDate);
 

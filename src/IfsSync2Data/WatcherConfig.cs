@@ -9,80 +9,76 @@
 * KSAN 개발팀은 사전 공지, 허락, 동의 없이 KSAN 개발에 관련된 모든 결과물에 대한 LICENSE 방식을 변경 할 권리가 있습니다.
 */
 using Microsoft.Win32;
-using System;
 
 namespace IfsSync2Data
 {
-    class WatcherConfig
-    {
-        private const string WATCHER_CHECK_DELAY = "WatcherCheckDelay";
-        private const string WATCHER_IP = "IP";
-        private const string WATCHER_PORT = "Port";
-        private const string WATCHER_PCNAME = "PcName";
-        private const string WATCHER_EMAIL = "Email";
-        private const string ROOT_PATH = "RootPath";
-        /***************************************************************/
-        private const int DEFAULT_WATCHER_CHECK_DELAY = 5 * 60 * 1000; // 5 min
-        /***************************************************************/
-        private readonly RegistryKey WatcherConfigKey = null;
+	public class WatcherConfig
+	{
+		#region Define
+		const string WATCHER_CHECK_DELAY = "WatcherCheckDelay";
+		const string WATCHER_IP = "IP";
+		const string WATCHER_PORT = "Port";
+		const string WATCHER_PC_NAME = "PcName";
+		const string WATCHER_EMAIL = "Email";
+		const string ROOT_PATH = "RootPath";
+		const int DEFAULT_WATCHER_CHECK_DELAY = 5 * 60 * 1000; // 5 min
+		#endregion
 
-        public int WatcherCheckDelay
-        {
-            get
-            {
-                int value = 0;
-                try { value = Convert.ToInt32(WatcherConfigKey.GetValue(WATCHER_CHECK_DELAY)); } catch { }
-                return value;
-            }
-            set
-            {
-                WatcherConfigKey.SetValue(WATCHER_CHECK_DELAY, value, RegistryValueKind.DWord);
-            }
-        }
-        public string IP
-        {
-            get { return WatcherConfigKey.GetValue(WATCHER_IP).ToString(); }
-            set { WatcherConfigKey.SetValue(WATCHER_IP, value, RegistryValueKind.String); }
-        }
-        public string Port
-        {
-            get { return WatcherConfigKey.GetValue(WATCHER_PORT).ToString(); }
-            set { WatcherConfigKey.SetValue(WATCHER_PORT, value, RegistryValueKind.String); }
-        }
-        public string PcName
-        {
-            get { return WatcherConfigKey.GetValue(WATCHER_PCNAME).ToString(); }
-            set { WatcherConfigKey.SetValue(WATCHER_PCNAME, value, RegistryValueKind.String); }
-        }
-        public string Email
-        {
-            get { return WatcherConfigKey.GetValue(WATCHER_EMAIL).ToString(); }
-            set { WatcherConfigKey.SetValue(WATCHER_EMAIL, value, RegistryValueKind.String); }
-        }
-        public string RootPath
-        {
-            get { return WatcherConfigKey.GetValue(ROOT_PATH).ToString(); }
-            set { WatcherConfigKey.SetValue(ROOT_PATH, value, RegistryValueKind.String); }
-        }
-        public WatcherConfig(bool Write = false)
-        {
-            WatcherConfigKey = Registry.LocalMachine.OpenSubKey(MainData.WATCHER_CONFIG_PATH, Write);
-            if (WatcherConfigKey == null)
-            {
-                WatcherConfigKey = Registry.LocalMachine.CreateSubKey(MainData.WATCHER_CONFIG_PATH);
-                WatcherConfigKey.SetValue(WATCHER_CHECK_DELAY, DEFAULT_WATCHER_CHECK_DELAY, RegistryValueKind.DWord);
-                WatcherConfigKey.SetValue(WATCHER_IP, "", RegistryValueKind.String);
-                WatcherConfigKey.SetValue(WATCHER_PORT, "", RegistryValueKind.String);
-                WatcherConfigKey.SetValue(WATCHER_PCNAME, "", RegistryValueKind.String);
-                WatcherConfigKey.SetValue(WATCHER_EMAIL, "", RegistryValueKind.String);
-                WatcherConfigKey.SetValue(ROOT_PATH, "", RegistryValueKind.String);
-            }
-        }
-        public void Close() { if (WatcherConfigKey != null) WatcherConfigKey.Close(); }
+		readonly RegistryKey _watcherConfigKey = null;
 
-        public void Delete()
-        {
-            WatcherConfigKey.DeleteSubKeyTree(MainData.WATCHER_CONFIG_PATH);
-        }
-    }
+#pragma warning disable CA1416
+		public int WatcherCheckDelay
+		{
+			get => int.TryParse(_watcherConfigKey.GetValue(WATCHER_CHECK_DELAY).ToString(), out int value) ? value : DEFAULT_WATCHER_CHECK_DELAY;
+			set => _watcherConfigKey.SetValue(WATCHER_CHECK_DELAY, value, RegistryValueKind.DWord);
+		}
+		public string IP
+		{
+			get => _watcherConfigKey.GetValue(WATCHER_IP).ToString();
+			set => _watcherConfigKey.SetValue(WATCHER_IP, value, RegistryValueKind.String);
+		}
+		public string Port
+		{
+			get => _watcherConfigKey.GetValue(WATCHER_PORT).ToString();
+			set => _watcherConfigKey.SetValue(WATCHER_PORT, value, RegistryValueKind.String);
+		}
+		public string PcName
+		{
+			get => _watcherConfigKey.GetValue(WATCHER_PC_NAME).ToString();
+			set => _watcherConfigKey.SetValue(WATCHER_PC_NAME, value, RegistryValueKind.String);
+		}
+		public string Email
+		{
+			get => _watcherConfigKey.GetValue(WATCHER_EMAIL).ToString();
+			set => _watcherConfigKey.SetValue(WATCHER_EMAIL, value, RegistryValueKind.String);
+		}
+		public string RootPath
+		{
+			get => _watcherConfigKey.GetValue(ROOT_PATH).ToString();
+			set => _watcherConfigKey.SetValue(ROOT_PATH, value, RegistryValueKind.String);
+		}
+		public WatcherConfig(bool write = false)
+		{
+			_watcherConfigKey = Registry.LocalMachine.OpenSubKey(MainData.WATCHER_CONFIG_PATH, write);
+			if (_watcherConfigKey == null)
+			{
+				_watcherConfigKey = Registry.LocalMachine.CreateSubKey(MainData.WATCHER_CONFIG_PATH);
+				_watcherConfigKey.SetValue(WATCHER_CHECK_DELAY, DEFAULT_WATCHER_CHECK_DELAY, RegistryValueKind.DWord);
+				_watcherConfigKey.SetValue(WATCHER_IP, "", RegistryValueKind.String);
+				_watcherConfigKey.SetValue(WATCHER_PORT, "", RegistryValueKind.String);
+				_watcherConfigKey.SetValue(WATCHER_PC_NAME, "", RegistryValueKind.String);
+				_watcherConfigKey.SetValue(WATCHER_EMAIL, "", RegistryValueKind.String);
+				_watcherConfigKey.SetValue(ROOT_PATH, "", RegistryValueKind.String);
+			}
+		}
+
+		public void Close() { _watcherConfigKey?.Close(); }
+
+		public void Delete()
+		{
+			_watcherConfigKey.DeleteSubKeyTree(MainData.WATCHER_CONFIG_PATH);
+		}
+
+#pragma warning restore CA1416
+	}
 }

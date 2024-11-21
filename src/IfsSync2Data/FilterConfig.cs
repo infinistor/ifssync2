@@ -9,71 +9,52 @@
 * KSAN 개발팀은 사전 공지, 허락, 동의 없이 KSAN 개발에 관련된 모든 결과물에 대한 LICENSE 방식을 변경 할 권리가 있습니다.
 */
 using Microsoft.Win32;
-using System;
 
 namespace IfsSync2Data
 {
-    class FilterConfig
-    {
-        private static readonly string FILTER_CHECK_DELAY = "FilterCheckDelay";
-        private const string ROOT_PATH = "RootPath";
-        /***************************************************************/
-        private static readonly int DEFAULT_FILTER_CHECK_DELAY = 5000;
-        /***************************************************************/
-        private readonly RegistryKey FilterConfigKey = null;
+	public class FilterConfig
+	{
+		#region Define
+		static readonly string FILTER_CHECK_DELAY = "FilterCheckDelay";
+		const string ROOT_PATH = "RootPath";
+		static readonly int DEFAULT_FILTER_CHECK_DELAY = 5000;
+		#endregion
 
-        public int FilterCheckDelay
-        {
-            get
-            {
-                int value = 0;
-                try { value = Convert.ToInt32(FilterConfigKey.GetValue(FILTER_CHECK_DELAY)); } catch { }
-                return value;
-            }
-            set
-            {
-                FilterConfigKey.SetValue(FILTER_CHECK_DELAY, value, RegistryValueKind.DWord);
-            }
-        }
+		readonly RegistryKey _filterConfigKey = null;
 
-        public string RootPath
-        {
-            get { return FilterConfigKey.GetValue(ROOT_PATH).ToString(); }
-            set { FilterConfigKey.SetValue(ROOT_PATH, value, RegistryValueKind.String); }
-        }
-        public bool Alive
-        {
-            get
-            {
-                int value = MainData.MY_FALSE;
-                try { value = Convert.ToInt32(FilterConfigKey.GetValue(MainData.ALIVE_CHECK)); } catch { }
+#pragma warning disable CA1416
+		public int FilterCheckDelay
+		{
+			get => int.TryParse(_filterConfigKey.GetValue(FILTER_CHECK_DELAY).ToString(), out int value) ? value : DEFAULT_FILTER_CHECK_DELAY;
+			set => _filterConfigKey.SetValue(FILTER_CHECK_DELAY, value, RegistryValueKind.DWord);
+		}
 
-                if (value == MainData.MY_FALSE) return false;
-                else return true;
-            }
-            set
-            {
-                int temp = MainData.MY_FALSE;
-                if (value) temp = MainData.MY_TRUE;
-
-                FilterConfigKey.SetValue(MainData.ALIVE_CHECK, temp, RegistryValueKind.DWord);
-            }
-        }
-        public FilterConfig(bool Write = false)
-        {
-            FilterConfigKey = Registry.LocalMachine.OpenSubKey(MainData.FILTER_CONFIG_PATH, Write);
-            if (FilterConfigKey == null)
-            {
-                FilterConfigKey = Registry.LocalMachine.CreateSubKey(MainData.FILTER_CONFIG_PATH);
-                FilterConfigKey.SetValue(FILTER_CHECK_DELAY, DEFAULT_FILTER_CHECK_DELAY, RegistryValueKind.DWord);
-                FilterConfigKey.SetValue(ROOT_PATH, "", RegistryValueKind.String);
-                FilterConfigKey.SetValue(MainData.ALIVE_CHECK, MainData.MY_FALSE, RegistryValueKind.DWord);
-            }
-        }
-        public void Close() { if(FilterConfigKey != null) FilterConfigKey.Close(); }
-        public void Delete()
-        {
-            FilterConfigKey.DeleteSubKeyTree(MainData.FILTER_CONFIG_PATH);
-        }
-    }
+		public string RootPath
+		{
+			get => _filterConfigKey.GetValue(ROOT_PATH).ToString();
+			set => _filterConfigKey.SetValue(ROOT_PATH, value, RegistryValueKind.String);
+		}
+		public bool Alive
+		{
+			get => int.TryParse(_filterConfigKey.GetValue(MainData.ALIVE_CHECK).ToString(), out int value) && value == MainData.MY_TRUE;
+			set => _filterConfigKey.SetValue(MainData.ALIVE_CHECK, value ? MainData.MY_TRUE : MainData.MY_FALSE, RegistryValueKind.DWord);
+		}
+		public FilterConfig(bool Write = false)
+		{
+			_filterConfigKey = Registry.LocalMachine.OpenSubKey(MainData.FILTER_CONFIG_PATH, Write);
+			if (_filterConfigKey == null)
+			{
+				_filterConfigKey = Registry.LocalMachine.CreateSubKey(MainData.FILTER_CONFIG_PATH);
+				_filterConfigKey.SetValue(FILTER_CHECK_DELAY, DEFAULT_FILTER_CHECK_DELAY, RegistryValueKind.DWord);
+				_filterConfigKey.SetValue(ROOT_PATH, "", RegistryValueKind.String);
+				_filterConfigKey.SetValue(MainData.ALIVE_CHECK, MainData.MY_FALSE, RegistryValueKind.DWord);
+			}
+		}
+		public void Close() { _filterConfigKey?.Close(); }
+		public void Delete()
+		{
+			_filterConfigKey.DeleteSubKeyTree(MainData.FILTER_CONFIG_PATH);
+		}
+	}
+#pragma warning restore CA1416
 }

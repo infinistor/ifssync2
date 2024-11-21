@@ -11,6 +11,7 @@
 using IfsSync2Data;
 using log4net;
 using log4net.Config;
+using System;
 using System.Reflection;
 using System.Threading;
 
@@ -18,37 +19,43 @@ using System.Threading;
 
 namespace IfsSync2Filter
 {
-    class Program
-    {
-        private static readonly ILog log = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
-        
-        static void Main()
-        {
-            Mutex mutex = new Mutex(true, MainData.MUTEX_NAME_FILTER, out bool CreateNew);
-            if (!CreateNew)
-            {
-                log.Error("Prevent duplicate execution");
-                return;
-            }
-            log.Info("Main Start");
+	class Program
+	{
+		private static readonly ILog log = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
 
-            MainUtility.DeleteOldLogs(MainData.GetLogFolder("Filter"));
+		static void Main()
+		{
+			var mutex = new Mutex(true, MainData.MUTEX_NAME_FILTER, out bool CreateNew);
+			if (!CreateNew)
+			{
+				log.Error("Prevent duplicate execution");
+				return;
+			}
+			log.Info("Main Start");
 
-            FilterConfig FilterConfigs = new FilterConfig(true);
+			MainUtility.DeleteOldLogs(MainData.GetLogFolder("Filter"));
 
-            Filter NormalFilter = new Filter(FilterConfigs.RootPath, false);
-            Filter GlobalFilter = new Filter(FilterConfigs.RootPath, true);
+			var FilterConfigs = new FilterConfig(true);
 
-            while (true)
-            {
-                FilterConfigs.Alive = true;
+			var NormalFilter = new Filter(false);
+			var GlobalFilter = new Filter(true);
 
-                NormalFilter.CheckOnce();
-                log.Info("NormalFilter Check End");
-                GlobalFilter.CheckOnce();
-                log.Info("GlobalFilter Check End");
-                Thread.Sleep(FilterConfigs.FilterCheckDelay);
-            }
-        }
-    }
+			while (true)
+			{
+				FilterConfigs.Alive = true;
+				try
+				{
+					NormalFilter.CheckOnce();
+					log.Info("NormalFilter Check End");
+					GlobalFilter.CheckOnce();
+					log.Info("GlobalFilter Check End");
+					Thread.Sleep(FilterConfigs.FilterCheckDelay);
+				}
+				catch (Exception e)
+				{
+					log.Error("Filter Check Error", e);
+				}
+			}
+		}
+	}
 }

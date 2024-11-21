@@ -3,6 +3,7 @@ packages/
 obj/
 IfsSync2/
 .vs/
+.vscode/
 Setup/
 
 

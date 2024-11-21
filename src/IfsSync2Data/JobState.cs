@@ -13,281 +13,285 @@ using System;
 
 namespace IfsSync2Data
 {
-    public class JobState
-    {
-        private const string JOB_VSS = "VSS";
-        private const string JOB_FILTER = "Filter";
-        private const string JOB_SENDER = "Sender";
-        private const string JOB_QUIT = "Quit";
-        private const string JOB_STOP = "Stop";
-        private const string JOB_ERROR = "Error";
+	public class JobState
+	{
+		#region Attributes
+		private const string JOB_VSS = "VSS";
+		private const string JOB_FILTER = "Filter";
+		private const string JOB_SENDER = "Sender";
+		private const string JOB_QUIT = "Quit";
+		private const string JOB_STOP = "Stop";
+		private const string JOB_ERROR = "Error";
 
-        private const string REMAINING_FILE_COUNT   = "RemainingCount";
-        private const string REMAINING_FILE_SIZE   = "RemainingSize";
-        private const string UPLOAD_FILE_COUNT      = "UploadCount";
-        private const string UPLOAD_FILE_FAIL_COUNT = "UploadFailCount";
-        private const string UPLOAD_FILE_SIZE       = "UploadSize";
-        /***************************************************************/
-        private const int MY_TRUE  = 1;
-        private const int MY_FALSE = 0;
-        /***************************************************************/
-        private readonly RegistryKey JobStateKey = null;
-        private readonly string KeyName;
-        public readonly string JobName;
-        public readonly string HostName;
+		private const string REMAINING_FILE_COUNT = "RemainingCount";
+		private const string REMAINING_FILE_SIZE = "RemainingSize";
+		private const string UPLOAD_FILE_COUNT = "UploadCount";
+		private const string UPLOAD_FILE_FAIL_COUNT = "UploadFailCount";
+		private const string UPLOAD_FILE_SIZE = "UploadSize";
 
-        public bool VSS
-        {
-            get
-            {
-                try
-                {
-                    if(JobStateKey == null) return false;
-                    int value = Convert.ToInt32(JobStateKey.GetValue(JOB_VSS));
-                    if (value == MY_FALSE) return false;
-                    else return true;
-                }
-                catch (Exception)
-                {
-                    return false;
-                }
-            }
-            set
-            {
-                int temp = MY_FALSE;
-                if (value) temp = MY_TRUE;
+		private const int MY_TRUE = 1;
+		private const int MY_FALSE = 0;
+		#endregion
 
-                JobStateKey.SetValue(JOB_VSS, temp, RegistryValueKind.DWord);
-            }
-        }
-        public bool Filter
-        {
-            get
-            {
-                try
-                {
-                    if(JobStateKey == null) return false;
-                    int value = Convert.ToInt32(JobStateKey.GetValue(JOB_FILTER));
-                    if (value == MY_FALSE) return false;
-                    else return true;
-                }
-                catch (Exception)
-                {
-                    return false;
-                }
-            }
-            set
-            {
-                int temp = MY_FALSE;
-                if (value) temp = MY_TRUE;
+		private readonly RegistryKey JobStateKey = null;
+		private readonly string KeyName;
+		public readonly string JobName;
+		public readonly string HostName;
 
-                JobStateKey.SetValue(JOB_FILTER, temp, RegistryValueKind.DWord);
-            }
-        }
-        public bool Sender
-        {
-            get
-            {
-                try
-                {
-                    if(JobStateKey == null) return false;
-                    int value = Convert.ToInt32(JobStateKey.GetValue(JOB_SENDER));
-                    if (value == MY_FALSE) return false;
-                    else return true;
-                }
-                catch (Exception)
-                {
-                    return false;
-                }
-            }
-            set
-            {
-                int temp = MY_FALSE;
-                if (value) temp = MY_TRUE;
+#pragma warning disable CA1416
+		public bool VSS
+		{
+			get
+			{
+				try
+				{
+					if (JobStateKey == null) return false;
+					int value = Convert.ToInt32(JobStateKey.GetValue(JOB_VSS));
+					if (value == MY_FALSE) return false;
+					else return true;
+				}
+				catch (Exception)
+				{
+					return false;
+				}
+			}
+			set
+			{
+				int temp = MY_FALSE;
+				if (value) temp = MY_TRUE;
 
-                JobStateKey.SetValue(JOB_SENDER, temp, RegistryValueKind.DWord);
-            }
-        }
-        public bool Quit
-        {
-            get
-            {
-                try
-                {
-                    if(JobStateKey == null) return false;
-                    int value = Convert.ToInt32(JobStateKey.GetValue(JOB_QUIT));
-                    if (value == MY_FALSE) return false;
-                    else return true;
-                }
-                catch(Exception)
-                {
-                    return false;
-                }
-            }
-            set
-            {
-                int temp = MY_FALSE;
-                if (value) temp = MY_TRUE;
+				JobStateKey.SetValue(JOB_VSS, temp, RegistryValueKind.DWord);
+			}
+		}
+		public bool Filter
+		{
+			get
+			{
+				try
+				{
+					if (JobStateKey == null) return false;
+					int value = Convert.ToInt32(JobStateKey.GetValue(JOB_FILTER));
+					if (value == MY_FALSE) return false;
+					else return true;
+				}
+				catch (Exception)
+				{
+					return false;
+				}
+			}
+			set
+			{
+				int temp = MY_FALSE;
+				if (value) temp = MY_TRUE;
 
-                JobStateKey.SetValue(JOB_QUIT, temp, RegistryValueKind.DWord);
-            }
-        }
-        public bool Stop
-        {
-            get
-            {
-                try
-                {
-                    if(JobStateKey == null) return false;
-                    int value = Convert.ToInt32(JobStateKey.GetValue(JOB_STOP));
-                    if (value == MY_FALSE) return false;
-                    else return true;
-                }
-                catch (Exception)
-                {
-                    return false;
-                }
-            }
-            set
-            {
-                int temp = MY_FALSE;
-                if (value) temp = MY_TRUE;
+				JobStateKey.SetValue(JOB_FILTER, temp, RegistryValueKind.DWord);
+			}
+		}
+		public bool Sender
+		{
+			get
+			{
+				try
+				{
+					if (JobStateKey == null) return false;
+					int value = Convert.ToInt32(JobStateKey.GetValue(JOB_SENDER));
+					if (value == MY_FALSE) return false;
+					else return true;
+				}
+				catch (Exception)
+				{
+					return false;
+				}
+			}
+			set
+			{
+				int temp = MY_FALSE;
+				if (value) temp = MY_TRUE;
 
-                JobStateKey.SetValue(JOB_STOP, temp, RegistryValueKind.DWord);
-            }
-        }
-        public bool Error
-        {
-            get
-            {
-                try
-                {
-                    if(JobStateKey == null) return false;
-                    int value = Convert.ToInt32(JobStateKey.GetValue(JOB_ERROR));
-                    if (value == MY_FALSE) return false;
-                    else return true;
-                }
-                catch (Exception)
-                {
-                    return false;
-                }
-            }
-            set
-            {
-                int temp = MY_FALSE;
-                if (value) temp = MY_TRUE;
+				JobStateKey.SetValue(JOB_SENDER, temp, RegistryValueKind.DWord);
+			}
+		}
+		public bool Quit
+		{
+			get
+			{
+				try
+				{
+					if (JobStateKey == null) return false;
+					int value = Convert.ToInt32(JobStateKey.GetValue(JOB_QUIT));
+					if (value == MY_FALSE) return false;
+					else return true;
+				}
+				catch (Exception)
+				{
+					return false;
+				}
+			}
+			set
+			{
+				int temp = MY_FALSE;
+				if (value) temp = MY_TRUE;
 
-                JobStateKey.SetValue(JOB_ERROR, temp, RegistryValueKind.DWord);
-            }
-        }
+				JobStateKey.SetValue(JOB_QUIT, temp, RegistryValueKind.DWord);
+			}
+		}
+		public bool Stop
+		{
+			get
+			{
+				try
+				{
+					if (JobStateKey == null) return false;
+					int value = Convert.ToInt32(JobStateKey.GetValue(JOB_STOP));
+					if (value == MY_FALSE) return false;
+					else return true;
+				}
+				catch (Exception)
+				{
+					return false;
+				}
+			}
+			set
+			{
+				int temp = MY_FALSE;
+				if (value) temp = MY_TRUE;
 
-        public string Status
-        {
-            get
-            {
-                if (Quit) return "Done";
-                if (Error) return "Error";
-                if (Stop) return "Stop";
-                if (Sender) return "Uploading";
-                if (Filter)
-                {
-                    if (KeyName == MainData.INSTANT_BACKUP_NAME) return "Scanning";
-                    return "Monitoring";
-                }
-                return "Waiting";
-            }   
-        }
+				JobStateKey.SetValue(JOB_STOP, temp, RegistryValueKind.DWord);
+			}
+		}
+		public bool Error
+		{
+			get
+			{
+				try
+				{
+					if (JobStateKey == null) return false;
+					int value = Convert.ToInt32(JobStateKey.GetValue(JOB_ERROR));
+					if (value == MY_FALSE) return false;
+					else return true;
+				}
+				catch (Exception)
+				{
+					return false;
+				}
+			}
+			set
+			{
+				int temp = MY_FALSE;
+				if (value) temp = MY_TRUE;
 
-        public long RemainingCount
-        {
-            get { try { return Convert.ToInt64(JobStateKey.GetValue(REMAINING_FILE_COUNT)); } catch(Exception) { return 0; } }
-            set { JobStateKey.SetValue(REMAINING_FILE_COUNT, value, RegistryValueKind.QWord); }
-        }
-        public long RemainingSize
-        {
-            get { try { return Convert.ToInt64(JobStateKey.GetValue(REMAINING_FILE_SIZE)); } catch (Exception) { return 0; } }
-            set { JobStateKey.SetValue(REMAINING_FILE_SIZE, value, RegistryValueKind.QWord); }
-        }
-        public long UploadCount
-        {
-            get { try { return Convert.ToInt64(JobStateKey.GetValue(UPLOAD_FILE_COUNT)); } catch (Exception) { return 0; } }
-            set { JobStateKey.SetValue(UPLOAD_FILE_COUNT, value, RegistryValueKind.QWord); }
-        }
-        public long UploadFailCount
-        {
-            get { try { return Convert.ToInt64(JobStateKey.GetValue(UPLOAD_FILE_FAIL_COUNT)); } catch (Exception) { return 0; } }
-            set { JobStateKey.SetValue(UPLOAD_FILE_FAIL_COUNT, value, RegistryValueKind.QWord); }
-        }
-        public long UploadSize
-        {
-            get { try { return Convert.ToInt64(JobStateKey.GetValue(UPLOAD_FILE_SIZE)); } catch (Exception) { return 0; } }
-            set { JobStateKey.SetValue(UPLOAD_FILE_SIZE, value, RegistryValueKind.QWord); }
-        }
+				JobStateKey.SetValue(JOB_ERROR, temp, RegistryValueKind.DWord);
+			}
+		}
 
-        public void RenameUpdate(long Count, long Size)
-        {
-            RemainingCount = Count;
-            RemainingSize = Size;
-        }
-        public void UploadFail()
-        {
-            UploadFailCount++;
-            RemainingCount--;
-        }
-        public void UploadSuccess(long FileSize = 0)
-        {
-            UploadCount++;
-            RemainingCount--;
-            if (FileSize > 0)
-            {
-                UploadSize += FileSize;
-                RemainingSize -= FileSize;
-            }
-        }
+		public string Status
+		{
+			get
+			{
+				if (Quit) return "Done";
+				if (Error) return "Error";
+				if (Stop) return "Stop";
+				if (Sender) return "Uploading";
+				if (Filter)
+				{
+					if (KeyName == MainData.INSTANT_BACKUP_NAME) return "Scanning";
+					return "Monitoring";
+				}
+				return "Waiting";
+			}
+		}
 
-        public JobState(string _HostName, string _JobName, bool Write = false)
-        {
-            JobName = _JobName;
-            HostName = _HostName;
-            KeyName = MainData.CreateRegistryJobName(HostName, JobName);
+		public long RemainingCount
+		{
+			get { try { return Convert.ToInt64(JobStateKey.GetValue(REMAINING_FILE_COUNT)); } catch (Exception) { return 0; } }
+			set { JobStateKey.SetValue(REMAINING_FILE_COUNT, value, RegistryValueKind.QWord); }
+		}
+		public long RemainingSize
+		{
+			get { try { return Convert.ToInt64(JobStateKey.GetValue(REMAINING_FILE_SIZE)); } catch (Exception) { return 0; } }
+			set { JobStateKey.SetValue(REMAINING_FILE_SIZE, value, RegistryValueKind.QWord); }
+		}
+		public long UploadCount
+		{
+			get { try { return Convert.ToInt64(JobStateKey.GetValue(UPLOAD_FILE_COUNT)); } catch (Exception) { return 0; } }
+			set { JobStateKey.SetValue(UPLOAD_FILE_COUNT, value, RegistryValueKind.QWord); }
+		}
+		public long UploadFailCount
+		{
+			get { try { return Convert.ToInt64(JobStateKey.GetValue(UPLOAD_FILE_FAIL_COUNT)); } catch (Exception) { return 0; } }
+			set { JobStateKey.SetValue(UPLOAD_FILE_FAIL_COUNT, value, RegistryValueKind.QWord); }
+		}
+		public long UploadSize
+		{
+			get { try { return Convert.ToInt64(JobStateKey.GetValue(UPLOAD_FILE_SIZE)); } catch (Exception) { return 0; } }
+			set { JobStateKey.SetValue(UPLOAD_FILE_SIZE, value, RegistryValueKind.QWord); }
+		}
 
-            JobStateKey = Registry.LocalMachine.OpenSubKey(KeyName, Write);
-            if (JobStateKey == null && Write)
-            {
-                JobStateKey = Registry.LocalMachine.CreateSubKey(KeyName, true);
-                JobStateKey.SetValue(JOB_VSS, MY_FALSE, RegistryValueKind.DWord);
-                JobStateKey.SetValue(JOB_FILTER, MY_FALSE, RegistryValueKind.DWord);
-                JobStateKey.SetValue(JOB_SENDER, MY_FALSE, RegistryValueKind.DWord);
-                JobStateKey.SetValue(JOB_QUIT, MY_FALSE, RegistryValueKind.DWord);
-                JobStateKey.SetValue(JOB_STOP, MY_FALSE, RegistryValueKind.DWord);
-                JobStateKey.SetValue(JOB_ERROR, MY_FALSE, RegistryValueKind.DWord);
-                
-                JobStateKey.SetValue(REMAINING_FILE_COUNT  , 0, RegistryValueKind.QWord);
-                JobStateKey.SetValue(REMAINING_FILE_SIZE   , 0, RegistryValueKind.QWord);
-                JobStateKey.SetValue(UPLOAD_FILE_COUNT     , 0, RegistryValueKind.QWord);
-                JobStateKey.SetValue(UPLOAD_FILE_FAIL_COUNT, 0, RegistryValueKind.QWord);
-                JobStateKey.SetValue(UPLOAD_FILE_SIZE      , 0, RegistryValueKind.QWord);
+		public void RenameUpdate(long Count, long Size)
+		{
+			RemainingCount = Count;
+			RemainingSize = Size;
+		}
+		public void UploadFail()
+		{
+			UploadFailCount++;
+			RemainingCount--;
+		}
+		public void UploadSuccess(long FileSize = 0)
+		{
+			UploadCount++;
+			RemainingCount--;
+			if (FileSize > 0)
+			{
+				UploadSize += FileSize;
+				RemainingSize -= FileSize;
+			}
+		}
 
-                if (JobName == MainData.INSTANT_BACKUP_NAME) JobStateKey.SetValue(JOB_QUIT, MY_TRUE, RegistryValueKind.DWord);
-            }
-        }
+		public JobState(string _HostName, string _JobName, bool Write = false)
+		{
+			JobName = _JobName;
+			HostName = _HostName;
+			KeyName = MainData.CreateRegistryJobName(HostName, JobName);
 
-        public void Clear()
-        {
-            VSS = false;
-            Filter = false;
-            Sender = false;
-            Error = false;
+			JobStateKey = Registry.LocalMachine.OpenSubKey(KeyName, Write);
+			if (JobStateKey == null && Write)
+			{
+				JobStateKey = Registry.LocalMachine.CreateSubKey(KeyName, true);
+				JobStateKey.SetValue(JOB_VSS, MY_FALSE, RegistryValueKind.DWord);
+				JobStateKey.SetValue(JOB_FILTER, MY_FALSE, RegistryValueKind.DWord);
+				JobStateKey.SetValue(JOB_SENDER, MY_FALSE, RegistryValueKind.DWord);
+				JobStateKey.SetValue(JOB_QUIT, MY_FALSE, RegistryValueKind.DWord);
+				JobStateKey.SetValue(JOB_STOP, MY_FALSE, RegistryValueKind.DWord);
+				JobStateKey.SetValue(JOB_ERROR, MY_FALSE, RegistryValueKind.DWord);
 
-            RemainingCount = 0;
-            RemainingSize = 0;
-            UploadClear();
-        }
-        public void UploadClear()
-        {
-            UploadCount = 0;
-            UploadFailCount = 0;
-            UploadSize = 0;
-        }
-    }
+				JobStateKey.SetValue(REMAINING_FILE_COUNT, 0, RegistryValueKind.QWord);
+				JobStateKey.SetValue(REMAINING_FILE_SIZE, 0, RegistryValueKind.QWord);
+				JobStateKey.SetValue(UPLOAD_FILE_COUNT, 0, RegistryValueKind.QWord);
+				JobStateKey.SetValue(UPLOAD_FILE_FAIL_COUNT, 0, RegistryValueKind.QWord);
+				JobStateKey.SetValue(UPLOAD_FILE_SIZE, 0, RegistryValueKind.QWord);
+
+				if (JobName == MainData.INSTANT_BACKUP_NAME) JobStateKey.SetValue(JOB_QUIT, MY_TRUE, RegistryValueKind.DWord);
+			}
+		}
+#pragma warning restore CA1416
+
+		public void Clear()
+		{
+			VSS = false;
+			Filter = false;
+			Sender = false;
+			Error = false;
+
+			RemainingCount = 0;
+			RemainingSize = 0;
+			UploadClear();
+		}
+		public void UploadClear()
+		{
+			UploadCount = 0;
+			UploadFailCount = 0;
+			UploadSize = 0;
+		}
+	}
 }

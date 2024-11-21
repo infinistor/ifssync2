@@ -9,21 +9,22 @@
     <Import_RootNamespace>IfsSync2Data</Import_RootNamespace>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Include="$(MSBuildThisFileDirectory)ExtensionSqlManager.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)ExtensionDbManager.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)FilterConfig.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)GlobalConfigData.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)InstantData.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)JobState.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)MainUtility.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)ServiceManager.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)TrayIconConfig.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)JobData.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)JobDataSqlManager.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)JobDbManager.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)MainData.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)SenderConfig.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)TaskData.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)TaskDataSqlManager.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)TaskDbManager.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)UserData.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)UserDataSqlManager.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)UserDbManager.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)WatcherConfig.cs" />
   </ItemGroup>
 </Project>

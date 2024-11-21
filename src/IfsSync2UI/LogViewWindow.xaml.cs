@@ -20,99 +20,99 @@ using log4net;
 
 namespace IfsSync2UI
 {
-    /// <summary>
-    /// LogViewWindow.xaml에 대한 상호 작용 논리
-    /// </summary>
-    public partial class LogViewWindow : Window
-    {
-        private static readonly ILog log = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
-        private readonly JobData Job;
+	/// <summary>
+	/// LogViewWindow.xaml에 대한 상호 작용 논리
+	/// </summary>
+	public partial class LogViewWindow : Window
+	{
+		private static readonly ILog log = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
+		private readonly JobData Job;
 
-        private readonly LogTab SuccessTab = new LogTab();
-        private readonly LogTab FailureTab = new LogTab();
+		private readonly LogTab SuccessTab = new LogTab();
+		private readonly LogTab FailureTab = new LogTab();
 
-        private readonly TaskDataSqlManager TaskSQL;
+		private readonly TaskDataDbManager TaskSQL;
 
-        public bool IsClose = false;
+		public bool IsClose = false;
 
-        public LogViewWindow(string RootPath, JobData jobData)
-        {
-            InitializeComponent();
-            Job = jobData;
-            TabInit();
-            TaskSQL = new TaskDataSqlManager(RootPath, Job.HostName, Job.JobName);
-            Title = Job.JobName + " Log View";
-            UpdateLogList();
-        }
+		public LogViewWindow(JobData job)
+		{
+			InitializeComponent();
+			Job = job;
+			TabInit();
+			TaskSQL = new TaskDataDbManager(job.JobName);
+			Title = Job.JobName + " Log View";
+			UpdateLogList();
+		}
 
-        private void UpdateLogList()
-        {
-            int SuccessIndex = SuccessTab.LogIndex;
-            int FailureIndex = FailureTab.LogIndex;
+		private void UpdateLogList()
+		{
+			int SuccessIndex = SuccessTab.LogIndex;
+			int FailureIndex = FailureTab.LogIndex;
 
-            List<TaskData> Success = TaskSQL.GetSuccessList(SuccessIndex, 10000);
-            List<TaskData> Failure = TaskSQL.GetFailureList(FailureIndex, 10000);
+			List<TaskData> Success = TaskSQL.GetSuccessList(SuccessIndex, 10000);
+			List<TaskData> Failure = TaskSQL.GetFailureList(FailureIndex, 10000);
 
-            SuccessTab.TaskLogUpdates(Success);
-            FailureTab.TaskLogUpdates(Failure);
-        }
+			SuccessTab.TaskLogUpdates(Success);
+			FailureTab.TaskLogUpdates(Failure);
+		}
 
-        private void TabInit()
-        {
-            try
-            {
-                MainTab.Dispatcher.Invoke(delegate
-                {
-                    TabItem Success = new TabItem { Content = SuccessTab, Header = "Success" };
-                    MainTab.Items.Add(Success);
+		private void TabInit()
+		{
+			try
+			{
+				MainTab.Dispatcher.Invoke(delegate
+				{
+					TabItem Success = new TabItem { Content = SuccessTab, Header = "Success" };
+					MainTab.Items.Add(Success);
 
-                    TabItem Failure = new TabItem { Content = FailureTab, Header = "Failure" };
-                    MainTab.Items.Add(Failure);
-                });
-            }
-            catch(Exception e) { log.Error(e); }
-        }
+					TabItem Failure = new TabItem { Content = FailureTab, Header = "Failure" };
+					MainTab.Items.Add(Failure);
+				});
+			}
+			catch (Exception e) { log.Error(e); }
+		}
 
-        private void Btn_Clear(object sender, RoutedEventArgs e)
-        {
-            SuccessTab.Clear();
-            FailureTab.Clear();
-        }
+		private void Btn_Clear(object sender, RoutedEventArgs e)
+		{
+			SuccessTab.Clear();
+			FailureTab.Clear();
+		}
 
-        private void Btn_Refresh(object sender, RoutedEventArgs e)
-        {
-            UpdateLogList();
-        }
+		private void Btn_Refresh(object sender, RoutedEventArgs e)
+		{
+			UpdateLogList();
+		}
 
-        private void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e)
-        {
-            IsClose = true;
-        }
+		private void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e)
+		{
+			IsClose = true;
+		}
 
-        private void Btn_SaveCSV(object sender, RoutedEventArgs e)
-        {
-            int index = MainTab.SelectedIndex;
-            if (index < 0)
-            {
-                Utility.ErrorMessageBox("Not Selected Tab", Title);
-                return;
-            }
+		private void Btn_SaveCSV(object sender, RoutedEventArgs e)
+		{
+			int index = MainTab.SelectedIndex;
+			if (index < 0)
+			{
+				Utility.ErrorMessageBox("Not Selected Tab", Title);
+				return;
+			}
 
-            FileDialog fileDialog = new SaveFileDialog
-            {
-                FileName = "Data.csv",
-                Filter = "Excel File(*.csv)|*.csv"
-            };
+			FileDialog fileDialog = new SaveFileDialog
+			{
+				FileName = "Data.csv",
+				Filter = "Excel File(*.csv)|*.csv"
+			};
 
-            if (fileDialog.ShowDialog() == System.Windows.Forms.DialogResult.Cancel) return;
+			if (fileDialog.ShowDialog() == System.Windows.Forms.DialogResult.Cancel) return;
 
-            if (string.IsNullOrWhiteSpace(fileDialog.FileName)) return;
-            string FileName = fileDialog.FileName;
-            TabItem Item = MainTab.Items[index] as TabItem;
-            LogTab Tab = Item.Content as LogTab;
-            
-            if(Tab.SaveCSV(FileName)) System.Windows.MessageBox.Show(FileName + "\n저장 성공!", Title);
-            else Utility.ErrorMessageBox(FileName + "\n저장 실패!", Title);
-        }
-    }
+			if (string.IsNullOrWhiteSpace(fileDialog.FileName)) return;
+			string FileName = fileDialog.FileName;
+			TabItem Item = MainTab.Items[index] as TabItem;
+			LogTab Tab = Item.Content as LogTab;
+
+			if (Tab.SaveCSV(FileName)) System.Windows.MessageBox.Show(FileName + "\n저장 성공!", Title);
+			else Utility.ErrorMessageBox(FileName + "\n저장 실패!", Title);
+		}
+	}
 }

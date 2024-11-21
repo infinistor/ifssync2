@@ -10,65 +10,65 @@
 */
 namespace IfsSync2Data
 {
-    public class TaskData
-    {
-        public enum TaskNameList { None = -1, Upload = 0, Rename, Delete }
-        //Index, FileName, Policy, Path, event time, upload time, upload flag
-        public long Index { get; set; }
-        public TaskNameList TaskName { get; set; }
-        public string FilePath { get; set; }
-        public string NewFilePath { get; set; }
-        public string SnapshotPath { get; set; }
-        public long FileSize { get; set; }
-        public string EventTime { get; set; }
-        public string UploadTime { get; set; }
-        public string Result { get; set; }
-        public bool UploadFlag { get; set; }
-        public TaskData()
-        {
-            Init();
-        }
-        public TaskData(TaskNameList _TaskName, string _Filepath, string _Eventtime)
-        {
-            Init();
-            TaskName = _TaskName;
-            FilePath = _Filepath;
-            EventTime = _Eventtime;
-        }
-        
-        public TaskData(TaskNameList _TaskName, string _Filepath, string _Eventtime, long _FileSize)
-            : this(_TaskName, _Filepath, _Eventtime) { FileSize = _FileSize; }
-        
-        public TaskData(TaskNameList _TaskName, string _Filepath, string _Eventtime, string _Newfilepath)
-            :this(_TaskName, _Filepath, _Eventtime) { NewFilePath = _Newfilepath; }
+	public class TaskData
+	{
+		public enum TaskNameList { None = -1, Upload = 0, Rename, Delete }
+		//Index, FileName, Policy, Path, event time, upload time, upload flag
+		public long Index { get; set; }
+		public TaskNameList TaskName { get; set; }
+		public string FilePath { get; set; }
+		public string NewFilePath { get; set; }
+		public string SnapshotPath { get; set; }
+		public long FileSize { get; set; }
+		public string EventTime { get; set; }
+		public string UploadTime { get; set; }
+		public string Result { get; set; }
+		public bool UploadFlag { get; set; }
+		public TaskData()
+		{
+			Init();
+		}
+		public TaskData(TaskNameList taskName, string filepath, string eventTime)
+		{
+			Init();
+			TaskName = taskName;
+			FilePath = filepath;
+			EventTime = eventTime;
+		}
 
-        public void Init()
-        {
-            Index        = 0;
-            TaskName     = TaskNameList.None;
-            FilePath     = string.Empty;
-            NewFilePath  = string.Empty;
-            SnapshotPath = string.Empty;
-            FileSize     = 0;
-            EventTime    = string.Empty;
-            UploadTime   = string.Empty;
-            Result       = string.Empty;
-            UploadFlag   = false;
-        }
+		public TaskData(TaskNameList taskName, string filepath, string eventTime, long _FileSize)
+			: this(taskName, filepath, eventTime) { FileSize = _FileSize; }
 
-        public string StrTaskName
-        {
-            get
-            {
-                return TaskName.ToString();
-            }
-            set
-            {
-                TaskName = TaskNameList.None;
-                for (TaskNameList i = TaskNameList.Upload; i <= TaskNameList.Delete; i++)
-                    if (i.ToString() == value)
-                        TaskName = i;
-            }
-        }
-    }
+		public TaskData(TaskNameList taskName, string filepath, string eventTime, string newFilepath)
+			: this(taskName, filepath, eventTime) { NewFilePath = newFilepath; }
+
+		public void Init()
+		{
+			Index = 0;
+			TaskName = TaskNameList.None;
+			FilePath = string.Empty;
+			NewFilePath = string.Empty;
+			SnapshotPath = string.Empty;
+			FileSize = 0;
+			EventTime = string.Empty;
+			UploadTime = string.Empty;
+			Result = string.Empty;
+			UploadFlag = false;
+		}
+
+		public string StrTaskName
+		{
+			get
+			{
+				return TaskName.ToString();
+			}
+			set
+			{
+				TaskName = TaskNameList.None;
+				for (TaskNameList i = TaskNameList.Upload; i <= TaskNameList.Delete; i++)
+					if (i.ToString() == value)
+						TaskName = i;
+			}
+		}
+	}
 }

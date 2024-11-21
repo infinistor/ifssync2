@@ -13,121 +13,73 @@ using System;
 
 namespace IfsSync2Data
 {
-    class SenderConfig
-    {
-        private static readonly string SENDER_FETCH_COUNT = "SenderFetchCount";
-        private static readonly string SENDER_DELAY = "SenderDelay";
-        private static readonly string SENDER_CHECK_DELAY = "SenderCheckDelay";
-        private static readonly string SENDER_STOP = "SenderStop";
-        private const string ROOT_PATH = "RootPath";
-        /***************************************************************/
-        private static readonly int DEFAULT_FETCH_COUNT = 1000; //5sec
-        private static readonly int DEFAULT_SENDER_DELAY = 5 * 1000; //5sec
-        private static readonly int DEFAULT_SENDER_CHECK_DELAY = 5 * 1000; //5 sec
-        /***************************************************************/
+	public class SenderConfig
+	{
+		#region Define
+		const string SENDER_FETCH_COUNT = "SenderFetchCount";
+		const string SENDER_DELAY = "SenderDelay";
+		const string SENDER_CHECK_DELAY = "SenderCheckDelay";
+		const string SENDER_STOP = "SenderStop";
+		const string ROOT_PATH = "RootPath";
+		const int DEFAULT_FETCH_COUNT = 1000; //5sec
+		const int DEFAULT_SENDER_DELAY = 5 * 1000; //5sec
+		const int DEFAULT_SENDER_CHECK_DELAY = 5 * 1000; //5 sec
+		#endregion
 
-        private readonly RegistryKey SenderConfigKey = null;
+		readonly RegistryKey SenderConfigKey = null;
 
-        public int FetchCount
-        {
-            get
-            {
-                int value = 0;
-                try { value = Convert.ToInt32(SenderConfigKey.GetValue(SENDER_FETCH_COUNT)); } catch { }
-                return value;
-            }
-            set
-            {
-                SenderConfigKey.SetValue(SENDER_FETCH_COUNT, value, RegistryValueKind.DWord);
-            }
-        }
-        public int SenderDelay
-        {
-            get
-            {
-                int value = 0;
-                try { value = Convert.ToInt32(SenderConfigKey.GetValue(SENDER_DELAY)); } catch { }
-                return value;
-            }
-            set
-            {
-                SenderConfigKey.SetValue(SENDER_DELAY, value, RegistryValueKind.DWord);
-            }
-        }
-        public int SenderCheckDelay
-        {
-            get
-            {
-                int value = 0;
-                try { value = Convert.ToInt32(SenderConfigKey.GetValue(SENDER_CHECK_DELAY)); } catch { }
-                return value;
-            }
-            set
-            {
-                SenderConfigKey.SetValue(SENDER_CHECK_DELAY, value, RegistryValueKind.DWord);
-            }
-        }
-        public string RootPath
-        {
-            get { return SenderConfigKey.GetValue(ROOT_PATH).ToString(); }
-            set { SenderConfigKey.SetValue(ROOT_PATH, value, RegistryValueKind.String); }
-        }
-        public bool Stop
-        {
-            get
-            {
-                int value = MainData.MY_FALSE;
-                try { value = Convert.ToInt32(SenderConfigKey.GetValue(SENDER_STOP)); } catch { }
+#pragma warning disable CA1416
+		public int FetchCount
+		{
+			get => int.TryParse(SenderConfigKey.GetValue(SENDER_FETCH_COUNT).ToString(), out int value) ? value : 0;
+			set => SenderConfigKey.SetValue(SENDER_FETCH_COUNT, value, RegistryValueKind.DWord);
+		}
+		public int SenderDelay
+		{
+			get => int.TryParse(SenderConfigKey.GetValue(SENDER_DELAY).ToString(), out int value) ? value : 0;
+			set => SenderConfigKey.SetValue(SENDER_DELAY, value, RegistryValueKind.DWord);
+		}
+		public int SenderCheckDelay
+		{
+			get => int.TryParse(SenderConfigKey.GetValue(SENDER_CHECK_DELAY).ToString(), out int value) ? value : 0;
+			set => SenderConfigKey.SetValue(SENDER_CHECK_DELAY, value, RegistryValueKind.DWord);
+		}
+		public string RootPath
+		{
+			get => SenderConfigKey.GetValue(ROOT_PATH).ToString();
+			set => SenderConfigKey.SetValue(ROOT_PATH, value, RegistryValueKind.String);
+		}
+		public bool Stop
+		{
+			get => int.TryParse(SenderConfigKey.GetValue(SENDER_STOP).ToString(), out int value) && value == MainData.MY_TRUE;
+			set => SenderConfigKey.SetValue(SENDER_STOP, value ? MainData.MY_TRUE : MainData.MY_FALSE, RegistryValueKind.DWord);
+		}
+		public bool Alive
+		{
+			get => int.TryParse(SenderConfigKey.GetValue(MainData.ALIVE_CHECK).ToString(), out int value) && value == MainData.MY_TRUE;
+			set => SenderConfigKey.SetValue(MainData.ALIVE_CHECK, value ? MainData.MY_TRUE : MainData.MY_FALSE, RegistryValueKind.DWord);
+		}
+		public SenderConfig(bool write = false)
+		{
+			SenderConfigKey = Registry.LocalMachine.OpenSubKey(MainData.SENDER_CONFIG_PATH, write);
+			if (SenderConfigKey == null)
+			{
+				SenderConfigKey = Registry.LocalMachine.CreateSubKey(MainData.SENDER_CONFIG_PATH);
 
-                if (value == MainData.MY_FALSE) return false;
-                else return true;
-            }
-            set
-            {
-                int temp = MainData.MY_FALSE;
-                if (value) temp = MainData.MY_TRUE;
+				SenderConfigKey.SetValue(SENDER_FETCH_COUNT, DEFAULT_FETCH_COUNT, RegistryValueKind.DWord);
+				SenderConfigKey.SetValue(SENDER_DELAY, DEFAULT_SENDER_DELAY, RegistryValueKind.DWord);
+				SenderConfigKey.SetValue(SENDER_CHECK_DELAY, DEFAULT_SENDER_CHECK_DELAY, RegistryValueKind.DWord);
+				SenderConfigKey.SetValue(ROOT_PATH, "", RegistryValueKind.String);
+				SenderConfigKey.SetValue(SENDER_STOP, MainData.MY_FALSE, RegistryValueKind.DWord);
+				SenderConfigKey.SetValue(MainData.ALIVE_CHECK, MainData.MY_FALSE, RegistryValueKind.DWord);
+			}
+		}
 
-                SenderConfigKey.SetValue(SENDER_STOP, temp, RegistryValueKind.DWord);
-            }
-        }
-        public bool Alive
-        {
-            get
-            {
-                int value = MainData.MY_FALSE;
-                try { value = Convert.ToInt32(SenderConfigKey.GetValue(MainData.ALIVE_CHECK)); } catch { }
-
-                if (value == MainData.MY_FALSE) return false;
-                else return true;
-            }
-            set
-            {
-                int temp = MainData.MY_FALSE;
-                if (value) temp = MainData.MY_TRUE;
-
-                SenderConfigKey.SetValue(MainData.ALIVE_CHECK, temp, RegistryValueKind.DWord);
-            }
-        }
-        public SenderConfig(bool Write = false)
-        {
-            SenderConfigKey = Registry.LocalMachine.OpenSubKey(MainData.SENDER_CONFIG_PATH, Write);
-            if(SenderConfigKey == null)
-            {
-                SenderConfigKey = Registry.LocalMachine.CreateSubKey(MainData.SENDER_CONFIG_PATH);
-
-                SenderConfigKey.SetValue(SENDER_FETCH_COUNT, DEFAULT_FETCH_COUNT, RegistryValueKind.DWord);
-                SenderConfigKey.SetValue(SENDER_DELAY, DEFAULT_SENDER_DELAY, RegistryValueKind.DWord);
-                SenderConfigKey.SetValue(SENDER_CHECK_DELAY, DEFAULT_SENDER_CHECK_DELAY, RegistryValueKind.DWord);
-                SenderConfigKey.SetValue(ROOT_PATH, "", RegistryValueKind.String);
-                SenderConfigKey.SetValue(SENDER_STOP, MainData.MY_FALSE, RegistryValueKind.DWord);
-                SenderConfigKey.SetValue(MainData.ALIVE_CHECK, MainData.MY_FALSE, RegistryValueKind.DWord);
-            }
-        }
-
-        public void Close() { if(SenderConfigKey != null) SenderConfigKey.Close(); }
-        public void Delete()
-        {
-            SenderConfigKey.DeleteSubKeyTree(MainData.SENDER_CONFIG_PATH);
-        }
-    }
+		public void Close() { SenderConfigKey?.Close(); }
+		public void Delete()
+		{
+			SenderConfigKey.DeleteSubKeyTree(MainData.SENDER_CONFIG_PATH);
+		}
+#pragma warning restore CA1416
+	}
 }

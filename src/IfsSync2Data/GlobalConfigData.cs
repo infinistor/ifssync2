@@ -12,26 +12,26 @@ using System.Collections.Generic;
 
 namespace IfsSync2Data
 {
-    public class GlobalConfigData
-    {
-        public int FetchCount { get; set; }
-        public int DeleteCount { get; set; }
-        public int SenderDelay{ get; set; }
-        
-        public bool SenderPause { get; set; }
-        public string S3Proxy { get; set; }
+	public class GlobalConfigData
+	{
+		public int FetchCount { get; set; }
+		public int DeleteCount { get; set; }
+		public int SenderDelay { get; set; }
 
-        public List<JobData> JobList { get; set; }
+		public bool SenderPause { get; set; }
+		public string S3Proxy { get; set; }
 
-        public GlobalConfigData()
-        {
-            FetchCount = 1000;
-            DeleteCount = 100;
-            SenderDelay = 5000;
+		public List<JobData> JobList { get; set; }
 
-            SenderPause = false;
+		public GlobalConfigData()
+		{
+			FetchCount = 1000;
+			DeleteCount = 100;
+			SenderDelay = 5000;
 
-            JobList = new List<JobData>();
-        }
-    }
+			SenderPause = false;
+
+			JobList = [];
+		}
+	}
 }

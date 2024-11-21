@@ -19,147 +19,147 @@ using System;
 
 namespace IfsSync2WatcherService
 {
-    class Watcher
-    {
-        private readonly ILog log = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
-        private readonly WatcherConfig WatcherConfigs;
-        private readonly FilterConfig   FilterConfigs;
-        private readonly SenderConfig   SenderConfigs;
-        private readonly TrayIconConfig TrayIconConfigs;
+	class Watcher
+	{
+		private readonly ILog log = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
+		private readonly WatcherConfig WatcherConfigs;
+		private readonly FilterConfig FilterConfigs;
+		private readonly SenderConfig SenderConfigs;
+		private readonly TrayIconConfig TrayIconConfigs;
 
-        private readonly JobDataSqlManager  JobSQL ;
-        private readonly UserDataSqlManager UserSQL;
+		private readonly JobDataSqlManager JobSQL;
+		private readonly UserDataSqlManager UserSQL;
 
-        public Watcher()
-        {
-            WatcherConfigs = new WatcherConfig(true);
-            FilterConfigs = new FilterConfig(true);
-            SenderConfigs = new SenderConfig(true);
-            TrayIconConfigs = new TrayIconConfig();
+		public Watcher()
+		{
+			WatcherConfigs = new WatcherConfig(true);
+			FilterConfigs = new FilterConfig(true);
+			SenderConfigs = new SenderConfig(true);
+			TrayIconConfigs = new TrayIconConfig();
 
-            JobSQL = new JobDataSqlManager(WatcherConfigs.RootPath);
-            UserSQL = new UserDataSqlManager(WatcherConfigs.RootPath);
-        }
+			JobSQL = new JobDataSqlManager();
+			UserSQL = new UserDataSqlManager();
+		}
 
-        public void CheckOnce()
-        {
-            if (WatcherConfigs.IP !="")
-            {
-                string URL = MainData.CreateAddress(WatcherConfigs.IP, WatcherConfigs.Port);
-                UserData GlobalUser;
-                try
-                {
-                    List<UserData> GlobalUserList = UserSQL.GetUsers(true);
-                    if (GlobalUserList.Count == 0)
-                    {
-                        log.Error("Global User is empty!");
-                        return;
-                    }
+		public void CheckOnce()
+		{
+			if (WatcherConfigs.IP != "")
+			{
+				string URL = MainData.CreateAddress(WatcherConfigs.IP, WatcherConfigs.Port);
+				UserData GlobalUser;
+				try
+				{
+					List<UserData> GlobalUserList = UserSQL.GetUsers(true);
+					if (GlobalUserList.Count == 0)
+					{
+						log.Error("Global User is empty!");
+						return;
+					}
 
-                    GlobalUser = GlobalUserList[0];
-                }
-                catch(Exception e)
-                {
-                    log.Error("Global User Error", e);
-                    return;
-                }
+					GlobalUser = GlobalUserList[0];
+				}
+				catch (Exception e)
+				{
+					log.Error("Global User Error", e);
+					return;
+				}
 
 
-                try
-                {
-                    IFSSyncUtility.CheckUpdate(URL, GlobalUser.UserName, MainData.GetVersion());
-                }
-                catch(Exception e)
-                {
-                    log.Error("CheckUpdate Error", e);
-                }
+				try
+				{
+					IFSSyncUtility.CheckUpdate(URL, GlobalUser.UserName, MainData.GetVersion());
+				}
+				catch (Exception e)
+				{
+					log.Error("CheckUpdate Error", e);
+				}
 
-                //글로벌 잡 가져오기
-                List<JobData> GlobalJobList = JobSQL.GetJobDatas(true);
+				//글로벌 잡 가져오기
+				List<JobData> GlobalJobList = JobSQL.GetJobs(true);
 
-                try
-                {
-                    //글로벌 옵션 가져오기
-                    var GlobalConfig = IFSSyncUtility.GetGlobalConfig(URL, GlobalUser.UserName, GlobalUser.ID);
+				try
+				{
+					//글로벌 옵션 가져오기
+					var GlobalConfig = IFSSyncUtility.GetGlobalConfig(URL, GlobalUser.UserName, GlobalUser.Id);
 
-                    //s3proxy 정보 확인
-                    if (!string.IsNullOrWhiteSpace(GlobalConfig.S3Proxy))
-                    {
-                        if (GlobalUser.URL != GlobalConfig.S3Proxy) UserSQL.UpdateUserS3Proxy(GlobalUser.ID, GlobalConfig.S3Proxy, true);
-                    }
+					//s3proxy 정보 확인
+					if (!string.IsNullOrWhiteSpace(GlobalConfig.S3Proxy))
+					{
+						if (GlobalUser.URL != GlobalConfig.S3Proxy) UserSQL.UpdateUserS3Proxy(GlobalUser.Id, GlobalConfig.S3Proxy, true);
+					}
 
-                    //글로벌 옵션 설정
-                    SenderConfigs.Stop = GlobalConfig.SenderPause;
-                    SenderConfigs.SenderDelay = GlobalConfig.SenderDelay;
-                    SenderConfigs.FetchCount = GlobalConfig.FetchCount;
+					//글로벌 옵션 설정
+					SenderConfigs.Stop = GlobalConfig.SenderPause;
+					SenderConfigs.SenderDelay = GlobalConfig.SenderDelay;
+					SenderConfigs.FetchCount = GlobalConfig.FetchCount;
 
-                    //새로운 글로벌 잡 가져오기
-                    List<JobData> NewGlobalJobList = GlobalConfig.JobList;
+					//새로운 글로벌 잡 가져오기
+					List<JobData> NewGlobalJobList = GlobalConfig.JobList;
 
-                    //Delete Flag on
-                    foreach (var MainJob in GlobalJobList) MainJob.DeleteFlag = true;
+					//Delete Flag on
+					foreach (var MainJob in GlobalJobList) MainJob.DeleteFlag = true;
 
-                    foreach (var NewJob in NewGlobalJobList)
-                    {
-                        bool CreateCheck = true;
+					foreach (var NewJob in NewGlobalJobList)
+					{
+						bool CreateCheck = true;
 
-                        foreach (var MainJob in GlobalJobList)
-                        {
-                            if (!MainJob.DeleteFlag) continue;
-                            if (NewJob.StrPath == MainJob.StrPath)
-                            {
-                                CreateCheck = false;
-                                MainJob.DeleteFlag = false;
-                                NewJob.ID = MainJob.ID;
-                                //기존과 비교하여 변경점이 있으면 변경
-                                if (!NewJob.Equals(MainJob)) JobSQL.Update(NewJob, true);
-                                break;
-                            }
-                        }
+						foreach (var MainJob in GlobalJobList)
+						{
+							if (!MainJob.DeleteFlag) continue;
+							if (NewJob.StrPath == MainJob.StrPath)
+							{
+								CreateCheck = false;
+								MainJob.DeleteFlag = false;
+								NewJob.Id = MainJob.Id;
+								//기존과 비교하여 변경점이 있으면 변경
+								if (!NewJob.Equals(MainJob)) JobSQL.Update(NewJob, true);
+								break;
+							}
+						}
 
-                        if (CreateCheck)
-                        {
-                            int index = JobSQL.NextGlobalJobIndex();
-                            NewJob.JobName = MainData.DEFAULT_GLOBAL_JOB_NAME + index.ToString();
-                            JobSQL.Insert(NewJob, true);
-                        }
-                    }
-                    foreach (var MainJob in GlobalJobList)
-                    {
-                        if (MainJob.DeleteFlag) JobSQL.Delete(MainJob.ID, true);
-                    }
+						if (CreateCheck)
+						{
+							int index = JobSQL.NextGlobalJobIndex();
+							NewJob.JobName = MainData.DEFAULT_GLOBAL_JOB_NAME + index.ToString();
+							JobSQL.Insert(NewJob, true);
+						}
+					}
+					foreach (var MainJob in GlobalJobList)
+					{
+						if (MainJob.DeleteFlag) JobSQL.Delete(MainJob.Id, true);
+					}
 
-                }
-                catch (Exception e)
-                {
-                    log.Error("Global Job Get Error", e);
-                    return;
-                }
+				}
+				catch (Exception e)
+				{
+					log.Error("Global Job Get Error", e);
+					return;
+				}
 
-                //Alive 신호보내기
-                AliveData Alive = new AliveData()
-                {
-                    ListenAlive = FilterConfigs.Alive,
-                    SenderAlive = SenderConfigs.Alive,
-                    MonRemain = TrayIconConfigs.Remaining,
-                    FailRemain = TrayIconConfigs.UploadFailCount
-                };
+				//Alive 신호보내기
+				AliveData Alive = new AliveData()
+				{
+					ListenAlive = FilterConfigs.Alive,
+					SenderAlive = SenderConfigs.Alive,
+					MonRemain = TrayIconConfigs.Remaining,
+					FailRemain = TrayIconConfigs.UploadFailCount
+				};
 
-                if (!IFSSyncUtility.SendAlive(URL, GlobalUser.UserName, Alive, out string Error))
-                    log.Error($"Alive send fail {Error}");
-                else
-                    log.Info("Alive send OK");
+				if (!IFSSyncUtility.SendAlive(URL, GlobalUser.UserName, Alive, out string Error))
+					log.Error($"Alive send fail {Error}");
+				else
+					log.Info("Alive send OK");
 
-                //Alive init
-                FilterConfigs.Alive = false;
-                SenderConfigs.Alive = false;
+				//Alive init
+				FilterConfigs.Alive = false;
+				SenderConfigs.Alive = false;
 
-            }
-        }
+			}
+		}
 
-        public void Stop()
-        {
+		public void Stop()
+		{
 
-        }
-    }
+		}
+	}
 }

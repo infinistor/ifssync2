@@ -17,18 +17,21 @@ namespace IfsSync2Data
 {
 	public static class MainData
 	{
+		#region Global Variable
 		public const string COMPANY_NAME = "PSPACE";
-		/************************** Main Flag *********************************/
 		public const string ALIVE_CHECK = "Alive";
 		public const int MY_TRUE = 1;
 		public const int MY_FALSE = 0;
 		public const int DEFAULT_STATUS_CHECK_DELAY = 1 * 1000; //1sec
 		public const int DEFAULT_BINARY_SIZE = 1024;
 		public const string AWS_FLAG = "-";
-		/************************** Main Pass *********************************/
+		public const string UNKNOWN = "Unknown";
+		#endregion
+		#region Global Path
 		public const string ROOT = "C:\\PSPACE\\";
-		public const string DB_DIRECTORY_NAME = "DB\\";
-		public const string DB_EXTENSION_NAME = ".db";
+		public const string DB_DIRECTORY_NAME = ROOT + "DB\\";
+		public const string LOG_DIRECTORY_NAME = ROOT + "LOG\\";
+		public const string DB_EXTENSION_NAME = "db";
 		public const string MUTEX_GLOBAL_NAME = "Global\\";
 		public const string EXE = ".exe";
 		public const string REGISTRY_ROOT = "Software\\PSPACE\\IfsSync2\\";
@@ -37,20 +40,20 @@ namespace IfsSync2Data
 
 		public const string HTTP = "http://";
 		public const string HTTPS = "https://";
-		public const string UNKNOWN = "Unknown";
-		/*************************** Main UI **********************************/
+		#endregion
+		#region UI
 		public const string UI_NAME = "IfsSync2UI";
 		public const string MAIN_STORAGE_NAME = "Default";
 		public const string MUTEX_NAME_UI = MUTEX_GLOBAL_NAME + "{{" + UI_NAME + "}}";
 		public const string UNC_TYPE_LINK_PATH = "\\target.lnk";
-
-		/************************** Tray Icon *********************************/
+		#endregion
+		#region Tray Icon
 		public const string TRAY_ICON_NAME = "IfsSync2TrayIcon";
 		public const string MUTEX_NAME_TRAY_ICON = MUTEX_GLOBAL_NAME + "{" + TRAY_ICON_NAME + "}";
 		public const string ICON_FILE_NAME = "file";
 		public const string TRAY_ICON_CONFIG_PATH = REGISTRY_ROOT + "TrayIconConfig";
-
-		/************************ Filter *******************************/
+		#endregion
+		#region Filter
 		public const string FILTER_NAME = "IfsSync2Filter";
 		public const string FILTER_EXE = FILTER_NAME + EXE;
 		public const string MUTEX_NAME_FILTER = MUTEX_GLOBAL_NAME + "{" + FILTER_NAME + "}";
@@ -58,8 +61,9 @@ namespace IfsSync2Data
 		public const string FILTER_DRIVE_PATH = "Lib\\cbfilter.cab";
 		public const int ALTITUDE_FAKE_VALUE_FOR_DEBUG = 360000;
 
-		public const string RUNTIME_LICENSE_KEY = "----";
-		/************************ Sender *******************************/
+		public const string RUNTIME_LICENSE_KEY = "43464E4641444E585246323032313035323336314D3935353434000000000000000000000000000046534143594A4D550000424D54304E304D563539524D0000";
+		#endregion
+		#region Sender
 		public const string SENDER_NAME = "IfsSync2Sender";
 		public const string SENDER_EXE = SENDER_NAME + EXE;
 		public const string MUTEX_NAME_SENDER = MUTEX_GLOBAL_NAME + "{" + SENDER_NAME + "}";
@@ -68,8 +72,8 @@ namespace IfsSync2Data
 		public const int SENDER_TIMEOUT = 3600; // sec
 		public const int UPLOAD_CHANGE_FILE_SIZE = 1073741824; // 1GB
 		public const int UPLOAD_PART_SIZE = 100 * 1024 * 1024; // 100mb
-
-		/********************** Watcher Service *************************/
+		#endregion
+		#region Watcher
 		public const string WATCHER_SERVICE_NAME = "IfsSync2WatcherService";
 		public const string WATCHER_SERVICE_EXE = WATCHER_SERVICE_NAME + EXE;
 		public const string WATCHER_CONFIG_PATH = REGISTRY_ROOT + "WatcherConfig";
@@ -77,12 +81,12 @@ namespace IfsSync2Data
 		public const string WATCHER_SERVICE_GET_JOBS = "";
 		public const string WATCHER_SERVICE_PUT_ALIVE = "CheckAlive/";
 		public const string WATCHER_SERVICE_VERSION_CHECK = "CheckUpdate";
-
-		/********************** Instant Backup *********************************/
+		#endregion
+		#region Instant Backup
 		public const string INSTANT_BACKUP_NAME = "Instant";
 		public const string INSTANT_REGISTRY_ROOT_NAME = REGISTRY_ROOT + "Instant";
-
-		/************************** Job Data *********************************/
+		#endregion
+		#region Job Data
 		public const string MUTEX_NAME_JOB_SQL = MUTEX_GLOBAL_NAME + "{JobDataDB}";
 		public const string DEFAULT_HOSTNAME_NAME = "Global";
 		public const string DEFAULT_JOB_NAME = "Default";
@@ -90,17 +94,17 @@ namespace IfsSync2Data
 		public const string DEFAULT_BLACK_PATH_LIST = @"C:\$WINDOWS.~BT|___allroot___$Recycle.Bin|___allroot___JCK|C:\Program Files (x86)|C:\Program Files|C:\Windows|C:\Users\___alldir___\AppData|C:\ProgramData|C:\Documents and Settings|C:\Users\___alldir___\OneDriveTemp|___allroot___BACKUP|C:\System Volume Information|C:\Users\___alldir___\Dropbox|C:\Users\pspace\eclipse-workspace\IfsSync|";
 		public const string DEFAULT_GLOBAL_JOB_NAME = "Global Backup ";
 		public const string JOB_DB_FILE_NAME = "Job";
-
-		/*********************** Extension Data *******************************/
+		#endregion
+		#region Extension Data
 		public const string EXTENSION_NAME = "Extension";
 		public const string MUTEX_NAME_EXTENSION_NAME = MUTEX_GLOBAL_NAME + "{ExtensionDB}";
 		public const string DEFAULT_EXTENSION_LIST = "mp3,wav,docx,doc,xlsx,xls,pdf,ppt,pptx,odt,ods,odp,rtf,txt,jpg,png,gif,tiff,ico,svg,webp,csv,json,xml,html,zip,pst,avi,mov,mp4,ogg,wmv,webm";
-
-		/************************** User Data *********************************/
+		#endregion
+		#region User Data
 		public const string MUTEX_NAME_USER_SQL = MUTEX_GLOBAL_NAME + "{UserDataDB}";
 		public const string USER_DB_FILE_NAME = "UserData";
-
-		/************************** Curl Data *********************************/
+		#endregion
+		#region Curl Data
 		public const string CURL_GET_S3_VOLUME_SIZE = "/ifss30";
 		public const string CURL_GET_S3_VOLUME_TOTAL_SIZE = "Total";
 		public const string CURL_GET_S3_VOLUME_USED_SIZE = "Used";
@@ -109,20 +113,28 @@ namespace IfsSync2Data
 		public const string CURL_STR_GET_METHOD = "GET";
 		public const string CURL_STR_PUT_METHOD = "PUT";
 		public const int CURL_TIMEOUT_DELAY = 20 * 1000; // 20 sec
-		/************************** Curl Data *********************************/
 		public const int S3_FILE_MANAGER_DEFAULT_PORT = 5544;
-		/***************************** ETC ************************************/
-		public static readonly string[] CapacityUnitList = { "B", "KB", "MB", "GB", "TB", "PB", "EB", "ZB", "YB" };
+		#endregion
+		#region etc
+		public static readonly string[] CapacityUnitList = ["B", "KB", "MB", "GB", "TB", "PB", "EB", "ZB", "YB"];
+		public const int DEFAULT_DELETE_DATE = 30;
+		#endregion
 
-		public static string CreateFilePath(string TargetPath, string FileName) => Path.Combine(TargetPath, FileName + ".exe");
-		public static string CreateIconPath(string TargetPath, string IconName) => Path.Combine(TargetPath, IconName + ".ico");
-		public static string CreateDBFileName(string TargetPath, string FileName) => Path.Combine(TargetPath, DB_DIRECTORY_NAME, FileName + DB_EXTENSION_NAME);
-		public static bool CreateDirectory(string FilePath)
+		#region Utility
+		public static string CreateExeFilePath(string TargetPath, string FileName) => Path.Combine(TargetPath, FileName + ".exe");
+		public static string CreateIconFilePath(string TargetPath, string IconName) => Path.Combine(TargetPath, IconName + ".ico");
+		public static bool CreateFile(string FilePath)
 		{
 			try
 			{
-				string MyPath = new FileInfo(FilePath).DirectoryName;
-				Directory.CreateDirectory(MyPath);
+				// 폴더가 없으면 생성
+				if (!Directory.Exists(Path.GetDirectoryName(FilePath)))
+					Directory.CreateDirectory(Path.GetDirectoryName(FilePath));
+
+				// 파일이 없으면 생성
+				if (!File.Exists(FilePath))
+					File.Create(FilePath).Close();
+
 				return true;
 			}
 			catch
@@ -130,6 +142,7 @@ namespace IfsSync2Data
 				return false;
 			}
 		}
+
 		public static string CreateMutexName(string Name) => $"{MUTEX_GLOBAL_NAME}{{{Name}}}";
 		public static string CreateRegistryJobName(string HostName, string JobName) => $"{REGISTRY_ROOT}{JOB_CONFIG_NAME}{HostName}\\{JobName}";
 		public static string CreateAddress(string Address, string Port) => (string.IsNullOrWhiteSpace(Address) || string.IsNullOrWhiteSpace(Port)) ? "" : $"https://{Address}:{Port}/api/v1/IfsSyncClients/";
@@ -161,7 +174,7 @@ namespace IfsSync2Data
 		public static string GetFileName(string FilePath)
 		{
 			string[] result = FilePath.Split(Path.DirectorySeparatorChar);
-			string FileName = result[result.Length - 1];
+			string FileName = result[^1];
 
 			return FileName;
 		}
@@ -175,14 +188,10 @@ namespace IfsSync2Data
 		{
 			try
 			{
-				using (var md5 = MD5.Create())
-				{
-					using (var stream = File.OpenRead(FileName))
-					{
-						var hash = md5.ComputeHash(stream);
-						return BitConverter.ToString(hash).Replace("-", "").ToLowerInvariant();
-					}
-				}
+				using var md5 = MD5.Create();
+				using var stream = File.OpenRead(FileName);
+				var hash = md5.ComputeHash(stream);
+				return BitConverter.ToString(hash).Replace("-", "").ToLowerInvariant();
 			}
 			catch
 			{
@@ -196,6 +205,25 @@ namespace IfsSync2Data
 			return string.Format("{0}:{1}", Address, Port);
 		}
 
-		public static string GetLogFolder(string ProcessName) => $"{ROOT}Log//{ProcessName}";
+		public static string GetLogFolder(string ProcessName) => $"{LOG_DIRECTORY_NAME}{ProcessName}";
+		public static string GetDBFilePath(string dbName) => $"{DB_DIRECTORY_NAME}{dbName}.{DB_EXTENSION_NAME}";
+
+		//파일삭제 함수
+		public static void DeleteOldLogs(string dirPath, int DeleteDate = DEFAULT_DELETE_DATE)
+		{
+			var dirInfo = new DirectoryInfo(dirPath);
+			if (!dirInfo.Exists) return;
+			DateTime fileCreatedTime;
+			DateTime cmpTime = DateTime.Now.AddDays(DeleteDate);
+
+			foreach (FileInfo file in dirInfo.GetFiles())
+			{
+				fileCreatedTime = file.CreationTime;
+
+				//파일생성날짜가 strDate보다 이전이면 파일을 삭제한다. 7일전이면 삭제
+				if (DateTime.Compare(fileCreatedTime, cmpTime) > 0) File.Delete(file.FullName);
+			}
+		}
+		#endregion
 	}
 }

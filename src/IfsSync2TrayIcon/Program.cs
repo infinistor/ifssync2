@@ -15,7 +15,6 @@ using System.Reflection;
 using System.Threading;
 using System.Windows.Forms;
 using IfsSync2Data;
-using Microsoft.Win32;
 
 [assembly: XmlConfigurator(ConfigFile = "IfsSync2TrayIconLigConfig.xml", Watch = true)]
 

@@ -16,65 +16,59 @@ using IfsSync2Data;
 
 namespace IfsSync2Filter
 {
-	public class Filter
+	public class Filter(bool global)
 	{
-		static readonly int FILTER_CHECK_DELAY = 5000;
-		static readonly ILog log = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
+		const int FILTER_CHECK_DELAY = 5000;
 
-		readonly List<FilterThread> FilterList = [];
-		readonly JobDbManager JobSQL;
-		readonly bool Global;
-
-		public Filter(bool global)
-		{
-			Global = global;
-			JobSQL = new JobDbManager();
-		}
+		readonly ILog _log = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
+		readonly List<FilterThread> _filters = [];
+		readonly JobDbManager _jobDb = new();
+		readonly bool _global = global;
 
 		public void CheckOnce()
 		{
 			FilterThreadAliveInit();
-			List<JobData> TempJobList = JobSQL.GetJobs(Global);
+			var jobs = _jobDb.GetJobs(_global);
 
-			foreach (JobData Item in TempJobList)
+			foreach (var job in jobs)
 			{
-				if (Item.JobName.Equals(MainData.INSTANT_BACKUP_NAME)) continue;
-				bool IsNewFilter = true;
+				if (job.JobName.Equals(MainData.INSTANT_BACKUP_NAME)) continue;
+				bool isNewFilter = true;
 				//if new or change
-				foreach (FilterThread Filter in FilterList)
+				foreach (var Filter in _filters)
 				{
 					if (Filter.IsAlive) continue;
 
-					if (Item.Id == Filter.Job.Id)
+					if (job.Id == Filter.Job.Id)
 					{
-						IsNewFilter = false;
+						isNewFilter = false;
 						Filter.IsAlive = true;
 						//JobData is Changed.
-						if (Item.FilterUpdate)
+						if (job.FilterUpdate)
 						{
-							Item.FilterUpdate = false;
-							Filter.JobDataUpdate(Item);
-							JobSQL.UpdateFilterCheck(Item, Global);
+							job.FilterUpdate = false;
+							Filter.JobDataUpdate(job);
+							_jobDb.UpdateFilterCheck(job, _global);
 						}
 						break;
 					}
 				}
 
 				//JobThread is not existed. Create JobThread
-				if (IsNewFilter) FilterList.Add(new FilterThread(Item));
+				if (isNewFilter) _filters.Add(new FilterThread(job));
 			}
 
-			for (int i = FilterList.Count - 1; i >= 0; i--)
+			for (int i = _filters.Count - 1; i >= 0; i--)
 			{
-				if (!FilterList[i].IsAlive)
+				if (!_filters[i].IsAlive)
 				{
-					FilterList[i].Close();
-					FilterList.RemoveAt(i);
+					_filters[i].Close();
+					_filters.RemoveAt(i);
 					continue;
 				}
-				else FilterList[i].FilterStateOn();
+				else _filters[i].FilterStateOn();
 
-				if (!FilterList[i].IsFilterUpdate) FilterList[i].FilterUpdate();
+				if (!_filters[i].IsFilterUpdate) _filters[i].FilterUpdate();
 			}
 
 			Thread.Sleep(FILTER_CHECK_DELAY);
@@ -83,17 +77,17 @@ namespace IfsSync2Filter
 		public void Stop()
 		{
 			FilterThreadAllDelete();
-			log.Info("Stop");
+			_log.Info("Stop");
 		}
 
 		void FilterThreadAliveInit()
 		{
-			foreach (FilterThread Job in FilterList) Job.IsAlive = false;
+			foreach (var Job in _filters) Job.IsAlive = false;
 		}
 		void FilterThreadAllDelete()
 		{
-			foreach (FilterThread Job in FilterList) Job.Close();
-			FilterList.Clear();
+			foreach (var Job in _filters) Job.Close();
+			_filters.Clear();
 		}
 
 	}

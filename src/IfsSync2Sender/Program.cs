@@ -13,51 +13,61 @@ using log4net.Config;
 using System.Reflection;
 using IfsSync2Data;
 using System.Threading;
+using System;
 
 [assembly: XmlConfigurator(ConfigFile = "IfsSync2SenderLogConfig.xml", Watch = true)]
 
 namespace IfsSync2Sender
 {
-    class Program
-    {
-        private static readonly ILog log = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
-        static void Main()
-        {
-            Mutex mutex = new Mutex(true, MainData.MUTEX_NAME_SENDER, out bool CreateNew);
-            if (!CreateNew)
-            {
-                log.Error("Prevent duplicate execution");
-                return;
-            }
-            log.Info("Main Start");
-            MainUtility.DeleteOldLogs(MainData.GetLogFolder("Sender"));
-            
-            SenderConfig SenderConfigs = new SenderConfig(true);
+	static class Program
+	{
+		private static readonly ILog log = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
+		static void Main()
+		{
+			var mutex = new Mutex(true, MainData.MUTEX_NAME_SENDER, out bool CreateNew);
+			if (!CreateNew)
+			{
+				log.Error("Prevent duplicate execution");
+				return;
+			}
+			log.Info("Main Start");
+			MainUtility.DeleteOldLogs(MainData.GetLogFolder("Sender"));
 
-            Sender GlobalSender = new Sender(SenderConfigs.RootPath, true);
-            Sender NormalSender = new Sender(SenderConfigs.RootPath, false);
-            
-            while (true)
-            {
-                while(SenderConfigs.Stop)
-                {
-                    GlobalSender.AllStop();
-                    NormalSender.AllStop();
-                    Thread.Sleep(SenderConfigs.SenderCheckDelay);
-                }
+			var senderConfigs = new SenderConfig(true);
 
-                SenderConfigs.Alive = true;
-                int FetchCount = SenderConfigs.FetchCount;
-                int Delay = SenderConfigs.SenderDelay;
-                GlobalSender.Once(FetchCount, Delay);
-                log.Info("GlobalSender end");
-                NormalSender.Once(FetchCount, Delay);
-                log.Info("Sender end");
+			var globalSender = new Sender(senderConfigs.RootPath, true);
+			var normalSender = new Sender(senderConfigs.RootPath, false);
 
-                Thread.Sleep(SenderConfigs.SenderCheckDelay);
-            }
-        }
+			while (true)
+			{
+				try
+				{
+					while (senderConfigs.Stop)
+					{
+						globalSender.AllStop();
+						normalSender.AllStop();
+						Thread.Sleep(senderConfigs.SenderCheckDelay);
+					}
+
+					senderConfigs.Alive = true;
+					int fetchCount = senderConfigs.FetchCount;
+					int delay = senderConfigs.SenderDelay;
+					globalSender.Once(fetchCount, delay);
+					log.Info("GlobalSender end");
+					normalSender.Once(fetchCount, delay);
+					log.Info("Sender end");
+
+					Thread.Sleep(senderConfigs.SenderCheckDelay);
+				}
+				catch (Exception e)
+				{
+					log.Error("Sender Error", e);
+					mutex.ReleaseMutex();
+					Thread.Sleep(senderConfigs.SenderCheckDelay);
+				}
+			}
+		}
 
 
-    }
+	}
 }

@@ -21,14 +21,14 @@ namespace IfsSync2Filter
 {
 	public class FilterThread
 	{
-		private static readonly ILog log = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
+		static readonly ILog log = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
 		/***************************** Job Data *************************************/
 		public readonly JobData Job;
-		private readonly JobState State;
+		readonly JobState State;
 		/*************************** Filter Data ************************************/
-		private readonly Cbmonitor monitor = null;
-		private const long DEFAULT_NOTIFY_FILTER =  //Constants.FS_NE_NONE;
-												   //Constants.FS_NE_SET_SECURITY |
+		readonly Cbmonitor monitor = null;
+		const long DEFAULT_NOTIFY_FILTER =  //Constants.FS_NE_NONE;
+											//Constants.FS_NE_SET_SECURITY |
 												   Constants.FS_NE_SET_SIZES |
 												   Constants.FS_NE_CREATE |
 												   Constants.FS_NE_DELETE |
@@ -37,49 +37,38 @@ namespace IfsSync2Filter
 												   Constants.FS_NE_SET_SIZES |
 												   Constants.FS_NE_CAN_DELETE;
 
-		private readonly static string RESERVEDWORDS_ALLROOT = "___allroot___";
-		private readonly static string RESERVEDWORDS_ALLDIR = "___alldir___";
-		private readonly static string RESERVEDWORDS_DIR = "*";
-		private readonly string Net = @"\Device\LanmanRedirector\;";
+		const string RESERVED_WORDS_ALLROOT = "___allroot___";
+		const string RESERVED_WORDS_ALLDIR = "___alldir___";
+		const string RESERVED_WORDS_DIR = "*";
+		readonly string Net = @"\Device\LanmanRedirector\;";
+		public const string MS_MP_ENG = "MsMpEng.exe";
 
-		/***************************** Event Data ************************************/
-		public const string MSMPENG = "MsMpEng.exe";
-
-		private readonly List<string> DeleteStacks; //Delete Stack
-
-		//Create Stack
-		private readonly List<WriteFileInfo> NotifyWriteFileList;
-
-		public class WriteFileInfo
+		public class WriteFileInfo(string filePath, long size)
 		{
-			public string FilePath = string.Empty;
-			public long Size = 0;
+			public string FilePath { get; set; } = filePath;
+			public long Size { get; set; } = size;
 
-			public WriteFileInfo(string _FilePath, long _Size)
-			{
-				FilePath = _FilePath;
-				Size = _Size;
-			}
 			public void SizeUpdate(long _Size) { if (Size < _Size) Size = _Size; }
 		}
-		/****************************** SQL Data ************************************/
-		private readonly TaskDataSqlManager TaskSQL;
-		/******************************** ETC ***************************************/
+		readonly TaskDbManager _taskDb;
+
+		readonly List<string> DeleteStacks = [];
+		readonly List<WriteFileInfo> _notifyWriteFileList = [];
+
 		public bool IsAlive { get; set; }
 		public bool IsFilterUpdate { get; set; }
+
 		public void FilterStateOn()
 		{
 			State.Filter = true;
 		}
-		public FilterThread(JobData Data)
+		public FilterThread(JobData job)
 		{
 			IsAlive = true;
 			IsFilterUpdate = false;
-			Job = Data;
-			TaskSQL = new TaskDataSqlManager(Data.JobName);
+			Job = job;
+			_taskDb = new TaskDbManager(job.JobName);
 			State = new JobState(Job.HostName, Job.JobName, true);
-			NotifyWriteFileList = new List<WriteFileInfo>();
-			DeleteStacks = new List<string>();
 			monitor = new Cbmonitor(MainData.RUNTIME_LICENSE_KEY);
 
 			monitor.OnNotifyDeleteFile += NotifyDeleteFile;
@@ -106,91 +95,90 @@ namespace IfsSync2Filter
 
 		public List<string> GetFilterList()
 		{
-			List<string> FilterList = new List<string>();
-			FilterList.Clear();
+			var filterList = new List<string>();
 
-			foreach (var Dir in Job.Path)
+			foreach (var path in Job.Path)
 			{
-				string Directory = Dir.Trim();
-				if (!Directory.EndsWith("\\")) Directory += "\\";
+				string directory = path.Trim();
+				if (!directory.EndsWith('\\')) directory += "\\";
 
-				FilterList.Add(string.Format("{0}*", Directory));
-				FilterList.Add(string.Format("{0}", Directory));
+				filterList.Add(directory + "*");
+				filterList.Add(directory);
 			}
-			return FilterList;
+			return filterList;
 		}
 
 		public void FilterUpdate()
 		{
-			List<string> FilterList = GetFilterList();
+			List<string> filters = GetFilterList();
 
-			bool FailCheck = false;
+			bool failCheck = false;
 
 			monitor.DeleteAllFilterRules();
-			foreach (string Filter in FilterList)
+			foreach (string filter in filters)
 			{
 				try
 				{
 					//NUC Folder Check
-					if (MainData.CheckUNCFolder(Filter))
+					if (MainData.CheckUNCFolder(filter))
 					{
-						monitor.AddFilterRule(Filter, DEFAULT_NOTIFY_FILTER);
-						log.Debug($"NUC Folder Filter : {Filter}");
+						monitor.AddFilterRule(filter, DEFAULT_NOTIFY_FILTER);
+						log.Debug($"NUC Folder Filter : {filter}");
 					}
 					//Drive Check
-					else if (!new DriveInfo(Path.GetPathRoot(Filter)).IsReady)
+					else if (!new DriveInfo(Path.GetPathRoot(filter)).IsReady)
 					{
-						FailCheck = true;
-						log.Debug($"Filter Update Fail : {Filter}");
+						failCheck = true;
+						log.Debug($"Filter Update Fail : {filter}");
 					}
 					else
 					{
-						monitor.AddFilterRule(Filter, DEFAULT_NOTIFY_FILTER);
-						log.Debug($"Filter : {Filter}");
+						monitor.AddFilterRule(filter, DEFAULT_NOTIFY_FILTER);
+						log.Debug($"Filter : {filter}");
 					}
 				}
 				catch (Exception e)
 				{
-					FailCheck = true;
+					failCheck = true;
 					log.Error(e);
 				}
 			}
 			SetBlackPath();
 			log.Info("Filter Update");
 
-			if (FailCheck) IsFilterUpdate = false;
+			if (failCheck) IsFilterUpdate = false;
 			else IsFilterUpdate = true;
 		}
 
-		private List<string> GetAllRoot()
+		List<string> GetAllRoot()
 		{
-			List<string> Roots = new List<string>();
+			var roots = new List<string>();
 
 			foreach (string MyPath in Job.Path)
 			{
 				string Root = Path.GetPathRoot(MyPath);
-				if (!Root.EndsWith("\\")) Root += "\\";
-				if (!Roots.Contains(Root)) Roots.Add(Root);
+				if (!Root.EndsWith('\\')) Root += "\\";
+				if (!roots.Contains(Root)) roots.Add(Root);
 			}
-			return Roots;
+			return roots;
 		}
 
-		private List<string> GetBlackPathList()
+		List<string> GetBlackPathList()
 		{
-			List<string> BlackPathList = new List<string>();
+			var BlackPathList = new List<string>();
 
-			List<string> AllRoot = GetAllRoot();
+			var AllRoot = GetAllRoot();
 
 			foreach (string MyPath in Job.BlackPath)
 			{
 				if (string.IsNullOrWhiteSpace(MyPath)) continue;
 				string BlackPath = ReplacementOfReservedWords(MyPath).Trim();
 
-				if (BlackPath.StartsWith(RESERVEDWORDS_ALLROOT))
+				if (BlackPath.StartsWith(RESERVED_WORDS_ALLROOT))
 				{
 					foreach (string Root in AllRoot)
 					{
-						string Item = BlackPath.Replace(RESERVEDWORDS_ALLROOT, Root);
+						string Item = BlackPath.Replace(RESERVED_WORDS_ALLROOT, Root);
 						BlackPathList.Add(Item);
 					}
 				}
@@ -200,15 +188,11 @@ namespace IfsSync2Filter
 			return BlackPathList;
 		}
 
-		private string ReplacementOfReservedWords(string Path)
-		{
-			return Path.Replace(RESERVEDWORDS_ALLDIR, RESERVEDWORDS_DIR) + "\\*";
-		}
 
-		private void SetBlackPath()
+		void SetBlackPath()
 		{
 			monitor.DeleteAllPassthroughRules();
-			List<string> BlackPathList = GetBlackPathList();
+			var BlackPathList = GetBlackPathList();
 
 			foreach (string BlackPath in BlackPathList) monitor.AddPassthroughRule(BlackPath, DEFAULT_NOTIFY_FILTER);
 		}
@@ -225,38 +209,20 @@ namespace IfsSync2Filter
 				monitor.DeleteAllFilterRules();
 			}
 			State.Filter = false;
-			TaskSQL.DeleteDBFile();
+			_taskDb.DeleteDBFile();
 		}
 
 		#region Sql Task Upload
 
-		private bool CheckIsFolder(string FilePath)
-		{
-			try
-			{
-				DirectoryInfo info = new DirectoryInfo(FilePath);
-				if ((info.Attributes & FileAttributes.Directory) == FileAttributes.Directory) return true;
-			}
-			catch { }
-			return false;
-		}
-		private bool CheckWhiteFileList(string FileName)
+		bool CheckWhiteFileList(string FileName)
 		{
 			foreach (string Ext in Job.WhiteFileExt) if (FileName.EndsWith(Ext, StringComparison.OrdinalIgnoreCase)) return true;
 
 			return false;
 		}
 
-		private bool FilePathException(string FilePath)
-		{
-			string FileName = MainData.GetFileName(FilePath);
 
-			if (FileName.StartsWith("~")) return true;
-			else if (FileName.EndsWith("tmp", StringComparison.OrdinalIgnoreCase)) return true;
-			return false;
-		}
-
-		private List<string> SubDirectory(string ParentDirectory, ObservableCollection<string> ExtList)
+		List<string> SubDirectory(string ParentDirectory, ObservableCollection<string> ExtList)
 		{
 			DirectoryInfo dInfoParent = new DirectoryInfo(ParentDirectory);
 			List<string> FileList = new List<string>();
@@ -271,7 +237,7 @@ namespace IfsSync2Filter
 
 			return FileList;
 		}
-		private List<string> AddBackupFile(string ParentDirectory, ObservableCollection<string> ExtList)
+		List<string> AddBackupFile(string ParentDirectory, ObservableCollection<string> ExtList)
 		{
 			//add File List
 			string[] files = Directory.GetFiles(ParentDirectory);
@@ -289,16 +255,16 @@ namespace IfsSync2Filter
 			}
 			return FileList;
 		}
-		private List<string> GetFileListToDirectory(string Directory, ObservableCollection<string> ExtList)
+		List<string> GetFileListToDirectory(string Directory, ObservableCollection<string> ExtList)
 		{
 			return SubDirectory(Directory, ExtList);
 		}
 
-		private long GetFileSize(string FilePath)
+		long GetFileSize(string FilePath)
 		{
 			try { return new FileInfo(FilePath).Length; } catch { return 0; }
 		}
-		private bool CreateBackup(string FilePath)
+		bool CreateBackup(string FilePath)
 		{
 			string FileName = MainData.GetFileName(FilePath);
 
@@ -310,7 +276,7 @@ namespace IfsSync2Filter
 					foreach (string File in FileList)
 					{
 						TaskData Data = new TaskData(TaskData.TaskNameList.Upload, File, DateTime.Now.ToString("yyyy-MM-dd-HH:mm:ss"), GetFileSize(File));
-						TaskSQL.Insert(Data);
+						_taskDb.Insert(Data);
 						log.Debug(Data.FilePath);
 					}
 					return true;
@@ -318,7 +284,7 @@ namespace IfsSync2Filter
 				else if (CheckWhiteFileList(FileName))
 				{
 					TaskData Data = new TaskData(TaskData.TaskNameList.Upload, FilePath, DateTime.Now.ToString("yyyy-MM-dd-HH:mm:ss"), GetFileSize(FilePath));
-					TaskSQL.Insert(Data);
+					_taskDb.Insert(Data);
 					log.Debug(Data.FilePath);
 					return true;
 				}
@@ -326,7 +292,7 @@ namespace IfsSync2Filter
 
 			return false;
 		}
-		private bool DeleteBackup(string FilePath)
+		bool DeleteBackup(string FilePath)
 		{
 			string FileName = MainData.GetFileName(FilePath);
 
@@ -336,14 +302,14 @@ namespace IfsSync2Filter
 				{
 					TaskData Data = new TaskData(TaskData.TaskNameList.Delete, FilePath,
 												DateTime.Now.ToString("yyyy-MM-dd-HH:mm:ss"));
-					TaskSQL.Insert(Data);
+					_taskDb.Insert(Data);
 					log.Debug(Data.FilePath);
 					return true;
 				}
 			}
 			return false;
 		}
-		private bool RenameBackup(string FilePath, string NewFilePath)
+		bool RenameBackup(string FilePath, string NewFilePath)
 		{
 			//string FileName = MainData.GetFileName(FilePath);
 
@@ -357,14 +323,14 @@ namespace IfsSync2Filter
 					NewFilePath += "\\";
 					TaskData Data = new TaskData(TaskData.TaskNameList.Rename, FilePath,
 												DateTime.Now.ToString("yyyy-MM-dd-HH:mm:ss"), NewFilePath);
-					TaskSQL.Insert(Data);
+					_taskDb.Insert(Data);
 					log.Debug($"{Data.FilePath} => {Data.NewFilePath}");
 				}
 				else if (CheckWhiteFileList(NewFileName))
 				{
 					TaskData Data = new TaskData(TaskData.TaskNameList.Rename, FilePath,
 												DateTime.Now.ToString("yyyy-MM-dd-HH:mm:ss"), NewFilePath);
-					TaskSQL.Insert(Data);
+					_taskDb.Insert(Data);
 					log.Debug($"{Data.FilePath} => {Data.NewFilePath}");
 					return true;
 				}
@@ -375,18 +341,18 @@ namespace IfsSync2Filter
 		#endregion  Sql Task Upload
 
 		#region ETC
-		private string ChangeHardLinkDriveName(string FilePath)
+		string ChangeHardLinkDriveName(string FilePath)
 		{
 			//\Device\LanmanRedirector\;<drive letter>:<logon-session id>\<server>\<share>\<path>"
 			//Get <drive letter>:<path>
 			if (FilePath.StartsWith(Net))
 			{
 				string from = FilePath.Replace(Net, ""); //delete [\Device\LanmanRedirector\;]
-				string VolumName = from[..2]; //Get <drive letter>:
+				string VolumeName = from[..2]; //Get <drive letter>:
 
 				string[] result = from.Split('\\'); //cut <drive letter>:<logon-session id>, <server>, <share>, <path> ....
 
-				string NewFilePath = VolumName;
+				string NewFilePath = VolumeName;
 				for (int i = 3; i < result.Length; i++)//Get <path>....
 				{
 					NewFilePath += "\\" + result[i];
@@ -395,24 +361,22 @@ namespace IfsSync2Filter
 			}
 			else return FilePath;
 		}
-		private bool WriteFileEventCheck(string FilePath, long FileSize)
+		void WriteFileEventCheck(string filePath, long fileSize)
 		{
-			bool exist = false;
-			for (int i = 0; i < NotifyWriteFileList.Count; i++)
+			for (int i = 0; i < _notifyWriteFileList.Count; i++)
 			{
-				if (NotifyWriteFileList[i].FilePath == FilePath)
+				if (_notifyWriteFileList[i].FilePath == filePath)
 				{
-					NotifyWriteFileList[i].SizeUpdate(FileSize);
-					return false;
+					_notifyWriteFileList[i].SizeUpdate(fileSize);
+					return;
 				}
 			}
-			if (!exist) NotifyWriteFileList.Add(new WriteFileInfo(FilePath, FileSize));
-			return exist;
+			_notifyWriteFileList.Add(new WriteFileInfo(filePath, fileSize));
 		}
 		#endregion ETC
 		#region Filter Notify Event
 
-		private void NotifyRenameOrMoveFile(object Sender, CbmonitorNotifyRenameOrMoveFileEventArgs args)
+		void NotifyRenameOrMoveFile(object Sender, CbmonitorNotifyRenameOrMoveFileEventArgs args)
 		{
 			string FilePath = ChangeHardLinkDriveName(args.FileName);
 			string NewFilePath = ChangeHardLinkDriveName(args.NewFileName);
@@ -432,7 +396,7 @@ namespace IfsSync2Filter
 
 			log.Debug(Msg);
 		}
-		private void NotifyCreateFile(object Sender, CbmonitorNotifyCreateFileEventArgs args)
+		void NotifyCreateFile(object Sender, CbmonitorNotifyCreateFileEventArgs args)
 		{
 			if (!CheckIsFolder(args.FileName))
 			{
@@ -442,24 +406,24 @@ namespace IfsSync2Filter
 		}
 		#region File Write Event
 
-		private void NotifySetFileSize(object Sender, CbmonitorNotifySetFileSizeEventArgs args)
+		void NotifySetFileSize(object Sender, CbmonitorNotifySetFileSizeEventArgs args)
 		{
 			log.Debug(args.FileName);
 
 			WriteFileEventCheck(args.FileName, args.Size);
 		}
-		private void NotifyGetFileSizes(object Sender, CbmonitorNotifyGetFileSizesEventArgs args)
+		void NotifyGetFileSizes(object Sender, CbmonitorNotifyGetFileSizesEventArgs args)
 		{
 			log.Debug(args.FileName);
 
 			string ProcessName = ((Cbmonitor)Sender).GetOriginatorProcessName();
-			if (ProcessName.EndsWith(MSMPENG, StringComparison.OrdinalIgnoreCase)) WriteFileEventCheck(args.FileName, args.Size);
+			if (ProcessName.EndsWith(MS_MP_ENG, StringComparison.OrdinalIgnoreCase)) WriteFileEventCheck(args.FileName, args.Size);
 		}
-		private void NotifyWriteFile(object Sender, CbmonitorNotifyWriteFileEventArgs args)
+		void NotifyWriteFile(object Sender, CbmonitorNotifyWriteFileEventArgs args)
 		{
 			log.Debug(args.FileName);
 
-			foreach (var item in NotifyWriteFileList)
+			foreach (var item in _notifyWriteFileList)
 			{
 				if (item.FilePath == args.FileName)
 				{
@@ -472,20 +436,19 @@ namespace IfsSync2Filter
 		#endregion File Write Event
 
 		#region File Delete Event
-		private void NotifyDeleteFile(object Sender, CbmonitorNotifyDeleteFileEventArgs args)
+		void NotifyDeleteFile(object Sender, CbmonitorNotifyDeleteFileEventArgs args)
 		{
 			log.Debug(args.FileName);
 			DeleteBackup(args.FileName);
 		}
 
-		private void NotifyCanFileBeDeleted(object Sender, CbmonitorNotifyCanFileBeDeletedEventArgs args)
+		void NotifyCanFileBeDeleted(object Sender, CbmonitorNotifyCanFileBeDeletedEventArgs args)
 		{
 			if (!args.CanDelete)
 			{
 				int index = DeleteStacks.IndexOf(args.FileName);
 				if (index < 0)
 				{
-					//log.Debug("Add to delete list : {2}", args.FileName);
 					DeleteStacks.Add(args.FileName);
 				}
 				else
@@ -498,5 +461,33 @@ namespace IfsSync2Filter
 		}
 		#endregion File Delete Event
 		#endregion Filter Notify Event
+		#region Util
+
+		static string ReplacementOfReservedWords(string Path)
+		{
+			return Path.Replace(RESERVED_WORDS_ALLDIR, RESERVED_WORDS_DIR) + "\\*";
+		}
+		static bool CheckIsFolder(string FilePath)
+		{
+			try
+			{
+				var info = new DirectoryInfo(FilePath);
+				if ((info.Attributes & FileAttributes.Directory) == FileAttributes.Directory) return true;
+				return false;
+			}
+			catch
+			{
+				return false;
+			}
+		}
+		static bool FilePathException(string FilePath)
+		{
+			string FileName = MainData.GetFileName(FilePath);
+
+			if (FileName.StartsWith('~')) return true;
+			else if (FileName.EndsWith("tmp", StringComparison.OrdinalIgnoreCase)) return true;
+			return false;
+		}
+		#endregion
 	}
 }

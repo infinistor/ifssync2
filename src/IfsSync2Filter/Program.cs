@@ -19,7 +19,7 @@ using System.Threading;
 
 namespace IfsSync2Filter
 {
-	class Program
+	static class Program
 	{
 		private static readonly ILog log = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
 
@@ -35,25 +35,27 @@ namespace IfsSync2Filter
 
 			MainUtility.DeleteOldLogs(MainData.GetLogFolder("Filter"));
 
-			var FilterConfigs = new FilterConfig(true);
+			var filterConfigs = new FilterConfig(true);
 
-			var NormalFilter = new Filter(false);
-			var GlobalFilter = new Filter(true);
+			var normalFilter = new Filter(false);
+			var globalFilter = new Filter(true);
 
 			while (true)
 			{
-				FilterConfigs.Alive = true;
+				filterConfigs.Alive = true;
 				try
 				{
-					NormalFilter.CheckOnce();
+					normalFilter.CheckOnce();
 					log.Info("NormalFilter Check End");
-					GlobalFilter.CheckOnce();
+					globalFilter.CheckOnce();
 					log.Info("GlobalFilter Check End");
-					Thread.Sleep(FilterConfigs.FilterCheckDelay);
+					Thread.Sleep(filterConfigs.FilterCheckDelay);
 				}
 				catch (Exception e)
 				{
 					log.Error("Filter Check Error", e);
+					mutex.ReleaseMutex();
+					Thread.Sleep(filterConfigs.FilterCheckDelay);
 				}
 			}
 		}

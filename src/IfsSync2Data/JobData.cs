@@ -9,28 +9,17 @@
 * KSAN 개발팀은 사전 공지, 허락, 동의 없이 KSAN 개발에 관련된 모든 결과물에 대한 LICENSE 방식을 변경 할 권리가 있습니다.
 */
 using System;
-using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Text;
 
 namespace IfsSync2Data
 {
 	/// <summary> 작업 데이터 클래스 </summary>
-	public class JobData : IEquatable<JobData>, IEqualityComparer<JobData>
+	public class JobData
 	{
 		private const char Separator = '|';
-		/// <summary> 작업 정책 목록 </summary>
-		public enum PolicyName
-		{
-			/// <summary>Start immediately</summary>
-			Now = -1,
-			/// <summary>Real time upload</summary>
-			RealTime = 0,
-			/// <summary>Every few hours</summary>
-			Schedule,
-		}
+
 		public int Id { get; set; }
 		public string HostName { get; set; }
 		public string JobName { get; set; }
@@ -45,7 +34,7 @@ namespace IfsSync2Data
 		public ObservableCollection<string> VSSFileExt { get; set; }
 		public ObservableCollection<Schedule> ScheduleList { get; set; }
 
-		public PolicyName Policy { get; set; }
+		public JobPolicyType Policy { get; set; }
 		public bool Global { get; set; }
 		public bool Remove { get; set; }
 		public bool IsInit { get; set; }
@@ -65,15 +54,15 @@ namespace IfsSync2Data
 			JobName = MainData.DEFAULT_JOB_NAME;
 			IsGlobalUser = true;
 			UserID = -1;
-			Path = [];
-			BlackPath = [];
-			BlackFile = [];
-			BlackFileExt = [];
-			WhiteFile = [];
-			WhiteFileExt = [];
-			VSSFileExt = [];
-			ScheduleList = [];
-			Policy = PolicyName.RealTime;
+			Path = new ObservableCollection<string>();
+			BlackPath = new ObservableCollection<string>();
+			BlackFile = new ObservableCollection<string>();
+			BlackFileExt = new ObservableCollection<string>();
+			WhiteFile = new ObservableCollection<string>();
+			WhiteFileExt = new ObservableCollection<string>();
+			VSSFileExt = new ObservableCollection<string>();
+			ScheduleList = new ObservableCollection<Schedule>();
+			Policy = JobPolicyType.RealTime;
 			Global = true;
 			Remove = true;
 			FilterUpdate = false;
@@ -190,7 +179,7 @@ namespace IfsSync2Data
 		{
 			set
 			{
-				for (PolicyName i = PolicyName.Now; i <= PolicyName.Schedule; i++)
+				for (JobPolicyType i = JobPolicyType.Now; i <= JobPolicyType.Schedule; i++)
 					if (value.Equals(i.ToString())) { Policy = i; break; }
 			}
 			get
@@ -251,7 +240,7 @@ namespace IfsSync2Data
 
 		public bool CheckToSchedules()
 		{
-			if (Policy != PolicyName.Schedule) return true;
+			if (Policy != JobPolicyType.Schedule) return true;
 
 			DateTime time = DateTime.Now;
 			string Week = time.DayOfWeek.ToString();
@@ -263,34 +252,6 @@ namespace IfsSync2Data
 				if (item.IsExistSchedule(Week, Hours, Mins)) return true;
 			}
 			return false;
-		}
-		public override bool Equals(object obj)
-		{
-			if (obj == null) return false;
-			var item = obj as JobData;
-
-			return Equals(item);
-		}
-
-		public bool Equals(JobData item)
-		{
-			if (item == null) return false;
-
-			if (HostName != item.HostName) return false;
-			if (IsGlobalUser != item.IsGlobalUser) return false;
-			if (UserID != item.UserID) return false;
-			if (StrPath != item.StrPath) return false;
-			if (StrBlackPath != item.StrBlackPath) return false;
-			if (StrBlackFile != item.StrBlackFile) return false;
-			if (StrBlackFileExt != item.StrBlackFileExt) return false;
-			if (StrWhiteFile != item.StrWhiteFile) return false;
-			if (StrWhiteFileExt != item.StrWhiteFileExt) return false;
-			if (Policy != item.Policy) return false;
-			if (Remove != item.Remove) return false;
-			if (ScheduleList.Count != item.ScheduleList.Count) return false;
-			for (int i = 0; i < ScheduleList.Count; i++) if (ScheduleList[i].Equals(item.ScheduleList[i])) return false;
-
-			return true;
 		}
 
 		public void CopyTo(JobData Data)
@@ -319,37 +280,36 @@ namespace IfsSync2Data
 			foreach (var item in Data.WhiteFileExt) WhiteFileExt.Add(item);
 
 		}
-
-		public override int GetHashCode()
+	}
+	public static class JobDataExtensions
+	{
+		/// <summary>
+		/// Compare two JobData objects
+		/// </summary>
+		/// <param name="s">source</param>
+		/// <param name="t">target</param>
+		/// <returns></returns>
+		public static bool Equals(this JobData s, JobData t)
 		{
-			HashCode hash = new HashCode();
-			hash.Add(HostName);
-			hash.Add(IsGlobalUser);
-			hash.Add(UserID);
-			hash.Add(StrPath);
-			hash.Add(StrBlackPath);
-			hash.Add(StrBlackFile);
-			hash.Add(StrBlackFileExt);
-			hash.Add(StrWhiteFile);
-			hash.Add(StrWhiteFileExt);
-			hash.Add(Policy);
-			hash.Add(Remove);
-			hash.Add(ScheduleList);
-			return hash.ToHashCode();
-		}
+			if (t == null) return false;
 
-		public bool Equals(JobData x, JobData y)
-		{
-			if (x == null || y == null) return false;
-			return x.Equals(y);
-		}
+			if (s.HostName != t.HostName) return false;
+			if (s.IsGlobalUser != t.IsGlobalUser) return false;
+			if (s.UserID != t.UserID) return false;
+			if (s.StrPath != t.StrPath) return false;
+			if (s.StrBlackPath != t.StrBlackPath) return false;
+			if (s.StrBlackFile != t.StrBlackFile) return false;
+			if (s.StrBlackFileExt != t.StrBlackFileExt) return false;
+			if (s.StrWhiteFile != t.StrWhiteFile) return false;
+			if (s.StrWhiteFileExt != t.StrWhiteFileExt) return false;
+			if (s.Policy != t.Policy) return false;
+			if (s.Remove != t.Remove) return false;
+			if (s.ScheduleList.Count != t.ScheduleList.Count) return false;
+			for (int i = 0; i < s.ScheduleList.Count; i++) if (s.ScheduleList[i].Equals(t.ScheduleList[i])) return false;
 
-		public int GetHashCode([DisallowNull] JobData obj)
-		{
-			return obj.GetHashCode();
+			return true;
 		}
 	}
-
 
 	public class Schedule
 	{
@@ -367,8 +327,8 @@ namespace IfsSync2Data
 		public static readonly int FRIDAY = 0b_0000_0010;
 		public static readonly int SATURDAY = 0b_0000_0001;
 
-		private static readonly int[] DayOfTheWeekValueList = [EVERY, SUNDAY, MONDAY, TUESDAY, WEDNESDAY, THURSDAY, FRIDAY, SATURDAY];
-		private static readonly string[] DayOfTheWeekNameList = ["Every", "Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+		private static readonly int[] DayOfTheWeekValueList = new int[] { EVERY, SUNDAY, MONDAY, TUESDAY, WEDNESDAY, THURSDAY, FRIDAY, SATURDAY };
+		private static readonly string[] DayOfTheWeekNameList = new string[] { "Every", "Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat" };
 		/***********************Backup Type********************************/
 
 		public int ID { get; set; }
@@ -461,12 +421,24 @@ namespace IfsSync2Data
 			else if (Now <= NextDayTimes) return CheckDayOfTheWeek(YesterdayOfTheWeekIndex);
 			return false;
 		}
+	}
 
-		public bool Equals(Schedule Data)
+	public static class ScheduleExtensions
+	{
+		/// <summary>
+		/// Compare two Schedule objects
+		/// </summary>
+		/// <param name="s">source</param>
+		/// <param name="t">target</param>
+		/// <returns></returns>
+		public static bool Equals(this Schedule s, Schedule t)
 		{
-			if (Weeks != Data.Weeks) return false;
-			if (AtTime != Data.AtTime) return false;
-			if (ForHours != Data.ForHours) return false;
+			if (t == null) return false;
+
+			if (s.Weeks != t.Weeks) return false;
+			if (s.AtTime != t.AtTime) return false;
+			if (s.ForHours != t.ForHours) return false;
+
 			return true;
 		}
 	}

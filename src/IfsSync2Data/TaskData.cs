@@ -12,7 +12,6 @@ namespace IfsSync2Data
 {
 	public class TaskData
 	{
-		public enum TaskNameList { None = -1, Upload = 0, Rename, Delete }
 		//Index, FileName, Policy, Path, event time, upload time, upload flag
 		public long Index { get; set; }
 		public TaskNameList TaskName { get; set; }

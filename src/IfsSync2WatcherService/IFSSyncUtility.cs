@@ -282,7 +282,7 @@ namespace IfsSync2WatcherService
 
 					if (SenderSchedule.Equals(STR_SENDER_SCHEDULE_ON))
 					{
-						jobData.Policy = JobData.PolicyName.Schedule;
+						jobData.Policy = JobPolicyType.Schedule;
 
 						GetStringToTime(SenderStartTime, out int StartHours, out int StartMins);
 						GetStringToTime(SenderEndTime, out int EndHours, out int EndMins);
@@ -296,7 +296,7 @@ namespace IfsSync2WatcherService
 						jobData.ScheduleList.Add(schedule);
 					}
 					else
-						jobData.Policy = JobData.PolicyName.RealTime;
+						jobData.Policy = JobPolicyType.RealTime;
 
 					JobList.Add(jobData);
 					Config.JobList = JobList;

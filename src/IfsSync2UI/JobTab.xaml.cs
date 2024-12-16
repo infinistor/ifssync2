@@ -155,18 +155,18 @@ namespace IfsSync2UI
 
 			switch (Job.Policy)
 			{
-				case JobData.PolicyName.Now:
+				case JobPolicyType.Now:
 					Grid_Instant.Visibility = Visibility.Visible;
 					L_Monitor.Content = "VSS";
 					L_VSS.Content = "Analysis";
 					L_Sender.Content = "Upload";
 					L_Monitor.ToolTip = "네트워크 드라이브에서는 VSS가 적용되지 않습니다.";
 					break;
-				case JobData.PolicyName.Schedule:
+				case JobPolicyType.Schedule:
 					Grid_Schedule.Visibility = Visibility.Visible;
 					B_Save.Visibility = Visibility.Visible;
 					break;
-				case JobData.PolicyName.RealTime:
+				case JobPolicyType.RealTime:
 					B_Save.Visibility = Visibility.Visible;
 					break;
 			}
@@ -175,7 +175,7 @@ namespace IfsSync2UI
 		public void Close()
 		{
 			LogViewWindow?.Close();
-			if (Job.Policy == JobData.PolicyName.Now) Analysis.End();
+			if (Job.Policy == JobPolicyType.Now) Analysis.Stop();
 		}
 		public void Delete()
 		{
@@ -201,7 +201,7 @@ namespace IfsSync2UI
 			if (!NewTab)
 			{
 				B_LogView.IsEnabled = true;
-				if (Job.Policy != JobData.PolicyName.Now)
+				if (Job.Policy != JobPolicyType.Now)
 				{
 					C_UserList.IsEnabled = false;
 					B_StorageRefresh.Visibility = Visibility.Hidden;
@@ -356,7 +356,7 @@ namespace IfsSync2UI
 				Utility.ErrorMessageBox("Error : Extension List is Empty", "Save");
 				return;
 			}
-			if (Job.Policy == JobData.PolicyName.Schedule)
+			if (Job.Policy == JobPolicyType.Schedule)
 			{
 				if (Job.ScheduleList.Count == 0)
 				{
@@ -992,16 +992,16 @@ namespace IfsSync2UI
 			ButtonLock(false);
 
 			//Analysis
-			List<string> ExtensionList = new List<string>(Job.WhiteFileExt);
-			List<string> DirectoryList = new List<string>(Job.Path);
+			List<string> extensionList = new List<string>(Job.WhiteFileExt);
+			List<string> directoryList = new List<string>(Job.Path);
 
 			//Directory Search
-			foreach (var myDir in DirectoryList)
+			foreach (var myDir in directoryList)
 			{
 				if (Analysis.IsQuit) break;
 				try
 				{
-					SubDirectory(myDir, ExtensionList);
+					SubDirectory(myDir, extensionList);
 				}
 				catch (Exception e)
 				{
@@ -1015,7 +1015,7 @@ namespace IfsSync2UI
 			State.Quit = true;
 
 			if (Analysis.IsQuit) return false;
-			Analysis.End();
+			Analysis.Stop();
 
 			log.Info($"End. Time : {sw.ElapsedMilliseconds.ToString()}ms");
 			TaskDb.InsertLog($"Analysis End. Time : {sw.ElapsedMilliseconds.ToString()}ms");
@@ -1032,7 +1032,7 @@ namespace IfsSync2UI
 			foreach (DirectoryInfo dInfo in dInfoParent.GetDirectories())
 			{
 				if (Analysis.IsQuit) break;
-				try { SubDirectory(dInfo.FullName, ExtensionList); } catch { };
+				try { SubDirectory(dInfo.FullName, ExtensionList); } catch { }
 			}
 			AddBackupFile(ParentDirectory, ExtensionList);
 		}
@@ -1201,7 +1201,7 @@ namespace IfsSync2UI
 
 		private void StateCheck(object sender, ElapsedEventArgs e)
 		{
-			if (Job.Policy == JobData.PolicyName.Now)
+			if (Job.Policy == JobPolicyType.Now)
 			{
 				//if (State.Error) State.Quit = true;
 
@@ -1222,7 +1222,7 @@ namespace IfsSync2UI
 			{
 				Image_Filter.Source = Image_CircleBlue.Source;
 				State_Filter.Content = "구동중";
-				if (Job.Policy == JobData.PolicyName.Now)
+				if (Job.Policy == JobPolicyType.Now)
 				{
 					Image_VSS.Source = Image_CircleBlue.Source;
 					State_VSS.Content = "분석중";
@@ -1230,7 +1230,7 @@ namespace IfsSync2UI
 			});
 			else Image_Filter.Dispatcher.Invoke(delegate
 			{
-				if (Job.Policy == JobData.PolicyName.Now)
+				if (Job.Policy == JobPolicyType.Now)
 				{
 					if (BackupStart)
 					{
@@ -1253,7 +1253,7 @@ namespace IfsSync2UI
 
 			if (State.VSS) Image_VSS.Dispatcher.Invoke(delegate
 			{
-				if (Job.Policy == JobData.PolicyName.Now)
+				if (Job.Policy == JobPolicyType.Now)
 				{
 					Image_Filter.Source = Image_CircleBlue.Source;
 					State_Filter.Content = "활성화";
@@ -1266,7 +1266,7 @@ namespace IfsSync2UI
 			});
 			else Image_VSS.Dispatcher.Invoke(delegate
 			{
-				if (Job.Policy == JobData.PolicyName.Now)
+				if (Job.Policy == JobPolicyType.Now)
 				{
 					Image_Filter.Source = Image_CircleGray.Source;
 					State_Filter.Content = "비활성화";

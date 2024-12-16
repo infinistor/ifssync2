@@ -18,8 +18,8 @@ namespace IfsSync2WatcherService
 	{
 		readonly Timer BackupThreadTimer;
 		private bool RunCheck = false;
-		private readonly Watcher BackupWatcher = new();
-		private readonly WatcherConfig WatcherConfigs = new();
+		private readonly Watcher BackupWatcher = new Watcher();
+		private readonly WatcherConfig WatcherConfigs = new WatcherConfig();
 		public WatcherService()
 		{
 			InitializeComponent();

@@ -16,14 +16,19 @@ using IfsSync2Data;
 
 namespace IfsSync2Filter
 {
-	public class Filter(bool global)
+	public class Filter
 	{
 		const int FILTER_CHECK_DELAY = 5000;
 
 		readonly ILog _log = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
-		readonly List<FilterThread> _filters = [];
-		readonly JobDbManager _jobDb = new();
-		readonly bool _global = global;
+		readonly List<FilterThread> _filters = new List<FilterThread>();
+		readonly JobDbManager _jobDb = new JobDbManager();
+		readonly bool _global;
+
+		public Filter(bool global)
+		{
+			_global = global;
+		}
 
 		public void CheckOnce()
 		{

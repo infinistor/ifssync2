@@ -1378,7 +1378,7 @@ namespace IfsSync2Sender
 
 		public void Download(string BucketName, string Key, string FilePath, string VersionId = null)
 		{
-			TransferUtility Transfer = new(Client);
+			var Transfer = new TransferUtility(Client);
 
 			var Request = new TransferUtilityDownloadRequest()
 			{

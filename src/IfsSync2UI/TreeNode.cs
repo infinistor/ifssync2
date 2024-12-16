@@ -15,100 +15,100 @@ using System.Windows.Media;
 
 namespace IfsSync2UI
 {
-    public class TreeNode : INotifyPropertyChanged
-    {
+	public class TreeNode : INotifyPropertyChanged
+	{
 
-        private bool? _isChecked = false;
-        public TreeNode Parent;
+		private bool? _isChecked = false;
+		public TreeNode Parent;
 
-        public List<TreeNode> Children { get; set; }
-        public string Name { get; set; }
-        public string FullPath { get; set; }
-        public ImageSource FileIcon { get; set; }
+		public List<TreeNode> Children { get; set; }
+		public string Name { get; set; }
+		public string FullPath { get; set; }
+		public ImageSource FileIcon { get; set; }
 
-        public TreeNode()
-        {
-            Children = new List<TreeNode>();
-        }
+		public TreeNode()
+		{
+			Children = new List<TreeNode>();
+		}
 
-        public void Clear()
-        {
-            foreach (TreeNode child in this.Children)
-            {
-                child.Clear();
-            }
-            Children.Clear();
-        }
+		public void Clear()
+		{
+			foreach (TreeNode child in this.Children)
+			{
+				child.Clear();
+			}
+			Children.Clear();
+		}
 
-        public void Initialize()
-        {
-            foreach (TreeNode child in this.Children)
-            {
-                child.Parent = this;
-                if(_isChecked == true) child._isChecked = _isChecked;
-                child.Initialize();
-            }
-        }
+		public void Initialize()
+		{
+			foreach (TreeNode child in this.Children)
+			{
+				child.Parent = this;
+				if (_isChecked == true) child._isChecked = _isChecked;
+				child.Initialize();
+			}
+		}
 
-        public bool? IsChecked
-        {
-            get { return _isChecked; }
-            set { SetIsChecked(value, true, true); }
-        }
+		public bool? IsChecked
+		{
+			get { return _isChecked; }
+			set { SetIsChecked(value, true, true); }
+		}
 
-        public bool IsAllChildrenChecked()
-        {
-            if(Children.Count > 0)
-            {
-                int count = 0;
-                foreach (var item in Children)
-                {
-                    if (!item.IsChecked.Value) return false;
-                    else count++;
-                }
-                if (count == Children.Count) return true;
-            }
-            return false;
-        }
+		public bool IsAllChildrenChecked()
+		{
+			if (Children.Count > 0)
+			{
+				int count = 0;
+				foreach (var item in Children)
+				{
+					if (!item.IsChecked.Value) return false;
+					else count++;
+				}
+				if (count == Children.Count) return true;
+			}
+			return false;
+		}
 
-        private void SetIsChecked(bool? value, bool updateChildren, bool updateParent)
-        {
-            if (value == _isChecked) return;
-            
-            //if (value == true) Console.WriteLine("SetIsChecked true : " + FullPath);
-            //else if (value == false) Console.WriteLine("SetIsChecked false : " + FullPath);
-            //else Console.WriteLine("SetIsChecked NULL : " + FullPath);
-            _isChecked = value;
-            OnPropertyChanged("IsChecked");
+		private void SetIsChecked(bool? value, bool updateChildren, bool updateParent)
+		{
+			if (value == _isChecked) return;
 
-            if (updateParent && Parent != null) Parent.VerifyCheckState();
+			//if (value == true) Console.WriteLine("SetIsChecked true : " + FullPath);
+			//else if (value == false) Console.WriteLine("SetIsChecked false : " + FullPath);
+			//else Console.WriteLine("SetIsChecked NULL : " + FullPath);
+			_isChecked = value;
+			OnPropertyChanged("IsChecked");
 
-            if (updateChildren && _isChecked.HasValue) Children.ForEach(c => c.SetIsChecked(_isChecked, true, false));
-        }
+			if (updateParent && Parent != null) Parent.VerifyCheckState();
 
-        private void VerifyCheckState()
-        {
-            bool? state = null;
-            for (int i = 0; i < Children.Count; ++i)
-            {
-                bool? current = Children[i].IsChecked;
-                if (i == 0)
-                {
-                    state = current;
-                }
-                else if (state != current)
-                {
-                    state = null;
-                    break;
-                }
-            }
-            SetIsChecked(state, false, true);
-        }
+			if (updateChildren && _isChecked.HasValue) Children.ForEach(c => c.SetIsChecked(_isChecked, true, false));
+		}
 
-        public event PropertyChangedEventHandler PropertyChanged;
-        void OnPropertyChanged(string prop)
-        {
-            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(prop));
-        }
-    }
+		private void VerifyCheckState()
+		{
+			bool? state = null;
+			for (int i = 0; i < Children.Count; ++i)
+			{
+				bool? current = Children[i].IsChecked;
+				if (i == 0)
+				{
+					state = current;
+				}
+				else if (state != current)
+				{
+					state = null;
+					break;
+				}
+			}
+			SetIsChecked(state, false, true);
+		}
+
+		public event PropertyChangedEventHandler PropertyChanged;
+		void OnPropertyChanged(string prop)
+		{
+			PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(prop));
+		}
+	}
 }

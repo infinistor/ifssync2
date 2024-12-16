@@ -48,7 +48,18 @@ namespace IfsSync2Data
 		readonly Mutex _sqliteMutex;
 		readonly string _filePath;
 
-		public readonly List<TaskData> TaskList = [];
+		public readonly List<TaskData> Tasks = new List<TaskData>();
+
+		public int TaskCount { get { return Tasks.Count; } }
+		public long TaskSize
+		{
+			get
+			{
+				long Sum = 0;
+				foreach (TaskData Task in Tasks) Sum += Task.FileSize;
+				return Sum;
+			}
+		}
 		#endregion
 
 		public TaskDbManager(string jobName)
@@ -68,7 +79,7 @@ namespace IfsSync2Data
 			}
 		}
 
-		bool CreateDBFile()
+		void CreateDBFile()
 		{
 			try
 			{
@@ -127,9 +138,8 @@ namespace IfsSync2Data
 				cmd.ExecuteNonQuery();
 
 				_log.Debug($"Success : {cmd.CommandText}");
-				return true;
 			}
-			catch (Exception e) { _log.Error(e); return false; }
+			catch (Exception e) { _log.Error(e); }
 			finally { _sqliteMutex.ReleaseMutex(); }
 
 		}
@@ -265,7 +275,7 @@ namespace IfsSync2Data
 					var task = new TaskData
 					{
 						Index = Convert.ToInt64(rdr[STR_INDEX_NAME]),
-						StrTaskName = rdr[STR_TASK_NAME].ToString(),
+						TaskName = rdr[STR_TASK_NAME].ToString().ToTaskNameList(),
 						FilePath = rdr[STR_FILEPATH].ToString(),
 						NewFilePath = rdr[STR_NEW_FILE_PATH].ToString(),
 						FileSize = Convert.ToInt64(rdr[STR_FILE_SIZE]),
@@ -301,7 +311,7 @@ namespace IfsSync2Data
 					tasks.Add(new TaskData
 					{
 						Index = Convert.ToInt64(rdr[STR_INDEX_NAME]),
-						StrTaskName = rdr[STR_TASK_NAME].ToString(),
+						TaskName = rdr[STR_TASK_NAME].ToString().ToTaskNameList(),
 						FilePath = rdr[STR_FILEPATH].ToString(),
 						NewFilePath = rdr[STR_NEW_FILE_PATH].ToString(),
 						FileSize = Convert.ToInt64(rdr[STR_FILE_SIZE]),
@@ -369,7 +379,7 @@ namespace IfsSync2Data
 				_sqliteMutex.WaitOne();
 				conn.Open();
 
-				TaskList.Clear();
+				Tasks.Clear();
 
 				using var cmd = new SQLiteCommand(conn)
 				{ CommandText = $"SELECT * FROM '{STR_TASK_TABLE_NAME}' Limit {limit}" };
@@ -377,7 +387,7 @@ namespace IfsSync2Data
 				using var rdr = cmd.ExecuteReader();
 				while (rdr.Read())
 				{
-					TaskList.Add(new TaskData
+					Tasks.Add(new TaskData
 					{
 						Index = Convert.ToInt64(rdr[STR_INDEX_NAME]),
 						StrTaskName = rdr[STR_TASK_NAME].ToString(),
@@ -389,7 +399,7 @@ namespace IfsSync2Data
 					});
 				}
 
-				_log.Debug($"List Count : {TaskList.Count}");
+				_log.Debug($"List Count : {Tasks.Count}");
 				return true;
 			}
 			catch (Exception e) { _log.Error(e); return false; }
@@ -448,7 +458,7 @@ namespace IfsSync2Data
 				_log.Debug($"List Count : {items.Count}");
 				return items;
 			}
-			catch (Exception e) { _log.Error(e); throw; }
+			catch (Exception e) { _log.Error(e); return items; }
 			finally { _sqliteMutex.ReleaseMutex(); }
 		}
 	}

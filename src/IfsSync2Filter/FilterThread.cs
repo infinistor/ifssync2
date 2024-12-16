@@ -43,17 +43,29 @@ namespace IfsSync2Filter
 		readonly string Net = @"\Device\LanmanRedirector\;";
 		public const string MS_MP_ENG = "MsMpEng.exe";
 
-		public class WriteFileInfo(string filePath, long size)
+		public class WriteFileInfo
 		{
-			public string FilePath { get; set; } = filePath;
-			public long Size { get; set; } = size;
+			public string FilePath { get; set; }
+			public long Size { get; set; }
 
-			public void SizeUpdate(long _Size) { if (Size < _Size) Size = _Size; }
+			public WriteFileInfo(string filePath, long size)
+			{
+				FilePath = filePath;
+				Size = size;
+			}
+
+			public void SizeUpdate(long _Size)
+			{
+				if (Size < _Size)
+				{
+					Size = _Size;
+				}
+			}
 		}
 		readonly TaskDbManager _taskDb;
 
-		readonly List<string> DeleteStacks = [];
-		readonly List<WriteFileInfo> _notifyWriteFileList = [];
+		readonly List<string> DeleteStacks = new List<string>();
+		readonly List<WriteFileInfo> _notifyWriteFileList = new List<WriteFileInfo>();
 
 		public bool IsAlive { get; set; }
 		public bool IsFilterUpdate { get; set; }
@@ -275,7 +287,7 @@ namespace IfsSync2Filter
 					List<string> FileList = GetFileListToDirectory(FilePath, Job.WhiteFileExt);
 					foreach (string File in FileList)
 					{
-						TaskData Data = new TaskData(TaskData.TaskNameList.Upload, File, DateTime.Now.ToString("yyyy-MM-dd-HH:mm:ss"), GetFileSize(File));
+						TaskData Data = new TaskData(TaskNameList.Upload, File, DateTime.Now.ToString("yyyy-MM-dd-HH:mm:ss"), GetFileSize(File));
 						_taskDb.Insert(Data);
 						log.Debug(Data.FilePath);
 					}
@@ -283,7 +295,7 @@ namespace IfsSync2Filter
 				}
 				else if (CheckWhiteFileList(FileName))
 				{
-					TaskData Data = new TaskData(TaskData.TaskNameList.Upload, FilePath, DateTime.Now.ToString("yyyy-MM-dd-HH:mm:ss"), GetFileSize(FilePath));
+					TaskData Data = new TaskData(TaskNameList.Upload, FilePath, DateTime.Now.ToString("yyyy-MM-dd-HH:mm:ss"), GetFileSize(FilePath));
 					_taskDb.Insert(Data);
 					log.Debug(Data.FilePath);
 					return true;
@@ -300,7 +312,7 @@ namespace IfsSync2Filter
 			{
 				if (CheckWhiteFileList(FileName))
 				{
-					TaskData Data = new TaskData(TaskData.TaskNameList.Delete, FilePath,
+					TaskData Data = new TaskData(TaskNameList.Delete, FilePath,
 												DateTime.Now.ToString("yyyy-MM-dd-HH:mm:ss"));
 					_taskDb.Insert(Data);
 					log.Debug(Data.FilePath);
@@ -321,14 +333,14 @@ namespace IfsSync2Filter
 				{
 					FilePath += "\\";
 					NewFilePath += "\\";
-					TaskData Data = new TaskData(TaskData.TaskNameList.Rename, FilePath,
+					TaskData Data = new TaskData(TaskNameList.Rename, FilePath,
 												DateTime.Now.ToString("yyyy-MM-dd-HH:mm:ss"), NewFilePath);
 					_taskDb.Insert(Data);
 					log.Debug($"{Data.FilePath} => {Data.NewFilePath}");
 				}
 				else if (CheckWhiteFileList(NewFileName))
 				{
-					TaskData Data = new TaskData(TaskData.TaskNameList.Rename, FilePath,
+					TaskData Data = new TaskData(TaskNameList.Rename, FilePath,
 												DateTime.Now.ToString("yyyy-MM-dd-HH:mm:ss"), NewFilePath);
 					_taskDb.Insert(Data);
 					log.Debug($"{Data.FilePath} => {Data.NewFilePath}");

@@ -456,7 +456,7 @@ namespace IfsSync2Data
 					};
 
 					//Get Schedule
-					if (Data.Policy == JobData.PolicyName.Schedule)
+					if (Data.Policy == JobPolicyType.Schedule)
 					{
 						using var scheduleCmd = new SQLiteCommand(conn);
 						scheduleCmd.CommandText = string.Format("SELECT * FROM {0} WHERE {1} = {2};", STR_SCHEDULE_TABLE_NAME, STR_SCHEDULE_JOB_ID, Data.Id);
@@ -524,7 +524,7 @@ namespace IfsSync2Data
 					};
 
 					//Get Schedule
-					if (Data.Policy == JobData.PolicyName.Schedule)
+					if (Data.Policy == JobPolicyType.Schedule)
 					{
 						using var scheduleCmd = new SQLiteCommand(conn) { CommandText = $"SELECT * FROM {STR_SCHEDULE_TABLE_NAME} WHERE {STR_SCHEDULE_JOB_ID} = {Data.Id};" };
 						using var scheduleRdr = scheduleCmd.ExecuteReader();
@@ -594,7 +594,7 @@ namespace IfsSync2Data
 				};
 
 				//Get Schedule
-				if (Data.Policy == JobData.PolicyName.Schedule)
+				if (Data.Policy == JobPolicyType.Schedule)
 				{
 					using var scheduleCmd = new SQLiteCommand(conn);
 					scheduleCmd.CommandText = string.Format(
@@ -627,7 +627,7 @@ namespace IfsSync2Data
 			if (Data.Id > 0) { if (!Update(Data)) return false; }
 			else { if (!Insert(Data)) return false; }
 
-			if (Data.Policy == JobData.PolicyName.Schedule) return InsertScheduleList(Data);
+			if (Data.Policy == JobPolicyType.Schedule) return InsertScheduleList(Data);
 			return true;
 		}
 

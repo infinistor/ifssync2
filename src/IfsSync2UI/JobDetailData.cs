@@ -16,76 +16,78 @@ using IfsSync2Data;
 
 namespace IfsSync2UI
 {
-    public class JobDetailData : INotifyPropertyChanged
-    {
-        public string JobName { get; set; }
-        public int ID { get; set; }
-        public int UserID { get; set; }
+	public class JobDetailData : INotifyPropertyChanged
+	{
+		public string JobName { get; set; }
+		public int ID { get; set; }
+		public int UserID { get; set; }
 
-        public string HostName { get; set; }
+		public string HostName { get; set; }
 
-        public bool Delete { get; set; }
+		public bool Delete { get; set; }
 
-        public string JobType { get; set; }
-        public string StorageName { get; set; }
-        public ObservableCollection<string> ExtensionList { get; set; }
-        public bool FilterFlag { get { return State.Filter; }}
-        public bool VSSFlag { get { return State.VSS; } }
-        public bool SenderFlag { get { return State.Sender; } }
-        public string ButtonTag { get { return JobName; } }
+		public string JobType { get; set; }
+		public string StorageName { get; set; }
+		public ObservableCollection<string> ExtensionList { get; set; }
+		public bool FilterFlag { get { return State.Filter; } }
+		public bool VSSFlag { get { return State.VSS; } }
+		public bool SenderFlag { get { return State.Sender; } }
+		public string ButtonTag { get { return JobName; } }
 
-        public Visibility BtnVisibility { set { ButtonVisibility = value; OnPropertyChanged("Visibility"); } }
-        public Visibility ButtonVisibility { set; get; }
+		public Visibility BtnVisibility { set { ButtonVisibility = value; OnPropertyChanged("Visibility"); } }
+		public Visibility ButtonVisibility { set; get; }
 
-        public bool Update { set { OnPropertyChanged("Update"); } }
+		public bool Update { set { OnPropertyChanged("Update"); } }
 
-        public readonly JobState State;
+		public readonly JobState State;
 
-        public JobDetailData(string _HostName, string _JobName, int JobID)
-        {
-            JobName = _JobName;
-            HostName = _HostName;
-            State = new JobState(HostName, JobName);
-            ID = JobID;
-            ButtonVisibility = Visibility.Visible;
-        }
+		public JobDetailData(string _HostName, string _JobName, int JobID)
+		{
+			JobName = _JobName;
+			HostName = _HostName;
+			State = new JobState(HostName, JobName);
+			ID = JobID;
+			ButtonVisibility = Visibility.Visible;
+		}
 
-        public ImageSource FilterIcon
-        {
-            get
-            {
-                if (FilterFlag) return CircleBlue;
-                else return CircleGray;
-            }
-        }
-        public ImageSource VSSIcon { 
-            get
-            {
-                if (VSSFlag) return CircleBlue;
-                else return CircleGray;
-            }
-        }
-        public ImageSource SenderIcon {
-            get
-            {
-                if (State.Error) return TriangleRed;
-                else if (SenderFlag) return TriangleGreen;
-                else return SquareGray;
-            }
-        }
+		public ImageSource FilterIcon
+		{
+			get
+			{
+				if (FilterFlag) return CircleBlue;
+				else return CircleGray;
+			}
+		}
+		public ImageSource VSSIcon
+		{
+			get
+			{
+				if (VSSFlag) return CircleBlue;
+				else return CircleGray;
+			}
+		}
+		public ImageSource SenderIcon
+		{
+			get
+			{
+				if (State.Error) return TriangleRed;
+				else if (SenderFlag) return TriangleGreen;
+				else return SquareGray;
+			}
+		}
 
-        public ImageSource CircleBlue   ;
-        public ImageSource CircleGray   ;
-        public ImageSource TriangleRed  ;
-        public ImageSource SquareGray   ;
-        public ImageSource TriangleGreen;
+		public ImageSource CircleBlue;
+		public ImageSource CircleGray;
+		public ImageSource TriangleRed;
+		public ImageSource SquareGray;
+		public ImageSource TriangleGreen;
 
-        public event PropertyChangedEventHandler PropertyChanged;
-        private void OnPropertyChanged(string prop)
-        {
-            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(prop));
-        }
+		public event PropertyChangedEventHandler PropertyChanged;
+		private void OnPropertyChanged(string prop)
+		{
+			PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(prop));
+		}
 
-        public string Status { get { return State.Status; } }
-    }
+		public string Status { get { return State.Status; } }
+	}
 }

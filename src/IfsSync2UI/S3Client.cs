@@ -11,7 +11,6 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Reflection;
 using Amazon;
 using Amazon.Runtime;
 using Amazon.S3;
@@ -19,7 +18,6 @@ using Amazon.S3.Model;
 using Amazon.S3.Transfer;
 using Amazon.S3.Util;
 using IfsSync2Data;
-using log4net;
 
 namespace IfsSync2UI
 {
@@ -1333,7 +1331,7 @@ namespace IfsSync2UI
 		#region TransferUtility Function
 		public void Upload(string BucketName, string Key, string FilePath, long PartSize = 10 * 1024 * 1024, int ThreadCount = 10,
 			Stream Body = null, byte[] ByteBody = null, string ContentType = null,
-			List<Tag> TagSet = null, 
+			List<Tag> TagSet = null,
 			List<KeyValuePair<string, string>> MetadataList = null, List<KeyValuePair<string, string>> HeaderList = null)
 		{
 			var TransferUtilityConfig = new TransferUtilityConfig()
@@ -1378,7 +1376,7 @@ namespace IfsSync2UI
 
 		public void Download(string BucketName, string Key, string FilePath, string VersionId = null)
 		{
-			TransferUtility Transfer = new(Client);
+			var Transfer = new TransferUtility(Client);
 
 			var Request = new TransferUtilityDownloadRequest()
 			{

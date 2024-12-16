@@ -18,7 +18,7 @@
 		<BootstrapperEnabled>true</BootstrapperEnabled>
 	</PropertyGroup>
 	<PropertyGroup>
-		<TargetFramework>net8.0-windows</TargetFramework>
+		<TargetFramework>netcoreapp3.1</TargetFramework>
 		<GenerateAssemblyInfo>false</GenerateAssemblyInfo>
 		<ImplicitUsings>disable</ImplicitUsings>
 		<BaseOutputPath>../IfsSync2</BaseOutputPath>
@@ -72,6 +72,7 @@
 	<ItemGroup>
 		<PackageReference Include="callback.CBFSFilter" Version="20.0.7656" />
 		<PackageReference Include="log4net" Version="2.0.17" />
+		<PackageReference Include="Microsoft.Win32.Registry" Version="5.0.0" />
 		<PackageReference Include="System.Data.SQLite" Version="1.0.119" />
 		<PackageReference Include="System.Data.SQLite.Core" Version="1.0.119" />
 		<PackageReference Include="System.Data.SQLite.EF6" Version="1.0.119" />

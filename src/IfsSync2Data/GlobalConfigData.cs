@@ -31,7 +31,7 @@ namespace IfsSync2Data
 
 			SenderPause = false;
 
-			JobList = [];
+			JobList = new List<JobData>();
 		}
 	}
 }

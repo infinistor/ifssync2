@@ -23,14 +23,16 @@ namespace IfsSync2Sender
 {
 	public class SenderThread
 	{
+		const string ERR_NETWORK_CONNECTION_FAILED = "The network connection has been lost.";
+
 		static readonly ILog log = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
 		public int Delay { get; set; }
 
-		readonly TaskDataSqlManager TaskSQL = null;
-		readonly JobDataSqlManager JobSQL = null;
+		readonly TaskDbManager TaskDB = null;
+		readonly JobDbManager JobDB = null;
 
 		public JobData Job { get; set; }
-		readonly Thread Sender = null;
+		readonly Thread _sender = null;
 		readonly JobState State;
 
 		InstantData Instant = null;
@@ -56,13 +58,13 @@ namespace IfsSync2Sender
 			Delay = DelayTime;
 			this.FetchCount = FetchCount;
 			this.IsGlobal = IsGlobal;
-			TaskSQL = new TaskDataSqlManager(jobData.JobName);
-			JobSQL = new JobDataSqlManager();
+			TaskDB = new TaskDbManager(jobData.JobName);
+			JobDB = new JobDbManager();
 			State = new JobState(Job.HostName, Job.JobName, true);
 
 			IsAlive = true;
-			Sender = new Thread(() => Start());
-			Sender.Start();
+			_sender = new Thread(() => Start());
+			_sender.Start();
 		}
 
 		public bool Login()
@@ -80,7 +82,7 @@ namespace IfsSync2Sender
 				if (CheckConnect(Client))
 				{
 					log.Info($"Login Success : {Job.JobName}");
-					if (State.Error) TaskSQL.InsertLog("S3 Login Success!");
+					if (State.Error) TaskDB.InsertLog("S3 Login Success!");
 					Login_OK = true;
 					State.Error = false;
 				}
@@ -88,7 +90,7 @@ namespace IfsSync2Sender
 				{
 					log.Fatal($"Login fail : {User.URL}");
 					Login_OK = false;
-					if (!State.Error) TaskSQL.InsertLog(LOGIN_FAIL_MESSAGE);
+					if (!State.Error) TaskDB.InsertLog(LOGIN_FAIL_MESSAGE);
 					State.Error = true;
 					End();
 				}
@@ -97,18 +99,18 @@ namespace IfsSync2Sender
 			catch (AmazonS3Exception e)
 			{
 				log.Fatal($"Login fail.", e);
-				if (!State.Error) TaskSQL.InsertLog(LOGIN_FAIL_MESSAGE);
+				if (!State.Error) TaskDB.InsertLog(LOGIN_FAIL_MESSAGE);
 				State.Error = true;
 				return false;
 			}
 			catch (Exception e)
 			{
 				string Message;
-				if (e.Message.Contains(CONNECT_FAILURE)) Message = "The network connection has been lost.";
+				if (e.Message.Contains(CONNECT_FAILURE)) Message = ERR_NETWORK_CONNECTION_FAILED;
 				else Message = "S3 Login Fail!";
 
 				log.Fatal(Message, e);
-				if (!State.Error) TaskSQL.InsertLog(Message);
+				if (!State.Error) TaskDB.InsertLog(Message);
 
 				State.Error = true;
 				return false;
@@ -127,18 +129,18 @@ namespace IfsSync2Sender
 
 			switch (Job.Policy)
 			{
-				case JobData.PolicyName.Now:
+				case JobPolicyType.Now:
 					{
 						//Analysis and Backup
 						InstantBackup();
 						break;
 					}
-				case JobData.PolicyName.Schedule:
+				case JobPolicyType.Schedule:
 					{
 						if (Job.IsInit)
 						{
 							Analysis();
-							JobSQL.UpdateIsInit(Job, false, IsGlobal);
+							JobDB.UpdateIsInit(Job, false, IsGlobal);
 						}
 						while (!State.Quit)
 						{
@@ -149,12 +151,12 @@ namespace IfsSync2Sender
 						}
 						break;
 					}
-				case JobData.PolicyName.RealTime:
+				case JobPolicyType.RealTime:
 					{
 						if (Job.IsInit)
 						{
 							Analysis();
-							JobSQL.UpdateIsInit(Job, false, IsGlobal);
+							JobDB.UpdateIsInit(Job, false, IsGlobal);
 						}
 						while (!State.Quit)
 						{
@@ -181,10 +183,10 @@ namespace IfsSync2Sender
 
 		bool CheckNeedVSS()
 		{
-			if (TaskSQL.TaskCount == 0) return false;
+			if (TaskDB.Tasks.Count == 0) return false;
 			if (Job.VSSFileExt.Count == 0) return false;
 
-			foreach (TaskData Data in TaskSQL.TaskList)
+			foreach (TaskData Data in TaskDB.Tasks)
 			{
 				foreach (string Ext in Job.VSSFileExt)
 				{
@@ -203,21 +205,21 @@ namespace IfsSync2Sender
 
 			while (!State.Quit)
 			{
-				TaskSQL.GetList(FetchCount);
-				if (TaskSQL.TaskCount == 0) break;
-				State.RenameUpdate(TaskSQL.TaskCount, TaskSQL.TaskSize);
+				TaskDB.GetList(FetchCount);
+				if (TaskDB.TaskCount == 0) break;
+				State.RenameUpdate(TaskDB.TaskCount, TaskDB.TaskSize);
 
 				if (CheckNeedVSS())
 				{
-					if (ShadowCopyList == null) ShadowCopyList = GetShadowCopies();
+					ShadowCopyList ??= GetShadowCopies();
 				}
 
-				foreach (TaskData item in TaskSQL.TaskList)
+				foreach (TaskData item in TaskDB.Tasks)
 				{
 					if (State.Quit || Stop) { break; }
 
 					//Get Snapshot Path
-					if (State.VSS && item.TaskName == TaskData.TaskNameList.Upload)
+					if (State.VSS && item.TaskName == TaskNameList.Upload)
 					{
 						foreach (ShadowCopy Shadow in ShadowCopyList)
 							if (item.FilePath.StartsWith(Shadow.VolumeName)) item.SnapshotPath = Shadow.GetSnapshotPath(item.FilePath);
@@ -243,21 +245,21 @@ namespace IfsSync2Sender
 
 			while (!State.Quit)
 			{
-				TaskSQL.GetList(FetchCount);
-				if (TaskSQL.TaskCount == 0) break;
-				State.RenameUpdate(TaskSQL.TaskCount, TaskSQL.TaskSize);
+				TaskDB.GetList(FetchCount);
+				if (TaskDB.TaskCount == 0) break;
+				State.RenameUpdate(TaskDB.TaskCount, TaskDB.TaskSize);
 
 				if (ShadowCopyList == null)
 				{
 					ShadowCopyList = GetShadowCopies();
 				}
 
-				foreach (TaskData item in TaskSQL.TaskList)
+				foreach (TaskData item in TaskDB.Tasks)
 				{
 					if (State.Quit || Stop || !Job.CheckToSchedules()) { break; }
 
 					//Get Snapshot Path Only Upload
-					if (item.TaskName == TaskData.TaskNameList.Upload)
+					if (item.TaskName == TaskNameList.Upload)
 					{
 						foreach (ShadowCopy Shadow in ShadowCopyList)
 						{
@@ -275,16 +277,14 @@ namespace IfsSync2Sender
 						break;
 					}
 					Instant.Upload++;
-					{
-						//몫
-						double Percent = (double)Instant.Upload / (double)Instant.Total;
-						double quotient = Math.Truncate(Percent);
+					//몫
+					var Percent = (double)Instant.Upload / (double)Instant.Total;
+					var quotient = Math.Truncate(Percent);
 
-						if (Instant.Percent < quotient)
-						{
-							Instant.Percent = (long)quotient;
-							TaskSQL.InsertLog(string.Format("Instant Backup : {0:0.##}%", Percent * 100));
-						}
+					if (Instant.Percent < quotient)
+					{
+						Instant.Percent = (long)quotient;
+						TaskDB.InsertLog(string.Format("Instant Backup : {0:0.##}%", Percent * 100));
 					}
 				}
 
@@ -301,18 +301,18 @@ namespace IfsSync2Sender
 
 			while (!State.Quit)
 			{
-				TaskSQL.GetList(FetchCount);
-				if (TaskSQL.TaskCount == 0) break;
-				State.RenameUpdate(TaskSQL.TaskCount, TaskSQL.TaskSize);
+				TaskDB.GetList(FetchCount);
+				if (TaskDB.TaskCount == 0) break;
+				State.RenameUpdate(TaskDB.TaskCount, TaskDB.TaskSize);
 
 				if (ShadowCopyList == null) ShadowCopyList = GetShadowCopies();
 
-				foreach (TaskData item in TaskSQL.TaskList)
+				foreach (TaskData item in TaskDB.Tasks)
 				{
 					if (State.Quit || Stop || !Job.CheckToSchedules()) { break; }
 
 					//Get Snapshot Path Only Upload
-					if (item.TaskName == TaskData.TaskNameList.Upload)
+					if (item.TaskName == TaskNameList.Upload)
 					{
 						foreach (ShadowCopy Shadow in ShadowCopyList)
 						{
@@ -371,7 +371,7 @@ namespace IfsSync2Sender
 			if (ShadowCopyList.Count > 0)
 			{
 				State.VSS = true;
-				TaskSQL.InsertLog("VSS Activation");
+				TaskDB.InsertLog("VSS Activation");
 			}
 
 			return ShadowCopyList;
@@ -384,7 +384,7 @@ namespace IfsSync2Sender
 				ShadowCopies.Clear();
 
 				State.VSS = false;
-				TaskSQL.InsertLog("VSS Deactivation and deletion");
+				TaskDB.InsertLog("VSS Deactivation and deletion");
 			}
 		}
 
@@ -400,7 +400,7 @@ namespace IfsSync2Sender
 					if (!State.Error)
 					{
 						log.Error($"The network connection has been lost. {BucketName}");
-						TaskSQL.InsertLog("The network connection has been lost.");
+						TaskDB.InsertLog("The network connection has been lost.");
 					}
 					State.Error = true;
 					return false;
@@ -409,7 +409,7 @@ namespace IfsSync2Sender
 
 			switch (task.TaskName)
 			{
-				case TaskData.TaskNameList.Upload:
+				case TaskNameList.Upload:
 					{
 						if (string.IsNullOrWhiteSpace(task.SnapshotPath)) task.SnapshotPath = task.FilePath;
 
@@ -420,7 +420,7 @@ namespace IfsSync2Sender
 							string MD5 = MainData.CalculateMD5(task.SnapshotPath);
 							if (S3MD5.Equals(MD5, StringComparison.OrdinalIgnoreCase))
 							{
-								TaskSQL.Delete(task);
+								TaskDB.Delete(task);
 								log.Debug($"Duplicate file : {task.FilePath}");
 								return true;
 							}
@@ -434,10 +434,10 @@ namespace IfsSync2Sender
 							task.Result = ErrorMsg;
 						}
 						task.UploadTime = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
-						TaskSQL.Update(task);
+						TaskDB.Update(task);
 						break;
 					}
-				case TaskData.TaskNameList.Rename:
+				case TaskNameList.Rename:
 					{
 						if (RenameObject(Client, BucketName, task.FilePath, task.NewFilePath, out string ErrorMsg)) task.UploadFlag = true;
 						else
@@ -447,10 +447,10 @@ namespace IfsSync2Sender
 							task.Result = ErrorMsg;
 						}
 						task.UploadTime = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
-						TaskSQL.Update(task);
+						TaskDB.Update(task);
 						break;
 					}
-				case TaskData.TaskNameList.Delete:
+				case TaskNameList.Delete:
 					{
 						if (DeleteObject(Client, BucketName, task.FilePath, out string ErrorMsg)) task.UploadFlag = true;
 						else
@@ -461,7 +461,7 @@ namespace IfsSync2Sender
 						}
 
 						task.UploadTime = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
-						TaskSQL.Update(task);
+						TaskDB.Update(task);
 						break;
 					}
 			}
@@ -586,9 +586,9 @@ namespace IfsSync2Sender
 				log.Error(e);
 				if (e.Message.Contains(CONNECT_FAILURE))
 				{
-					string Message = "The network connection has been lost.";
+					string Message = ERR_NETWORK_CONNECTION_FAILED;
 					log.Error(Message);
-					if (!State.Error) TaskSQL.InsertLog(Message);
+					if (!State.Error) TaskDB.InsertLog(Message);
 					State.Error = true;
 				}
 				return false;
@@ -625,9 +625,9 @@ namespace IfsSync2Sender
 				log.Error(e);
 				if (e.Message.Contains(CONNECT_FAILURE))
 				{
-					string Message = "The network connection has been lost.";
+					string Message = ERR_NETWORK_CONNECTION_FAILED;
 					log.Error(Message);
-					if (!State.Error) TaskSQL.InsertLog(Message);
+					if (!State.Error) TaskDB.InsertLog(Message);
 					State.Error = true;
 				}
 				return false;
@@ -661,9 +661,9 @@ namespace IfsSync2Sender
 				log.Error(e);
 				if (e.Message.Contains(CONNECT_FAILURE))
 				{
-					string Message = "The network connection has been lost.";
+					string Message = ERR_NETWORK_CONNECTION_FAILED;
 					log.Error(Message);
-					if (!State.Error) TaskSQL.InsertLog(Message);
+					if (!State.Error) TaskDB.InsertLog(Message);
 					State.Error = true;
 				}
 				return false;
@@ -698,8 +698,8 @@ namespace IfsSync2Sender
 			log.Info("Start");
 			var sw = new Stopwatch();
 			sw.Start();
-			if (Job.Policy == JobData.PolicyName.Now) State.Filter = true;
-			TaskSQL.Clear();
+			if (Job.Policy == JobPolicyType.Now) State.Filter = true;
+			TaskDB.Clear();
 
 			//Analysis
 			var ExtensionList = new List<string>(Job.WhiteFileExt);
@@ -710,10 +710,10 @@ namespace IfsSync2Sender
 			foreach (var Directory in DirectoryList)
 			{
 				if (State.Quit) break;
-				try { FileCount += SubDirectory(Directory, ExtensionList); } catch { };
+				try { FileCount += SubDirectory(Directory, ExtensionList); } catch { }
 			}
 
-			if (Job.Policy == JobData.PolicyName.Now) State.Filter = false;
+			if (Job.Policy == JobPolicyType.Now) State.Filter = false;
 			sw.Stop();
 			log.Debug($"End. Time : {sw.ElapsedMilliseconds.ToString()}ms / FileCount:{FileCount}");
 			return FileCount;
@@ -730,20 +730,22 @@ namespace IfsSync2Sender
 			foreach (DirectoryInfo dInfo in dInfoParent.GetDirectories())
 			{
 				if (State.Quit) break;
-				try { FileCount += SubDirectory(dInfo.FullName, ExtensionList); } catch { };
+				FileCount += SubDirectory(dInfo.FullName, ExtensionList);
 			}
-			try { FileCount += AddBackupFile(ParentDirectory, ExtensionList); } catch { };
+			FileCount += AddBackupFile(ParentDirectory, ExtensionList);
 
 			return FileCount;
 		}
 		int AddBackupFile(string ParentDirectory, List<string> ExtensionList)
 		{
 			//add File List
-			string[] files = Directory.GetFiles(ParentDirectory);
-			TaskData.TaskNameList taskName = TaskData.TaskNameList.Upload;
+			var files = Directory.GetFiles(ParentDirectory);
+			var taskName = TaskNameList.Upload;
 
 			int FileCount = 0;
-			foreach (string file in files)    // 파일 나열
+
+			// 파일 나열
+			foreach (string file in files)
 			{
 				if (State.Quit) break;
 				var info = new FileInfo(file);
@@ -753,7 +755,7 @@ namespace IfsSync2Sender
 				else if (ExtensionList.Contains(info.Extension.Replace(".", "").ToLower()) && info.FullName.IndexOf('$') < 0)
 				{
 					var item = new TaskData(taskName, info.FullName, DateTime.Now.ToString("yyyy-MM-dd-HH:mm:ss"), info.Length);
-					TaskSQL.Insert(item);
+					TaskDB.Insert(item);
 					FileCount++;
 				}
 			}
@@ -767,7 +769,7 @@ namespace IfsSync2Sender
 
 			if (Job.SenderUpdate || !Instant.Analysis)
 			{
-				TaskSQL.InsertLog("Instant Backup Start");
+				TaskDB.InsertLog("Instant Backup Start");
 				log.Debug("Instant Backup Start");
 
 				List<ShadowCopy> ShadowCopyList = GetShadowCopies();
@@ -777,19 +779,19 @@ namespace IfsSync2Sender
 				State.UploadClear();
 
 				Instant.Total = Analysis();
-				TaskSQL.InsertLog("Analysis File count = " + Instant.Total.ToString());
+				TaskDB.InsertLog("Analysis File count = " + Instant.Total.ToString());
 				Instant.Analysis = true;
 				if (State.Quit)
 				{
-					TaskSQL.Clear();
+					TaskDB.Clear();
 					log.Debug("Analysis Stop!");
-					TaskSQL.InsertLog("Analysis Stop!");
+					TaskDB.InsertLog("Analysis Stop!");
 				}
 				else if (Instant.Total != 0) InstantRunOnce(ShadowCopyList);
 				else
 				{
 					log.Debug("Analysis Zero. No Backup");
-					TaskSQL.InsertLog("Analysis Zero.");
+					TaskDB.InsertLog("Analysis Zero.");
 				}
 
 				ReleaseShadowCopies(ShadowCopyList);
@@ -798,17 +800,17 @@ namespace IfsSync2Sender
 				State.RemainingSize = 0;
 				Instant.Analysis = true;
 				Instant.Total = 0;
-				TaskSQL.Clear();
+				TaskDB.Clear();
 
 				if (State.Quit || State.Error)
 				{
 					log.Debug("Backup Stop!");
-					TaskSQL.InsertLog("Backup Stop!");
+					TaskDB.InsertLog("Backup Stop!");
 				}
 				else
 				{
 					log.Debug("Backup Finish!");
-					TaskSQL.InsertLog("Backup Finish!");
+					TaskDB.InsertLog("Backup Finish!");
 				}
 				State.Quit = true;
 			}

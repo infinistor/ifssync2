@@ -15,169 +15,169 @@ using System.Windows.Input;
 
 namespace IfsSync2UI
 {
-    public static class VirtualToggleButton
-    {
-        public static readonly DependencyProperty IsCheckedProperty =
-            DependencyProperty.RegisterAttached("IsChecked", typeof(Nullable<bool>), typeof(VirtualToggleButton),
-                new FrameworkPropertyMetadata((Nullable<bool>)false,
-                    FrameworkPropertyMetadataOptions.BindsTwoWayByDefault | FrameworkPropertyMetadataOptions.Journal,
-                    new PropertyChangedCallback(OnIsCheckedChanged)));
+	public static class VirtualToggleButton
+	{
+		public static readonly DependencyProperty IsCheckedProperty =
+			DependencyProperty.RegisterAttached("IsChecked", typeof(Nullable<bool>), typeof(VirtualToggleButton),
+				new FrameworkPropertyMetadata((Nullable<bool>)false,
+					FrameworkPropertyMetadataOptions.BindsTwoWayByDefault | FrameworkPropertyMetadataOptions.Journal,
+					new PropertyChangedCallback(OnIsCheckedChanged)));
 
-        public static Nullable<bool> GetIsChecked(DependencyObject d)
-        {
-            return (Nullable<bool>)d.GetValue(IsCheckedProperty);
-        }
-        
-        public static void SetIsChecked(DependencyObject d, Nullable<bool> value)
-        {
-            d.SetValue(IsCheckedProperty, value);
-        }
+		public static Nullable<bool> GetIsChecked(DependencyObject d)
+		{
+			return (Nullable<bool>)d.GetValue(IsCheckedProperty);
+		}
 
-        private static void OnIsCheckedChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
-        {
-            if (d is UIElement pseudobutton)
-            {
-                Nullable<bool> newValue = (Nullable<bool>)e.NewValue;
-                if (newValue == true)
-                {
-                    RaiseCheckedEvent(pseudobutton);
-                }
-                else if (newValue == false)
-                {
-                    RaiseUncheckedEvent(pseudobutton);
-                }
-                else
-                {
-                    RaiseIndeterminateEvent(pseudobutton);
-                }
-            }
-        }
+		public static void SetIsChecked(DependencyObject d, Nullable<bool> value)
+		{
+			d.SetValue(IsCheckedProperty, value);
+		}
 
-        public static readonly DependencyProperty IsThreeStateProperty =
-            DependencyProperty.RegisterAttached("IsThreeState", typeof(bool), typeof(VirtualToggleButton),
-                new FrameworkPropertyMetadata((bool)false));
+		private static void OnIsCheckedChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+		{
+			if (d is UIElement pauseDoButton)
+			{
+				Nullable<bool> newValue = (Nullable<bool>)e.NewValue;
+				if (newValue == true)
+				{
+					RaiseCheckedEvent(pauseDoButton);
+				}
+				else if (newValue == false)
+				{
+					RaiseUncheckedEvent(pauseDoButton);
+				}
+				else
+				{
+					RaiseIndeterminateEvent(pauseDoButton);
+				}
+			}
+		}
 
-        public static bool GetIsThreeState(DependencyObject d)
-        {
-            return (bool)d.GetValue(IsThreeStateProperty);
-        }
+		public static readonly DependencyProperty IsThreeStateProperty =
+			DependencyProperty.RegisterAttached("IsThreeState", typeof(bool), typeof(VirtualToggleButton),
+				new FrameworkPropertyMetadata((bool)false));
 
-        public static void SetIsThreeState(DependencyObject d, bool value)
-        {
-            d.SetValue(IsThreeStateProperty, value);
-        }
-        
-        public static readonly DependencyProperty IsVirtualToggleButtonProperty =
-            DependencyProperty.RegisterAttached("IsVirtualToggleButton", typeof(bool), typeof(VirtualToggleButton),
-                new FrameworkPropertyMetadata((bool)false,
-                    new PropertyChangedCallback(OnIsVirtualToggleButtonChanged)));
+		public static bool GetIsThreeState(DependencyObject d)
+		{
+			return (bool)d.GetValue(IsThreeStateProperty);
+		}
 
-        public static bool GetIsVirtualToggleButton(DependencyObject d)
-        {
-            return (bool)d.GetValue(IsVirtualToggleButtonProperty);
-        }
+		public static void SetIsThreeState(DependencyObject d, bool value)
+		{
+			d.SetValue(IsThreeStateProperty, value);
+		}
 
-        public static void SetIsVirtualToggleButton(DependencyObject d, bool value)
-        {
-            d.SetValue(IsVirtualToggleButtonProperty, value);
-        }
+		public static readonly DependencyProperty IsVirtualToggleButtonProperty =
+			DependencyProperty.RegisterAttached("IsVirtualToggleButton", typeof(bool), typeof(VirtualToggleButton),
+				new FrameworkPropertyMetadata((bool)false,
+					new PropertyChangedCallback(OnIsVirtualToggleButtonChanged)));
 
-        private static void OnIsVirtualToggleButtonChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
-        {
-            if (d is IInputElement element)
-            {
-                if ((bool)e.NewValue)
-                {
-                    element.MouseLeftButtonDown += OnMouseLeftButtonDown;
-                    element.KeyDown += OnKeyDown;
-                }
-                else
-                {
-                    element.MouseLeftButtonDown -= OnMouseLeftButtonDown;
-                    element.KeyDown -= OnKeyDown;
-                }
-            }
-        }
+		public static bool GetIsVirtualToggleButton(DependencyObject d)
+		{
+			return (bool)d.GetValue(IsVirtualToggleButtonProperty);
+		}
 
-        internal static RoutedEventArgs RaiseCheckedEvent(UIElement target)
-        {
-            if (target == null) return null;
+		public static void SetIsVirtualToggleButton(DependencyObject d, bool value)
+		{
+			d.SetValue(IsVirtualToggleButtonProperty, value);
+		}
 
-            RoutedEventArgs args = new RoutedEventArgs { RoutedEvent = ToggleButton.CheckedEvent };
-            RaiseEvent(target, args);
-            return args;
-        }
+		private static void OnIsVirtualToggleButtonChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+		{
+			if (d is IInputElement element)
+			{
+				if ((bool)e.NewValue)
+				{
+					element.MouseLeftButtonDown += OnMouseLeftButtonDown;
+					element.KeyDown += OnKeyDown;
+				}
+				else
+				{
+					element.MouseLeftButtonDown -= OnMouseLeftButtonDown;
+					element.KeyDown -= OnKeyDown;
+				}
+			}
+		}
 
-        internal static RoutedEventArgs RaiseUncheckedEvent(UIElement target)
-        {
-            if (target == null) return null;
+		internal static RoutedEventArgs RaiseCheckedEvent(UIElement target)
+		{
+			if (target == null) return null;
 
-            RoutedEventArgs args = new RoutedEventArgs { RoutedEvent = ToggleButton.UncheckedEvent };
-            RaiseEvent(target, args);
-            return args;
-        }
+			RoutedEventArgs args = new RoutedEventArgs { RoutedEvent = ToggleButton.CheckedEvent };
+			RaiseEvent(target, args);
+			return args;
+		}
 
-        internal static RoutedEventArgs RaiseIndeterminateEvent(UIElement target)
-        {
-            if (target == null) return null;
+		internal static RoutedEventArgs RaiseUncheckedEvent(UIElement target)
+		{
+			if (target == null) return null;
 
-            RoutedEventArgs args = new RoutedEventArgs
-            {
-                RoutedEvent = ToggleButton.IndeterminateEvent
-            };
-            RaiseEvent(target, args);
-            return args;
-        }
+			RoutedEventArgs args = new RoutedEventArgs { RoutedEvent = ToggleButton.UncheckedEvent };
+			RaiseEvent(target, args);
+			return args;
+		}
 
-        private static void OnMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
-        {
-            e.Handled = true;
-            UpdateIsChecked(sender as DependencyObject);
-        }
+		internal static RoutedEventArgs RaiseIndeterminateEvent(UIElement target)
+		{
+			if (target == null) return null;
 
-        private static void OnKeyDown(object sender, KeyEventArgs e)
-        {
-            if (e.OriginalSource == sender)
-            {
-                if (e.Key == Key.Space)
-                {
-                    if ((Keyboard.Modifiers & ModifierKeys.Alt) == ModifierKeys.Alt) return;
+			RoutedEventArgs args = new RoutedEventArgs
+			{
+				RoutedEvent = ToggleButton.IndeterminateEvent
+			};
+			RaiseEvent(target, args);
+			return args;
+		}
 
-                    UpdateIsChecked(sender as DependencyObject);
-                    e.Handled = true;
+		private static void OnMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+		{
+			e.Handled = true;
+			UpdateIsChecked(sender as DependencyObject);
+		}
 
-                }
-                else if (e.Key == Key.Enter && (bool)(sender as DependencyObject).GetValue(KeyboardNavigation.AcceptsReturnProperty))
-                {
-                    UpdateIsChecked(sender as DependencyObject);
-                    e.Handled = true;
-                }
-            }
-        }
+		private static void OnKeyDown(object sender, KeyEventArgs e)
+		{
+			if (e.OriginalSource == sender)
+			{
+				if (e.Key == Key.Space)
+				{
+					if ((Keyboard.Modifiers & ModifierKeys.Alt) == ModifierKeys.Alt) return;
 
-        private static void UpdateIsChecked(DependencyObject d)
-        {
-            Nullable<bool> isChecked = GetIsChecked(d);
-            if (isChecked == true)
-            {
-                SetIsChecked(d, GetIsThreeState(d) ? (Nullable<bool>)null : (Nullable<bool>)false);
-            }
-            else
-            {
-                SetIsChecked(d, isChecked.HasValue);
-            }
-        }
+					UpdateIsChecked(sender as DependencyObject);
+					e.Handled = true;
 
-        private static void RaiseEvent(DependencyObject target, RoutedEventArgs args)
-        {
-            if (target is UIElement)
-            {
-                (target as UIElement).RaiseEvent(args);
-            }
-            else if (target is ContentElement)
-            {
-                (target as ContentElement).RaiseEvent(args);
-            }
-        }
-    }
+				}
+				else if (e.Key == Key.Enter && (bool)(sender as DependencyObject).GetValue(KeyboardNavigation.AcceptsReturnProperty))
+				{
+					UpdateIsChecked(sender as DependencyObject);
+					e.Handled = true;
+				}
+			}
+		}
+
+		private static void UpdateIsChecked(DependencyObject d)
+		{
+			Nullable<bool> isChecked = GetIsChecked(d);
+			if (isChecked == true)
+			{
+				SetIsChecked(d, GetIsThreeState(d) ? (Nullable<bool>)null : (Nullable<bool>)false);
+			}
+			else
+			{
+				SetIsChecked(d, isChecked.HasValue);
+			}
+		}
+
+		private static void RaiseEvent(DependencyObject target, RoutedEventArgs args)
+		{
+			if (target is UIElement)
+			{
+				(target as UIElement).RaiseEvent(args);
+			}
+			else if (target is ContentElement)
+			{
+				(target as ContentElement).RaiseEvent(args);
+			}
+		}
+	}
 }

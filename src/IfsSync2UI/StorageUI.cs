@@ -13,55 +13,55 @@ using System.Windows.Controls.Primitives;
 
 namespace IfsSync2UI
 {
-    class StorageUI
-    {
-        public readonly Grid        Main;
-        public readonly TextBlock   StorageName;
-        public readonly TextBlock   URL;
-        public readonly StackPanel  Graph;
-        public readonly Label       SizeRate;
-        public readonly Label       Total;
-        public readonly Label       Used;
-        public readonly Label       Free;
-        public readonly TextBox     Box_StorageName;
+	class StorageUI
+	{
+		public readonly Grid Main;
+		public readonly TextBlock StorageName;
+		public readonly TextBlock URL;
+		public readonly StackPanel Graph;
+		public readonly Label SizeRate;
+		public readonly Label Total;
+		public readonly Label Used;
+		public readonly Label Free;
+		public readonly TextBox Box_StorageName;
 
-        public readonly ToggleButton PopupButton          = null;
-        public readonly TextBox      Box_URL              = null;
-        public readonly TextBox      Box_AccessKey        = null;
-        public readonly TextBox      Box_AccessSecret     = null;
-        public readonly TextBox      Box_UserName         = null;
-        public readonly TextBox      Box_S3FileManagerURL = null;
-        public readonly TextBlock    Black_AWSMessage     = null;
-        public readonly Grid         Grid_Quota           = null;
+		public readonly ToggleButton PopupButton = null;
+		public readonly TextBox Box_URL = null;
+		public readonly TextBox Box_AccessKey = null;
+		public readonly TextBox Box_AccessSecret = null;
+		public readonly TextBox Box_UserName = null;
+		public readonly TextBox Box_S3FileManagerURL = null;
+		public readonly TextBlock Black_AWSMessage = null;
+		public readonly Grid Grid_Quota = null;
 
-        public StorageUI(Grid _Main, TextBlock _StorageName, TextBlock _URL, StackPanel _Graph,
-                         Label _SizeRate, Label _Total, Label _Used, Label _Free, TextBox _Box_StorageName, TextBox _Box_S3FileManagerURL)
-        {
-            Main                 = _Main;
-            StorageName          = _StorageName;
-            URL                  = _URL;
-            Graph                = _Graph;
-            SizeRate             = _SizeRate;
-            Total                = _Total;
-            Used                 = _Used;
-            Free                 = _Free;
-            Box_StorageName      = _Box_StorageName;
-            Box_S3FileManagerURL = _Box_S3FileManagerURL;
-        }
-        public StorageUI(Grid _Main, TextBlock _StorageName, TextBlock _URL, StackPanel _Graph,
-                         Label _SizeRate, Label _Total, Label _Used, Label _Free, TextBox _Box_StorageName, TextBox _Box_S3FileManagerURL,
-                         ToggleButton _PopupButton, TextBox _Box_URL, TextBox _Box_AccessKey,
-                         TextBox _Box_AccessSecret, TextBox _Box_UserName,
-                         TextBlock _Black_AWSMessage, Grid _Grid_Quota)
-            :this(_Main, _StorageName, _URL, _Graph, _SizeRate, _Total, _Used, _Free, _Box_StorageName, _Box_S3FileManagerURL)
-        {
-            PopupButton      = _PopupButton;
-            Box_URL          = _Box_URL;
-            Box_AccessKey    = _Box_AccessKey;
-            Box_AccessSecret = _Box_AccessSecret;
-            Box_UserName     = _Box_UserName;
-            Black_AWSMessage = _Black_AWSMessage;
-            Grid_Quota       = _Grid_Quota;
-        }
-    }
+		public StorageUI(Grid _Main, TextBlock _StorageName, TextBlock _URL, StackPanel _Graph,
+						 Label _SizeRate, Label _Total, Label _Used, Label _Free, TextBox _Box_StorageName, TextBox _Box_S3FileManagerURL)
+		{
+			Main = _Main;
+			StorageName = _StorageName;
+			URL = _URL;
+			Graph = _Graph;
+			SizeRate = _SizeRate;
+			Total = _Total;
+			Used = _Used;
+			Free = _Free;
+			Box_StorageName = _Box_StorageName;
+			Box_S3FileManagerURL = _Box_S3FileManagerURL;
+		}
+		public StorageUI(Grid _Main, TextBlock _StorageName, TextBlock _URL, StackPanel _Graph,
+						 Label _SizeRate, Label _Total, Label _Used, Label _Free, TextBox _Box_StorageName, TextBox _Box_S3FileManagerURL,
+						 ToggleButton _PopupButton, TextBox _Box_URL, TextBox _Box_AccessKey,
+						 TextBox _Box_AccessSecret, TextBox _Box_UserName,
+						 TextBlock _Black_AWSMessage, Grid _Grid_Quota)
+			: this(_Main, _StorageName, _URL, _Graph, _SizeRate, _Total, _Used, _Free, _Box_StorageName, _Box_S3FileManagerURL)
+		{
+			PopupButton = _PopupButton;
+			Box_URL = _Box_URL;
+			Box_AccessKey = _Box_AccessKey;
+			Box_AccessSecret = _Box_AccessSecret;
+			Box_UserName = _Box_UserName;
+			Black_AWSMessage = _Black_AWSMessage;
+			Grid_Quota = _Grid_Quota;
+		}
+	}
 }

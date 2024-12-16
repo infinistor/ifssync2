@@ -116,7 +116,7 @@ namespace IfsSync2Data
 		public const int S3_FILE_MANAGER_DEFAULT_PORT = 5544;
 		#endregion
 		#region etc
-		public static readonly string[] CapacityUnitList = ["B", "KB", "MB", "GB", "TB", "PB", "EB", "ZB", "YB"];
+		public static readonly string[] CapacityUnitList = new string[] { "B", "KB", "MB", "GB", "TB", "PB", "EB", "ZB", "YB" };
 		public const int DEFAULT_DELETE_DATE = 30;
 		#endregion
 

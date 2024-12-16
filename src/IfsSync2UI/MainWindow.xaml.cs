@@ -37,13 +37,13 @@ namespace IfsSync2UI
 
 		static readonly ILog log = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
 
-		readonly ObservableCollection<JobDetailData> JobDetailList = [];
+		readonly ObservableCollection<JobDetailData> JobDetailList = new ObservableCollection<JobDetailData>();
 
 		StorageData MainStorage = null;
 		readonly StorageUI MainStorageUI = null;
 
-		readonly List<StorageData> StorageList = [];
-		readonly List<StorageUI> StorageUIList = [];
+		readonly List<StorageData> StorageList = new List<StorageData>();
+		readonly List<StorageUI> StorageUIList = new List<StorageUI>();
 
 		readonly WatcherConfig WatcherConfigs;
 
@@ -136,7 +136,7 @@ namespace IfsSync2UI
 				{
 					JobName = MainData.INSTANT_BACKUP_NAME,
 					HostName = Environment.UserName,
-					StrPolicy = JobData.PolicyName.Now.ToString()
+					StrPolicy = JobPolicyType.Now.ToString()
 				};
 				JobSQL.PutJobData(Instant);
 				Instant.Id = JobSQL.GetJobDataId(Instant.HostName, Instant.JobName);
@@ -200,13 +200,13 @@ namespace IfsSync2UI
 		}
 
 		#region Job Manager
-		static string GetJobType(JobData.PolicyName Policy)
+		static string GetJobType(JobPolicyType Policy)
 		{
 			return Policy switch
 			{
-				JobData.PolicyName.Now => MainData.INSTANT_BACKUP_NAME,
-				JobData.PolicyName.RealTime => "Real-Time",
-				JobData.PolicyName.Schedule => "Schedule",
+				JobPolicyType.Now => MainData.INSTANT_BACKUP_NAME,
+				JobPolicyType.RealTime => "Real-Time",
+				JobPolicyType.Schedule => "Schedule",
 				_ => "None",
 			};
 		}
@@ -337,7 +337,7 @@ namespace IfsSync2UI
 			if (JobSQL.IsJobName(Environment.UserName, JobName)) return true;
 			return false;
 		}
-		bool CreateJob(string _JobName, JobData.PolicyName _Policy)
+		bool CreateJob(string _JobName, JobPolicyType _Policy)
 		{
 			if (Utility.FileNameSpecialCharactersErrorCheck(_JobName))
 			{
@@ -384,7 +384,7 @@ namespace IfsSync2UI
 			if (!string.IsNullOrWhiteSpace(T_RealTimeName.Text))
 			{
 				string JobName = T_RealTimeName.Text;
-				if (CreateJob(JobName, JobData.PolicyName.RealTime))
+				if (CreateJob(JobName, JobPolicyType.RealTime))
 				{
 					T_RealTimeName.Text = string.Empty;
 					B_RealTimeToggle.IsChecked = false;
@@ -401,7 +401,7 @@ namespace IfsSync2UI
 			if (e.Key == Key.Return && !string.IsNullOrWhiteSpace(T_RealTimeName.Text))
 			{
 				string JobName = T_RealTimeName.Text;
-				if (CreateJob(JobName, JobData.PolicyName.RealTime))
+				if (CreateJob(JobName, JobPolicyType.RealTime))
 				{
 					T_RealTimeName.Text = string.Empty;
 					B_RealTimeToggle.IsChecked = false;
@@ -414,7 +414,7 @@ namespace IfsSync2UI
 			if (!string.IsNullOrWhiteSpace(T_ScheduleName.Text))
 			{
 				string JobName = T_ScheduleName.Text;
-				if (CreateJob(JobName, JobData.PolicyName.Schedule))
+				if (CreateJob(JobName, JobPolicyType.Schedule))
 				{
 					T_ScheduleName.Text = string.Empty;
 					B_ScheduleToggle.IsChecked = false;
@@ -434,7 +434,7 @@ namespace IfsSync2UI
 			{
 				string JobName = T_ScheduleName.Text;
 				B_ScheduleToggle.IsChecked = false;
-				if (CreateJob(JobName, JobData.PolicyName.Schedule))
+				if (CreateJob(JobName, JobPolicyType.Schedule))
 				{
 					T_ScheduleName.Text = string.Empty;
 					B_ScheduleToggle.IsChecked = false;
@@ -1029,11 +1029,13 @@ namespace IfsSync2UI
 				StrokeThickness = 0,
 				Data = new PathGeometry
 				{
-					Figures = [
+					Figures = new PathFigureCollection()
+					{
 						new PathFigure
 						{
 							StartPoint = Center,
-							Segments = [
+							Segments = new PathSegmentCollection()
+							{
 								new LineSegment()
 								{
 									Point = new Point(Center.X + RadiusX, Center.Y),
@@ -1045,9 +1047,10 @@ namespace IfsSync2UI
 									Size = new Size(Center.X, Center.Y),
 									IsLargeArc = angle > MaxAngle / 2,
 									SweepDirection = SweepDirection.Counterclockwise
-								}]
+								}
+							}
 						}
-					]
+					}
 				},
 				Fill = new SolidColorBrush(Colors.CornflowerBlue)
 			};

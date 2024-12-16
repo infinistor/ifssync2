@@ -22,8 +22,8 @@ namespace IfsSync2Sender
 
 		//SQL
 		private readonly string RootPath;
-		private readonly JobDataSqlManager JobSQL;
-		private readonly UserDataSqlManager UserSQL;
+		private readonly JobDbManager JobSQL;
+		private readonly UserDbManager UserSQL;
 		private readonly List<SenderThread> SenderList = new List<SenderThread>();
 		//User Data
 		private List<UserData> UserList;
@@ -35,8 +35,8 @@ namespace IfsSync2Sender
 		{
 			Global = _Global;
 			RootPath = _RootPath;
-			JobSQL = new JobDataSqlManager();
-			UserSQL = new UserDataSqlManager();
+			JobSQL = new JobDbManager();
+			UserSQL = new UserDbManager();
 		}
 
 		public void Once(int FetchCount, int SenderDelay)

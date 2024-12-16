@@ -14,112 +14,112 @@ using IfsSync2Data;
 
 namespace IfsSync2Filter
 {
-    public class FilterEventHandler
-    {
-        public enum EventList
-        {
-            None = 0,
-            SaveFile,
-            SaveNewFile,
-            Rename,
-            Delete
-        }
+	public class FilterEventHandler
+	{
+		public enum EventList
+		{
+			None = 0,
+			SaveFile,
+			SaveNewFile,
+			Rename,
+			Delete
+		}
 
-        private const string RECYCLE = "RECYCLE";
-        private const string CSV = ".csv";
-        private const char DotSeparator = '.';
-        private const string PDF = ".pdf";
-        private const string TMP = ".tmp";
-        private const string TEMP = ".tmp";
-        private const string VISUALSTUDIO_TMP = "~";
-        private const string APP_TEMP_PATH = @"\AppData\Local\Temp\";
+		private const string RECYCLE = "RECYCLE";
+		private const string CSV = ".csv";
+		private const char DotSeparator = '.';
+		private const string PDF = ".pdf";
+		private const string TMP = ".tmp";
+		private const string TEMP = ".tmp";
+		private const string VISUALSTUDIO_TMP = "~";
+		private const string APP_TEMP_PATH = @"\AppData\Local\Temp\";
 
-        public static EventList FindSaveByRenameEvent(ObservableCollection<string> Path, string FilePath, string NewFilePath)
-        {
-            if (RecycleCheck(NewFilePath)) return EventList.None;
-            if (CSVSaveCheck(FilePath, NewFilePath)) return EventList.SaveFile;
-            if (PDFSaveCheck(FilePath, NewFilePath)) return EventList.SaveNewFile;
-            if (MoveSaveCheck(Path, FilePath)) return EventList.SaveNewFile;
-            if (TmpSaveCheck(FilePath, NewFilePath)) return EventList.SaveNewFile;
-            if (MoveDeleteCheck(Path, NewFilePath)) return EventList.Delete;
-            if (IsTempFile(FilePath, NewFilePath)) return EventList.None;
-            return EventList.Rename;
-        }
+		public static EventList FindSaveByRenameEvent(ObservableCollection<string> Path, string FilePath, string NewFilePath)
+		{
+			if (RecycleCheck(NewFilePath)) return EventList.None;
+			if (CSVSaveCheck(FilePath, NewFilePath)) return EventList.SaveFile;
+			if (PDFSaveCheck(FilePath, NewFilePath)) return EventList.SaveNewFile;
+			if (MoveSaveCheck(Path, FilePath)) return EventList.SaveNewFile;
+			if (TmpSaveCheck(FilePath, NewFilePath)) return EventList.SaveNewFile;
+			if (MoveDeleteCheck(Path, NewFilePath)) return EventList.Delete;
+			if (IsTempFile(FilePath, NewFilePath)) return EventList.None;
+			return EventList.Rename;
+		}
 
-        private static bool RecycleCheck(string NewFilePath)
-        {
-            if (NewFilePath.IndexOf(RECYCLE) > 0) return true;
-            return false;
-        }
-        private static bool CSVSaveCheck(string FilePath, string NewFilePath)
-        {
-            if (FilePath.EndsWith(CSV, StringComparison.OrdinalIgnoreCase))
-            {
-                string NewFileName = MainData.GetFileName(NewFilePath);
+		private static bool RecycleCheck(string NewFilePath)
+		{
+			if (NewFilePath.IndexOf(RECYCLE) > 0) return true;
+			return false;
+		}
+		private static bool CSVSaveCheck(string FilePath, string NewFilePath)
+		{
+			if (FilePath.EndsWith(CSV, StringComparison.OrdinalIgnoreCase))
+			{
+				string NewFileName = MainData.GetFileName(NewFilePath);
 
-                return IsFileNameHex(NewFileName);
-            }
-            return false;
-        }
-        private static bool PDFSaveCheck(string FilePath, string NewFilePath)
-        {
-            if (NewFilePath.EndsWith(PDF, StringComparison.OrdinalIgnoreCase))
-            {
-                if (FilePath.EndsWith(TMP, StringComparison.OrdinalIgnoreCase)) return true;
-            }
-            return false;
-        }
-        private static bool TmpSaveCheck(string FilePath, string NewFilePath)
-        {
-            if (TempFileCheck(TMP, FilePath)) { if (!TempFileCheck(TMP, NewFilePath)) return true; }
-            else if (TempFileCheck(TEMP, FilePath)) { if (!TempFileCheck(TEMP, NewFilePath)) return true; }
-            else if (IsFileNameHex(MainData.GetFileName(FilePath))) { if (!TempFileCheck(TEMP, NewFilePath)) return true; }
-	    else
-	    {
-               string[] result = FilePath.Split(DotSeparator);
-                string Ext = result[result.Length - 1];
-                if (Ext.Length == 4 && Ext.EndsWith(VISUALSTUDIO_TMP))
-                    if (!NewFilePath.EndsWith(TMP, StringComparison.OrdinalIgnoreCase)) return true;
-            }
-            return false;
-        }
+				return IsFileNameHex(NewFileName);
+			}
+			return false;
+		}
+		private static bool PDFSaveCheck(string FilePath, string NewFilePath)
+		{
+			if (NewFilePath.EndsWith(PDF, StringComparison.OrdinalIgnoreCase))
+			{
+				if (FilePath.EndsWith(TMP, StringComparison.OrdinalIgnoreCase)) return true;
+			}
+			return false;
+		}
+		private static bool TmpSaveCheck(string FilePath, string NewFilePath)
+		{
+			if (TempFileCheck(TMP, FilePath)) { if (!TempFileCheck(TMP, NewFilePath)) return true; }
+			else if (TempFileCheck(TEMP, FilePath)) { if (!TempFileCheck(TEMP, NewFilePath)) return true; }
+			else if (IsFileNameHex(MainData.GetFileName(FilePath))) { if (!TempFileCheck(TEMP, NewFilePath)) return true; }
+			else
+			{
+				string[] result = FilePath.Split(DotSeparator);
+				string Ext = result[result.Length - 1];
+				if (Ext.Length == 4 && Ext.EndsWith(VISUALSTUDIO_TMP))
+					if (!NewFilePath.EndsWith(TMP, StringComparison.OrdinalIgnoreCase)) return true;
+			}
+			return false;
+		}
 
-        private static bool TempFileCheck(string TempExt, string FilePath)
-        {
-            return FilePath.EndsWith(TempExt, StringComparison.OrdinalIgnoreCase);
-        }
+		private static bool TempFileCheck(string TempExt, string FilePath)
+		{
+			return FilePath.EndsWith(TempExt, StringComparison.OrdinalIgnoreCase);
+		}
 
-        private static bool MoveSaveCheck(ObservableCollection<string> PathList, string FilePath)
-        {
-            foreach (string Root in PathList) if (!FilePath.StartsWith(Root)) return true;
+		private static bool MoveSaveCheck(ObservableCollection<string> PathList, string FilePath)
+		{
+			foreach (string Root in PathList) if (!FilePath.StartsWith(Root)) return true;
 
-            return false;
-        }
-        public static bool MoveDeleteCheck(ObservableCollection<string> PathList, string NewFilePath)
-        {
-            foreach (string Root in PathList) if (!NewFilePath.StartsWith(Root)) return true;
+			return false;
+		}
+		public static bool MoveDeleteCheck(ObservableCollection<string> PathList, string NewFilePath)
+		{
+			foreach (string Root in PathList) if (!NewFilePath.StartsWith(Root)) return true;
 
-            return false;
-        }
-        private static bool IsFileNameHex(string FileName)
-        {
-            string ToUpper_FileName = FileName.ToUpper();
+			return false;
+		}
+		private static bool IsFileNameHex(string FileName)
+		{
+			string ToUpper_FileName = FileName.ToUpper();
 
-            foreach (char temp in ToUpper_FileName)
-            {
-                if ((temp >= '0') && (temp <= '9')) continue;
-                else if ((temp >= 'A') && (temp <= 'F')) continue;
-                else return false;
-            }
-            return true;
-        }
-        private static bool IsTempFile(string FilePath, string NewFilePath)
-        {
-            if (FilePath.IndexOf(APP_TEMP_PATH) > 0) return true;
-            if (NewFilePath.EndsWith(TMP, StringComparison.OrdinalIgnoreCase)) return true;
-            return false;
-        }
+			foreach (char temp in ToUpper_FileName)
+			{
+				if ((temp >= '0') && (temp <= '9')) continue;
+				else if ((temp >= 'A') && (temp <= 'F')) continue;
+				else return false;
+			}
+			return true;
+		}
+		private static bool IsTempFile(string FilePath, string NewFilePath)
+		{
+			if (FilePath.IndexOf(APP_TEMP_PATH) > 0) return true;
+			if (NewFilePath.EndsWith(TMP, StringComparison.OrdinalIgnoreCase)) return true;
+			return false;
+		}
 
 
-    }
+	}
 }

@@ -24,7 +24,7 @@
 		<GenerateManifests>false</GenerateManifests>
 	</PropertyGroup>
 	<PropertyGroup>
-		<TargetFramework>net8.0</TargetFramework>
+		<TargetFramework>netcoreapp3.1</TargetFramework>
 		<GenerateAssemblyInfo>false</GenerateAssemblyInfo>
 		<BaseOutputPath>../IfsSync2</BaseOutputPath>
 		<AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
@@ -69,6 +69,7 @@
 		<PackageReference Include="callback.CBFSFilter" Version="20.0.7656" />
 		<PackageReference Include="log4net" Version="2.0.17" />
 		<PackageReference Include="Microsoft.CSharp" Version="4.7.0" />
+		<PackageReference Include="Microsoft.Win32.Registry" Version="5.0.0" />
 		<PackageReference Include="Mono.Options" Version="6.12.0.148" />
 		<PackageReference Include="System.ComponentModel.Annotations" Version="5.0.0" />
 		<PackageReference Include="System.Data.DataSetExtensions" Version="4.5.0" />

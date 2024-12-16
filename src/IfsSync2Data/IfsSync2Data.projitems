@@ -19,10 +19,12 @@
     <Compile Include="$(MSBuildThisFileDirectory)TrayIconConfig.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)JobData.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)JobDbManager.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)JobPolicyType.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)MainData.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)SenderConfig.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)TaskData.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)TaskDbManager.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)TaskNameList.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)UserData.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)UserDbManager.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)WatcherConfig.cs" />

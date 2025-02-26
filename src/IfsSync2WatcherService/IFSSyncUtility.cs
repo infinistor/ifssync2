@@ -150,7 +150,7 @@ namespace IfsSync2WatcherService
 				using (WebResponse resp = request.GetResponse())
 				{
 					Stream respStream = resp.GetResponseStream();
-					using (StreamReader sr = new StreamReader(respStream)) { responseText = sr.ReadToEnd(); };
+					using (StreamReader sr = new(respStream)) { responseText = sr.ReadToEnd(); };
 				};
 
 				JObject UserObj = JObject.Parse(responseText);
@@ -167,7 +167,7 @@ namespace IfsSync2WatcherService
 				}
 
 				//Get User Data
-				UserData User = new UserData()
+				UserData User = new()
 				{
 					URL = UserObj[STR_S3PROXY].ToString(),
 					UserName = UserObj[STR_USERID].ToString(),
@@ -186,7 +186,7 @@ namespace IfsSync2WatcherService
 		}
 		public static GlobalConfigData GetGlobalConfig(string _URL, string UserName, int UserID)
 		{
-			GlobalConfigData Config = new GlobalConfigData();
+			GlobalConfigData Config = new();
 			try
 			{
 				string URL;
@@ -204,7 +204,7 @@ namespace IfsSync2WatcherService
 				using (WebResponse resp = request.GetResponse())
 				{
 					Stream respStream = resp.GetResponseStream();
-					using StreamReader sr = new StreamReader(respStream);
+					using StreamReader sr = new(respStream);
 					responseText = sr.ReadToEnd();
 				}
 
@@ -245,14 +245,14 @@ namespace IfsSync2WatcherService
 
 				JArray JobArray = JArray.Parse(jobj[STR_CONF][STR_JOBS].ToString());
 
-				List<JobData> JobList = new List<JobData>();
+				List<JobData> JobList = new();
 
 				if (!TargetUserid.Equals(UserName))
 					throw new Exception(string.Format("UserName Error : {0} != {1}", UserName, TargetUserid));
 
 				foreach (var Job in JobArray)
 				{
-					JobData jobData = new JobData
+					JobData jobData = new()
 					{
 						IsGlobalUser = true,
 						UserID = UserID
@@ -287,7 +287,7 @@ namespace IfsSync2WatcherService
 						GetStringToTime(SenderStartTime, out int StartHours, out int StartMins);
 						GetStringToTime(SenderEndTime, out int EndHours, out int EndMins);
 
-						Schedule schedule = new Schedule();
+						Schedule schedule = new();
 						schedule.SetAtTime(StartHours, StartMins);
 						schedule.AddWeek(Schedule.EVERY);
 
@@ -350,7 +350,7 @@ namespace IfsSync2WatcherService
 				using (WebResponse resp = request.GetResponse())
 				{
 					Stream respStream = resp.GetResponseStream();
-					using StreamReader sr = new StreamReader(respStream);
+					using StreamReader sr = new(respStream);
 					responseText = sr.ReadToEnd();
 				}
 				JObject jobj = JObject.Parse(responseText);
@@ -423,7 +423,7 @@ namespace IfsSync2WatcherService
 			using (WebResponse resp = request.GetResponse())
 			{
 				Stream respStream = resp.GetResponseStream();
-				using StreamReader sr = new StreamReader(respStream); responseText = sr.ReadToEnd();
+				using StreamReader sr = new(respStream); responseText = sr.ReadToEnd();
 			}
 
 			JObject UserObj = JObject.Parse(responseText);

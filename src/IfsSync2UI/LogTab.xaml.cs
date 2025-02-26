@@ -118,7 +118,7 @@ namespace IfsSync2UI
             ICollectionView dataView = CollectionViewSource.GetDefaultView(L_TaskView.Items);
 
             dataView.SortDescriptions.Clear();
-            SortDescription sd = new SortDescription(sortBy, direction);
+            SortDescription sd = new(sortBy, direction);
             dataView.SortDescriptions.Add(sd);
             dataView.Refresh();
         }
@@ -152,7 +152,7 @@ namespace IfsSync2UI
             try
             {
                 if (File.Exists(FileName)) File.Delete(FileName);
-                StreamWriter sw = new StreamWriter(FileName, false, System.Text.Encoding.Unicode);
+                StreamWriter sw = new(FileName, false, System.Text.Encoding.Unicode);
 
                 //Header
                 string columnheader = string.Format("{0}\t{1}\t{2}\t{3}\t{4}\t{5}\t{6}",

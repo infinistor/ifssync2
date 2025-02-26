@@ -215,7 +215,7 @@ namespace IfsSync2UI
 			List<JobData> NormalJobs = JobSQL.GetJobs(Environment.UserName);
 			List<JobData> GlobalJobs = JobSQL.GetJobs(true);
 
-			List<JobData> JobList = new List<JobData>();
+			List<JobData> JobList = new();
 			JobList.AddRange(GlobalJobs);
 			JobList.AddRange(NormalJobs);
 
@@ -352,7 +352,7 @@ namespace IfsSync2UI
 
 			try
 			{
-				JobData Data = new JobData()
+				JobData Data = new()
 				{
 					JobName = _JobName,
 					HostName = Environment.UserName,
@@ -360,9 +360,9 @@ namespace IfsSync2UI
 				};
 				MainTab.Dispatcher.Invoke(delegate
 				{
-					TabItem item = new TabItem { Header = Data.JobName };
+					TabItem item = new() { Header = Data.JobName };
 
-					JobTab tabItemContent = new JobTab(item, Data, WatcherConfigs.RootPath, true);
+					JobTab tabItemContent = new(item, Data, WatcherConfigs.RootPath, true);
 
 					item.Content = tabItemContent;
 					MainTab.Items.Add(item);

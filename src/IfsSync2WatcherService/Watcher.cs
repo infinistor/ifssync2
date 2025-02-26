@@ -27,8 +27,8 @@ namespace IfsSync2WatcherService
 		private readonly SenderConfig SenderConfigs;
 		private readonly TrayIconConfig TrayIconConfigs;
 
-		private readonly JobDataSqlManager JobSQL;
-		private readonly UserDataSqlManager UserSQL;
+		private readonly JobDbManager JobSQL;
+		private readonly UserDbManager UserSQL;
 
 		public Watcher()
 		{
@@ -37,8 +37,8 @@ namespace IfsSync2WatcherService
 			SenderConfigs = new SenderConfig(true);
 			TrayIconConfigs = new TrayIconConfig();
 
-			JobSQL = new JobDataSqlManager();
-			UserSQL = new UserDataSqlManager();
+			JobSQL = new JobDbManager();
+			UserSQL = new UserDbManager();
 		}
 
 		public void CheckOnce()
@@ -137,7 +137,7 @@ namespace IfsSync2WatcherService
 				}
 
 				//Alive 신호보내기
-				AliveData Alive = new AliveData()
+				AliveData Alive = new()
 				{
 					ListenAlive = FilterConfigs.Alive,
 					SenderAlive = SenderConfigs.Alive,

@@ -322,7 +322,7 @@ namespace IfsSync2Data
 
 		public override int GetHashCode()
 		{
-			HashCode hash = new HashCode();
+			HashCode hash = new();
 			hash.Add(HostName);
 			hash.Add(IsGlobalUser);
 			hash.Add(UserID);

@@ -26,8 +26,8 @@ namespace IfsSync2Sender
 		static readonly ILog log = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
 		public int Delay { get; set; }
 
-		readonly TaskDataSqlManager TaskSQL = null;
-		readonly JobDataSqlManager JobSQL = null;
+		readonly TaskDbManager TaskSQL = null;
+		readonly JobDbManager JobSQL = null;
 
 		public JobData Job { get; set; }
 		readonly Thread Sender = null;
@@ -56,8 +56,8 @@ namespace IfsSync2Sender
 			Delay = DelayTime;
 			this.FetchCount = FetchCount;
 			this.IsGlobal = IsGlobal;
-			TaskSQL = new TaskDataSqlManager(jobData.JobName);
-			JobSQL = new JobDataSqlManager();
+			TaskSQL = new TaskDbManager(jobData.JobName);
+			JobSQL = new JobDbManager();
 			State = new JobState(Job.HostName, Job.JobName, true);
 
 			IsAlive = true;
@@ -341,7 +341,7 @@ namespace IfsSync2Sender
 		List<ShadowCopy> GetShadowCopies()
 		{
 			//find volume
-			List<string> VolumeList = new List<string>();
+			List<string> VolumeList = new();
 			foreach (var Directory in Job.Path)
 			{
 				string root = Path.GetPathRoot(Directory);
@@ -721,7 +721,7 @@ namespace IfsSync2Sender
 
 		int SubDirectory(string ParentDirectory, List<string> ExtensionList)
 		{
-			DirectoryInfo dInfoParent = new DirectoryInfo(ParentDirectory);
+			DirectoryInfo dInfoParent = new(ParentDirectory);
 
 			if (!dInfoParent.Exists) return 0;
 

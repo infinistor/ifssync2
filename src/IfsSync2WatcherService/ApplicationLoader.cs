@@ -163,7 +163,7 @@ namespace IfsSync2WatcherService
             // simply pass null and inherit (by default) the security attributes
             // of the existing token. However, in C# structures are value types and therefore
             // cannot be assigned the null value.
-            SECURITY_ATTRIBUTES sa = new SECURITY_ATTRIBUTES();
+            SECURITY_ATTRIBUTES sa = new();
             sa.Length = Marshal.SizeOf(sa);
 
 
@@ -179,7 +179,7 @@ namespace IfsSync2WatcherService
             // the window station has a desktop that is invisible and the process is incapable of receiving
             // user input. To remedy this we set the lpDesktop parameter to indicate we want to enable user 
             // interaction with the new process.
-            STARTUPINFO si = new STARTUPINFO();
+            STARTUPINFO si = new();
             si.cb = (int)Marshal.SizeOf(si);
             si.lpDesktop = @"winsta0\default"; // interactive window station parameter; basically this indicates that the process created can display a GUI on the desktop
 

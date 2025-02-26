@@ -16,6 +16,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Reflection;
 using System.Collections.ObjectModel;
+using System.Text;
 
 namespace IfsSync2Filter
 {
@@ -224,8 +225,8 @@ namespace IfsSync2Filter
 
 		List<string> SubDirectory(string ParentDirectory, ObservableCollection<string> ExtList)
 		{
-			DirectoryInfo dInfoParent = new DirectoryInfo(ParentDirectory);
-			List<string> FileList = new List<string>();
+			DirectoryInfo dInfoParent = new(ParentDirectory);
+			List<string> FileList = new();
 			if (!dInfoParent.Exists) return FileList;
 
 			//add Folder List
@@ -241,11 +242,11 @@ namespace IfsSync2Filter
 		{
 			//add File List
 			string[] files = Directory.GetFiles(ParentDirectory);
-			List<string> FileList = new List<string>();
+			List<string> FileList = new();
 
 			foreach (string file in files)    // 파일 나열
 			{
-				FileInfo info = new FileInfo(file);
+				FileInfo info = new(file);
 				if (!info.Exists) continue;
 				if ((info.Attributes & FileAttributes.System) == FileAttributes.System) { /*empty*/ }
 				else if (ExtList.Contains(info.Extension.Replace(".", "").ToLower()))
@@ -275,7 +276,7 @@ namespace IfsSync2Filter
 					List<string> FileList = GetFileListToDirectory(FilePath, Job.WhiteFileExt);
 					foreach (string File in FileList)
 					{
-						TaskData Data = new TaskData(TaskData.TaskNameList.Upload, File, DateTime.Now.ToString("yyyy-MM-dd-HH:mm:ss"), GetFileSize(File));
+						TaskData Data = new(TaskData.TaskNameList.Upload, File, DateTime.Now.ToString("yyyy-MM-dd-HH:mm:ss"), GetFileSize(File));
 						_taskDb.Insert(Data);
 						log.Debug(Data.FilePath);
 					}
@@ -283,7 +284,7 @@ namespace IfsSync2Filter
 				}
 				else if (CheckWhiteFileList(FileName))
 				{
-					TaskData Data = new TaskData(TaskData.TaskNameList.Upload, FilePath, DateTime.Now.ToString("yyyy-MM-dd-HH:mm:ss"), GetFileSize(FilePath));
+					TaskData Data = new(TaskData.TaskNameList.Upload, FilePath, DateTime.Now.ToString("yyyy-MM-dd-HH:mm:ss"), GetFileSize(FilePath));
 					_taskDb.Insert(Data);
 					log.Debug(Data.FilePath);
 					return true;
@@ -296,16 +297,13 @@ namespace IfsSync2Filter
 		{
 			string FileName = MainData.GetFileName(FilePath);
 
-			if (!FilePathException(FilePath))
+			if (!FilePathException(FilePath) && CheckWhiteFileList(FileName))
 			{
-				if (CheckWhiteFileList(FileName))
-				{
-					TaskData Data = new TaskData(TaskData.TaskNameList.Delete, FilePath,
-												DateTime.Now.ToString("yyyy-MM-dd-HH:mm:ss"));
-					_taskDb.Insert(Data);
-					log.Debug(Data.FilePath);
-					return true;
-				}
+				TaskData Data = new(TaskData.TaskNameList.Delete, FilePath,
+						DateTime.Now.ToString("yyyy-MM-dd-HH:mm:ss"));
+				_taskDb.Insert(Data);
+				log.Debug(Data.FilePath);
+				return true;
 			}
 			return false;
 		}
@@ -321,14 +319,14 @@ namespace IfsSync2Filter
 				{
 					FilePath += "\\";
 					NewFilePath += "\\";
-					TaskData Data = new TaskData(TaskData.TaskNameList.Rename, FilePath,
+					TaskData Data = new(TaskData.TaskNameList.Rename, FilePath,
 												DateTime.Now.ToString("yyyy-MM-dd-HH:mm:ss"), NewFilePath);
 					_taskDb.Insert(Data);
 					log.Debug($"{Data.FilePath} => {Data.NewFilePath}");
 				}
 				else if (CheckWhiteFileList(NewFileName))
 				{
-					TaskData Data = new TaskData(TaskData.TaskNameList.Rename, FilePath,
+					TaskData Data = new(TaskData.TaskNameList.Rename, FilePath,
 												DateTime.Now.ToString("yyyy-MM-dd-HH:mm:ss"), NewFilePath);
 					_taskDb.Insert(Data);
 					log.Debug($"{Data.FilePath} => {Data.NewFilePath}");
@@ -352,12 +350,12 @@ namespace IfsSync2Filter
 
 				string[] result = from.Split('\\'); //cut <drive letter>:<logon-session id>, <server>, <share>, <path> ....
 
-				string NewFilePath = VolumeName;
-				for (int i = 3; i < result.Length; i++)//Get <path>....
+				StringBuilder newFilePath = new(VolumeName);
+				for (int i = 3; i < result.Length; i++)
 				{
-					NewFilePath += "\\" + result[i];
+					newFilePath.Append('\\').Append(result[i]);
 				}
-				return NewFilePath;
+				return newFilePath.ToString();
 			}
 			else return FilePath;
 		}

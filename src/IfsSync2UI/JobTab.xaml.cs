@@ -49,7 +49,7 @@ namespace IfsSync2UI
 		private JobState State = null;
 		private readonly System.Timers.Timer StateCheckTimer;
 		/************************ Schedule Data *************************************/
-		private readonly List<CheckBox> WeekCheckBoxList = new List<CheckBox>();
+		private readonly List<CheckBox> WeekCheckBoxList = new();
 
 		/*************************** Db Data ***************************************/
 		private readonly UserDbManager UserDb;
@@ -58,15 +58,15 @@ namespace IfsSync2UI
 		private readonly TaskDbManager TaskDb;
 
 		/************************ Extension List ************************************/
-		private readonly List<string> ExtensionList = new List<string>();
-		private readonly ObservableCollection<string> FindExtensionList = new ObservableCollection<string>();
+		private readonly List<string> ExtensionList = new();
+		private readonly ObservableCollection<string> FindExtensionList = new();
 
 		/************************* Analysis Data ************************************/
-		private readonly ProgressData Analysis = new ProgressData();
+		private readonly ProgressData Analysis = new();
 		private Thread AnalysisThread = null;
 		public bool BackupStart = false;
 		/*************************** VSS Data ************************************/
-		private readonly List<string> VSSFileExt = new List<string>();
+		private readonly List<string> VSSFileExt = new();
 		private readonly string VSSFILEEXTLIST = "pst|ost|db";
 
 		/*************************** Log Data ************************************/
@@ -301,7 +301,7 @@ namespace IfsSync2UI
 		{
 			const string Title = "Schedule";
 
-			Schedule Schedules = new Schedule();
+			Schedule Schedules = new();
 			//Get Day of the Week
 			if (C_Every.IsChecked.Value) Schedules.AddWeek(Schedule.EVERY);
 			else
@@ -401,7 +401,7 @@ namespace IfsSync2UI
 
 		public void LoadDrive()
 		{
-			TreeNode root = new TreeNode()
+			TreeNode root = new()
 			{
 				Name = Root,
 				FullPath = Root,
@@ -439,7 +439,7 @@ namespace IfsSync2UI
 			{
 				if (drive.IsReady)
 				{
-					TreeNode item = new TreeNode()
+					TreeNode item = new()
 					{
 						Name = drive.VolumeLabel + " (" + drive.Name.TrimEnd('\\') + ")",
 						FullPath = drive.Name,
@@ -483,7 +483,7 @@ namespace IfsSync2UI
 			node.Children.Clear();
 			try
 			{
-				DirectoryInfo dirInfo = new DirectoryInfo(node.FullPath);
+				DirectoryInfo dirInfo = new(node.FullPath);
 
 				foreach (DirectoryInfo subDir in dirInfo.GetDirectories())
 				{
@@ -685,7 +685,7 @@ namespace IfsSync2UI
 			{
 				try
 				{
-					List<string> DeletePathList = new List<string>();
+					List<string> DeletePathList = new();
 
 					foreach (var SubDirectory in Job.Path) if (SubDirectory.StartsWith(MainPath)) DeletePathList.Add(SubDirectory);
 					foreach (string SubPath in DeletePathList) DeletePath(SubPath);
@@ -983,7 +983,7 @@ namespace IfsSync2UI
 			log.Info("Start");
 			TaskDb.InsertLog("Analysis Start!");
 			Analysis.Start();
-			Stopwatch sw = new Stopwatch();
+			Stopwatch sw = new();
 			sw.Start();
 			State.Filter = true;
 			State.Quit = false;
@@ -992,8 +992,8 @@ namespace IfsSync2UI
 			ButtonLock(false);
 
 			//Analysis
-			List<string> ExtensionList = new List<string>(Job.WhiteFileExt);
-			List<string> DirectoryList = new List<string>(Job.Path);
+			List<string> ExtensionList = new(Job.WhiteFileExt);
+			List<string> DirectoryList = new(Job.Path);
 
 			//Directory Search
 			foreach (var myDir in DirectoryList)
@@ -1025,7 +1025,7 @@ namespace IfsSync2UI
 
 		private void SubDirectory(string ParentDirectory, List<string> ExtensionList)
 		{
-			DirectoryInfo dInfoParent = new DirectoryInfo(ParentDirectory);
+			DirectoryInfo dInfoParent = new(ParentDirectory);
 
 			if (!dInfoParent.Exists) return;
 			//add Folder List
@@ -1046,7 +1046,7 @@ namespace IfsSync2UI
 			{
 
 				if (Analysis.IsQuit) break;
-				FileInfo info = new FileInfo(file);
+				FileInfo info = new(file);
 
 				if (!info.Exists) continue;
 
@@ -1071,7 +1071,7 @@ namespace IfsSync2UI
 
 			foreach (string Root in Job.Path)
 			{
-				DirectoryInfo dir = new DirectoryInfo(Root);
+				DirectoryInfo dir = new(Root);
 				if (!dir.Exists)
 				{
 					RootPath = Root;
@@ -1136,7 +1136,7 @@ namespace IfsSync2UI
 				Job.IsGlobalUser = false;
 			}
 			State.Quit = false;
-			InstantData instantData = new InstantData();
+			InstantData instantData = new();
 			instantData.Analysis = false;
 
 			if (!JobDb.PutJobData(Job))

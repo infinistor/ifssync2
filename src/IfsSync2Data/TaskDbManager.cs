@@ -49,6 +49,17 @@ namespace IfsSync2Data
 		readonly string _filePath;
 
 		public readonly List<TaskData> TaskList = [];
+
+		public int TaskCount => TaskList.Count;
+		public long TaskSize
+		{
+			get
+			{
+				long size = 0;
+				foreach (var task in TaskList) size += task.FileSize;
+				return size;
+			}
+		}
 		#endregion
 
 		public TaskDbManager(string jobName)
@@ -68,7 +79,7 @@ namespace IfsSync2Data
 			}
 		}
 
-		bool CreateDBFile()
+		void CreateDBFile()
 		{
 			try
 			{
@@ -127,12 +138,11 @@ namespace IfsSync2Data
 				cmd.ExecuteNonQuery();
 
 				_log.Debug($"Success : {cmd.CommandText}");
-				return true;
 			}
-			catch (Exception e) { _log.Error(e); return false; }
+			catch (Exception e) { _log.Error(e); }
 			finally { _sqliteMutex.ReleaseMutex(); }
-
 		}
+
 		public bool DeleteDBFile()
 		{
 

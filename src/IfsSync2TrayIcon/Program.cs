@@ -23,11 +23,11 @@ namespace IfsSync2TrayIcon
 	class Program
 	{
 		private static readonly ILog log = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
-		private static readonly TrayIconConfig TrayIconConfigs = new TrayIconConfig(true);
+		private static readonly TrayIconConfig TrayIconConfigs = new(true);
 
 		static void Main()
 		{
-			Mutex mutex = new Mutex(true, MainData.MUTEX_NAME_TRAY_ICON, out bool CreateNew);
+			Mutex mutex = new(true, MainData.MUTEX_NAME_TRAY_ICON, out bool CreateNew);
 
 			if (!CreateNew)
 			{
@@ -36,7 +36,7 @@ namespace IfsSync2TrayIcon
 			}
 			MainUtility.DeleteOldLogs(MainData.GetLogFolder("TrayIcon"));
 
-			TrayIconManager TrayIcon = new TrayIconManager();
+			TrayIconManager TrayIcon = new();
 
 			while (true)
 			{
@@ -74,7 +74,7 @@ namespace IfsSync2TrayIcon
 		{
 
 			DateTime ThisMoment = DateTime.Now;
-			TimeSpan duration = new TimeSpan(0, 0, 0, 0, MS);
+			TimeSpan duration = new(0, 0, 0, 0, MS);
 			DateTime AfterWards = ThisMoment.Add(duration);
 			while (AfterWards >= ThisMoment)
 			{

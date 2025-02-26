@@ -22,8 +22,8 @@ namespace IfsSync2TrayIcon
 
 		private readonly ILog log = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
 		private NotifyIcon Tray;
-		private readonly TrayIconConfig TrayIconConfigs = new TrayIconConfig(true);
-		private readonly SenderConfig SenderConfigs = new SenderConfig(true);
+		private readonly TrayIconConfig TrayIconConfigs = new(true);
+		private readonly SenderConfig SenderConfigs = new(true);
 
 		private string DetailMessage = string.Empty;
 		private string SummaryMessage = string.Empty;

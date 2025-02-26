@@ -103,7 +103,7 @@ namespace IfsSync2UI
         {
             if (target == null) return null;
 
-            RoutedEventArgs args = new RoutedEventArgs { RoutedEvent = ToggleButton.CheckedEvent };
+            RoutedEventArgs args = new() { RoutedEvent = ToggleButton.CheckedEvent };
             RaiseEvent(target, args);
             return args;
         }
@@ -112,7 +112,7 @@ namespace IfsSync2UI
         {
             if (target == null) return null;
 
-            RoutedEventArgs args = new RoutedEventArgs { RoutedEvent = ToggleButton.UncheckedEvent };
+            RoutedEventArgs args = new() { RoutedEvent = ToggleButton.UncheckedEvent };
             RaiseEvent(target, args);
             return args;
         }
@@ -121,8 +121,8 @@ namespace IfsSync2UI
         {
             if (target == null) return null;
 
-            RoutedEventArgs args = new RoutedEventArgs
-            {
+            RoutedEventArgs args = new()
+			{
                 RoutedEvent = ToggleButton.IndeterminateEvent
             };
             RaiseEvent(target, args);

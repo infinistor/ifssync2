@@ -28,10 +28,10 @@ namespace IfsSync2UI
 		private static readonly ILog log = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
 		private readonly JobData Job;
 
-		private readonly LogTab SuccessTab = new LogTab();
-		private readonly LogTab FailureTab = new LogTab();
+		private readonly LogTab SuccessTab = new();
+		private readonly LogTab FailureTab = new();
 
-		private readonly TaskDataDbManager TaskSQL;
+		private readonly TaskDbManager TaskSQL;
 
 		public bool IsClose = false;
 
@@ -40,7 +40,7 @@ namespace IfsSync2UI
 			InitializeComponent();
 			Job = job;
 			TabInit();
-			TaskSQL = new TaskDataDbManager(job.JobName);
+			TaskSQL = new TaskDbManager(job.JobName);
 			Title = Job.JobName + " Log View";
 			UpdateLogList();
 		}
@@ -63,10 +63,10 @@ namespace IfsSync2UI
 			{
 				MainTab.Dispatcher.Invoke(delegate
 				{
-					TabItem Success = new TabItem { Content = SuccessTab, Header = "Success" };
+					TabItem Success = new() { Content = SuccessTab, Header = "Success" };
 					MainTab.Items.Add(Success);
 
-					TabItem Failure = new TabItem { Content = FailureTab, Header = "Failure" };
+					TabItem Failure = new() { Content = FailureTab, Header = "Failure" };
 					MainTab.Items.Add(Failure);
 				});
 			}

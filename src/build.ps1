@@ -1,3 +1,4 @@
+clear
 Remove-Item -Recurse -Force ./IfsSync2
 dotnet publish -c Release
 if ($LASTEXITCODE -ne 0) {

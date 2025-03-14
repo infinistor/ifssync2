@@ -2,7 +2,7 @@
 #define MyAppName "IfsSync2"
 #define MyInitName "IfsSync2Init.exe"
 #define MyAppExeName "IfsSync2UI.exe"
-#define MyAppVersion "2.0.0.13"
+#define MyAppVersion "2.0.0.14"
 #define MyAppPublisher "PSPACE Technology"
 #define MyAppURL "http://www.pspace.com" 
 #define MyDateTimeString GetDateTimeString('yyyymmddhhnnss', '-', ':');
@@ -61,16 +61,64 @@ Type: filesandordirs; Name: "{group}";
 [UninstallDelete]
 Type: filesandordirs; Name: "{app}\{#MyAppName}";
 
-[code]
+[Code]
+function IsDotNetDetected(): Boolean;
+var
+  ResultCode: Integer;
+  TempFile: String;
+  Output: TArrayOfString;
+  ExecStr: String;
+  I: Integer;
+  OutputStr: String;
+begin
+  Result := False;
+  TempFile := ExpandConstant('{tmp}\dotnet_check.txt');
+  ExecStr := Format('/C dotnet --list-runtimes > "%s"', [TempFile]);
+  
+  try
+    if not Exec('cmd.exe', ExecStr, '', SW_HIDE, ewWaitUntilTerminated, ResultCode) then
+      exit;
+      
+    if not LoadStringsFromFile(TempFile, Output) then
+      exit;
+      
+    // 모든 라인을 하나의 문자열로 합치기
+    OutputStr := '';
+    for I := 0 to GetArrayLength(Output)-1 do
+      OutputStr := OutputStr + Output[I] + #13#10;
+      
+    Result := (Pos('Microsoft.AspNetCore.App 8.', OutputStr) > 0) and 
+              (Pos('Microsoft.WindowsDesktop.App 8.', OutputStr) > 0);
+  finally
+    DeleteFile(TempFile);
+  end;
+end;
+
+function InitializeSetup(): Boolean;
+begin
+  if not IsDotNetDetected() then
+  begin
+    MsgBox('.NET 8.0 Runtime이 설치되어 있지 않습니다.' #13#13 
+           '설치를 계속하기 전에 다음 항목들을 설치해주세요:' #13#13
+           '1. ASP.NET Core 8.0 Runtime (x64)' #13
+           '2. .NET 8.0 Desktop Runtime (x64)' #13#13
+           'https://dotnet.microsoft.com/download/dotnet/8.0 에서 다운로드 할 수 있습니다.', 
+           mbCriticalError, MB_OK);
+    Result := False;
+    exit;
+  end;
+  Result := True;
+end;
+
 procedure CurPageChanged(CurPageID: Integer);
-var  
+var
   FilePath: String;
   ResultCode: Integer;
   Results: bool;
 begin
   if CurPageID = wpReady then
   begin
-    FilePath:= 'C:\Program Files\PSPACE\IfsSync2\IfsSync2Init.exe'
+    FilePath:= 'C:\Program Files\PSPACE\IfsSync2\IfsSync2Init.exe';
     Results:= FileExists(FilePath);
     if Results then
     begin

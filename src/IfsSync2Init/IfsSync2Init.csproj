@@ -67,11 +67,12 @@
 	</ItemGroup>
 	<ItemGroup>
 		<PackageReference Include="callback.CBFSFilter" Version="20.0.7656" />
-		<PackageReference Include="log4net" Version="2.0.17" />
+		<PackageReference Include="log4net" Version="3.0.4" />
 		<PackageReference Include="Microsoft.CSharp" Version="4.7.0" />
 		<PackageReference Include="Mono.Options" Version="6.12.0.148" />
 		<PackageReference Include="System.ComponentModel.Annotations" Version="5.0.0" />
 		<PackageReference Include="System.Data.DataSetExtensions" Version="4.5.0" />
+		<PackageReference Include="System.Data.SqlClient" Version="4.8.6" />
 		<PackageReference Include="System.Data.SQLite" Version="1.0.119" />
 		<PackageReference Include="System.Data.SQLite.Core" Version="1.0.119" />
 		<PackageReference Include="System.Data.SQLite.EF6" Version="1.0.119" />

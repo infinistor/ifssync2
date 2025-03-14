@@ -7,6 +7,10 @@ namespace IfsSync2Data
 	{
 		const string LINUX_SERVICE_PATH = "/etc/systemd/system/";
 		const string MAC_SERVICE_PATH = "/Library/LaunchDaemons/";
+		const string UNSUPPORTED_PLATFORM = "Unsupported platform";
+		const string SERVICE_FOR_WINDOWS = "sc";
+		const string SERVICE_FOR_LINUX = "systemctl";
+		const string SERVICE_FOR_MAC = "launchctl";
 
 		#region Public methods
 		public static void RegisterService(string serviceName, string executablePath)
@@ -23,7 +27,7 @@ namespace IfsSync2Data
 					RegisterServiceMac(serviceName, executablePath);
 					break;
 				default:
-					throw new NotSupportedException("Unsupported platform");
+					throw new NotSupportedException(UNSUPPORTED_PLATFORM);
 			}
 		}
 		public static void UnregisterService(string serviceName)
@@ -40,7 +44,7 @@ namespace IfsSync2Data
 					UnregisterServiceMac(serviceName);
 					break;
 				default:
-					throw new NotSupportedException("Unsupported platform");
+					throw new NotSupportedException(UNSUPPORTED_PLATFORM);
 			}
 		}
 		public static void StartService(string serviceName)
@@ -50,7 +54,7 @@ namespace IfsSync2Data
 				case PlatformID.Win32NT:
 					{
 						using var process = new Process();
-						process.StartInfo.FileName = "sc";
+						process.StartInfo.FileName = SERVICE_FOR_WINDOWS;
 						process.StartInfo.Arguments = $"start {serviceName}";
 						process.Start();
 						break;
@@ -58,7 +62,7 @@ namespace IfsSync2Data
 				case PlatformID.Unix:
 					{
 						using var process = new Process();
-						process.StartInfo.FileName = "systemctl";
+						process.StartInfo.FileName = SERVICE_FOR_LINUX;
 						process.StartInfo.Arguments = $"start {serviceName}";
 						process.Start();
 						break;
@@ -66,13 +70,13 @@ namespace IfsSync2Data
 				case PlatformID.MacOSX:
 					{
 						using var process = new Process();
-						process.StartInfo.FileName = "launchctl";
+						process.StartInfo.FileName = SERVICE_FOR_MAC;
 						process.StartInfo.Arguments = $"start {serviceName}";
 						process.Start();
 						break;
 					}
 				default:
-					throw new NotSupportedException("Unsupported platform");
+					throw new NotSupportedException(UNSUPPORTED_PLATFORM);
 			}
 		}
 		public static void StopService(string serviceName)
@@ -82,7 +86,7 @@ namespace IfsSync2Data
 				case PlatformID.Win32NT:
 					{
 						using var process = new Process();
-						process.StartInfo.FileName = "sc";
+						process.StartInfo.FileName = SERVICE_FOR_WINDOWS;
 						process.StartInfo.Arguments = $"stop {serviceName}";
 						process.Start();
 						break;
@@ -90,7 +94,7 @@ namespace IfsSync2Data
 				case PlatformID.Unix:
 					{
 						using var process = new Process();
-						process.StartInfo.FileName = "systemctl";
+						process.StartInfo.FileName = SERVICE_FOR_LINUX;
 						process.StartInfo.Arguments = $"stop {serviceName}";
 						process.Start();
 						break;
@@ -98,13 +102,13 @@ namespace IfsSync2Data
 				case PlatformID.MacOSX:
 					{
 						using var process = new Process();
-						process.StartInfo.FileName = "launchctl";
+						process.StartInfo.FileName = SERVICE_FOR_MAC;
 						process.StartInfo.Arguments = $"stop {serviceName}";
 						process.Start();
 						break;
 					}
 				default:
-					throw new NotSupportedException("Unsupported platform");
+					throw new NotSupportedException(UNSUPPORTED_PLATFORM);
 			}
 		}
 		#endregion
@@ -113,7 +117,7 @@ namespace IfsSync2Data
 		private static void RegisterServiceWindows(string serviceName, string executablePath)
 		{
 			using var process = new Process();
-			process.StartInfo.FileName = "sc";
+			process.StartInfo.FileName = SERVICE_FOR_WINDOWS;
 			process.StartInfo.Arguments = $"create {serviceName} binPath= \"{executablePath}\" start= auto";
 			process.Start();
 		}
@@ -124,7 +128,7 @@ namespace IfsSync2Data
 			System.IO.File.WriteAllText($"{LINUX_SERVICE_PATH}{serviceName}.service", serviceFileContent);
 
 			using var process = new Process();
-			process.StartInfo.FileName = "systemctl";
+			process.StartInfo.FileName = SERVICE_FOR_LINUX;
 			process.StartInfo.Arguments = $"enable {serviceName}";
 			process.Start();
 		}
@@ -135,7 +139,7 @@ namespace IfsSync2Data
 			System.IO.File.WriteAllText($"{MAC_SERVICE_PATH}{serviceName}.plist", plistContent);
 
 			using var process = new Process();
-			process.StartInfo.FileName = "launchctl";
+			process.StartInfo.FileName = SERVICE_FOR_MAC;
 			process.StartInfo.Arguments = $"load -w /Library/LaunchDaemons/{serviceName}.plist";
 			process.Start();
 		}
@@ -143,7 +147,7 @@ namespace IfsSync2Data
 		private static void UnregisterServiceWindows(string serviceName)
 		{
 			using var process = new Process();
-			process.StartInfo.FileName = "sc";
+			process.StartInfo.FileName = SERVICE_FOR_WINDOWS;
 			process.StartInfo.Arguments = $"delete {serviceName}";
 			process.Start();
 		}
@@ -151,7 +155,7 @@ namespace IfsSync2Data
 		private static void UnregisterServiceLinux(string serviceName)
 		{
 			using var process = new Process();
-			process.StartInfo.FileName = "systemctl";
+			process.StartInfo.FileName = SERVICE_FOR_LINUX;
 			process.StartInfo.Arguments = $"disable {serviceName}";
 			process.Start();
 
@@ -161,7 +165,7 @@ namespace IfsSync2Data
 		private static void UnregisterServiceMac(string serviceName)
 		{
 			using var process = new Process();
-			process.StartInfo.FileName = "launchctl";
+			process.StartInfo.FileName = SERVICE_FOR_MAC;
 			process.StartInfo.Arguments = $"unload -w /Library/LaunchDaemons/{serviceName}.plist";
 			process.Start();
 

@@ -21,7 +21,6 @@ namespace IfsSync2Data
 	public class UserDbManager
 	{
 		#region Define
-		const string CONNECTION_FAILED = "SQLiteConnection fail";
 		const string STR_NORMAL_USER_TABLE_NAME = "NormalUserList";
 		const string STR_GLOBAL_USER_TABLE_NAME = "GlobalUserList";
 		const string STR_USER_ID = "Id";

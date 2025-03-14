@@ -2,7 +2,7 @@
 * Copyright (c) 2021 PSPACE, inc. KSAN Development Team ksan@pspace.co.kr
 * KSAN is a suite of free software: you can redistribute it and/or modify it under the terms of
 * the GNU General Public License as published by the Free Software Foundation, either version 
-* 3 of the License.  See LICENSE for details
+* 3 of the License. See LICENSE for details
 *
 * 본 프로그램 및 관련 소스코드, 문서 등 모든 자료는 있는 그대로 제공이 됩니다.
 * KSAN 프로젝트의 개발자 및 개발사는 이 프로그램을 사용한 결과에 따른 어떠한 책임도 지지 않습니다.
@@ -70,8 +70,6 @@ namespace IfsSync2Data
 		public const string SENDER_CONFIG_PATH = REGISTRY_ROOT + "SenderConfig";
 		public const string mGuid = "{adf69b11-073c-493b-8dfe-888054f2fda3}";
 		public const int SENDER_TIMEOUT = 3600; // sec
-		public const int UPLOAD_CHANGE_FILE_SIZE = 1073741824; // 1GB
-		public const int UPLOAD_PART_SIZE = 100 * 1024 * 1024; // 100mb
 		#endregion
 		#region Watcher
 		public const string WATCHER_SERVICE_NAME = "IfsSync2WatcherService";
@@ -120,6 +118,14 @@ namespace IfsSync2Data
 		public const int DEFAULT_DELETE_DATE = 30;
 		#endregion
 
+		#region Size Constants
+		private const long B = 1L;
+		private const long KB = 1024L * B;
+		private const long MB = 1024L * KB;
+		private const long GB = 1024L * MB;
+		private const long TB = 1024L * GB;
+		#endregion
+
 		#region Utility
 		public static string CreateExeFilePath(string TargetPath, string FileName) => Path.Combine(TargetPath, FileName + ".exe");
 		public static string CreateIconFilePath(string TargetPath, string IconName) => Path.Combine(TargetPath, IconName + ".ico");
@@ -146,6 +152,8 @@ namespace IfsSync2Data
 		public static string CreateMutexName(string Name) => $"{MUTEX_GLOBAL_NAME}{{{Name}}}";
 		public static string CreateRegistryJobName(string HostName, string JobName) => $"{REGISTRY_ROOT}{JOB_CONFIG_NAME}{HostName}\\{JobName}";
 		public static string CreateAddress(string Address, string Port) => (string.IsNullOrWhiteSpace(Address) || string.IsNullOrWhiteSpace(Port)) ? "" : $"https://{Address}:{Port}/api/v1/IfsSyncClients/";
+
+
 		public static string SizeToString(long value)
 		{
 			const float IECPrefix = 1024.0F;
@@ -160,7 +168,26 @@ namespace IfsSync2Data
 				UnitCount++;
 			}
 
-			return $"{Size:0.0}{CapacityUnitList[UnitCount]}";
+			return $"{Size:0}{CapacityUnitList[UnitCount]}";
+		}
+		public static long StringToSize(string size)
+		{
+			if (string.IsNullOrWhiteSpace(size)) return 0;
+
+			size = size.Trim().ToUpper();
+			return size switch
+			{
+				var s when s.EndsWith("TB") => ParseSize(s, "TB", TB),
+				var s when s.EndsWith("GB") => ParseSize(s, "GB", GB),
+				var s when s.EndsWith("MB") => ParseSize(s, "MB", MB),
+				var s when s.EndsWith("KB") => ParseSize(s, "KB", KB),
+				_ => ParseSize(size, "", B)
+			};
+		}
+
+		private static long ParseSize(string size, string unit, long multiplier)
+		{
+			return long.TryParse(size.Replace(unit, ""), out long value) ? value * multiplier : 0;
 		}
 
 		public static string GetVersion()
@@ -224,6 +251,9 @@ namespace IfsSync2Data
 				if (DateTime.Compare(fileCreatedTime, cmpTime) > 0) File.Delete(file.FullName);
 			}
 		}
+
+		// 현재시간 string 형식으로 반환
+		public static string GetCurrentTime() => DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
 		#endregion
 	}
 }

@@ -1,30 +1,32 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-  <PropertyGroup>
-    <MSBuildAllProjects>$(MSBuildAllProjects);$(MSBuildThisFileFullPath)</MSBuildAllProjects>
-    <HasSharedItems>true</HasSharedItems>
-    <SharedGUID>13d330f6-1e4f-4009-9385-b0e292698a1a</SharedGUID>
-  </PropertyGroup>
-  <PropertyGroup Label="Configuration">
-    <Import_RootNamespace>IfsSync2Data</Import_RootNamespace>
-  </PropertyGroup>
-  <ItemGroup>
-    <Compile Include="$(MSBuildThisFileDirectory)ExtensionDbManager.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)FilterConfig.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)GlobalConfigData.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)InstantData.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)JobState.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)MainUtility.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)ServiceManager.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)TrayIconConfig.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)JobData.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)JobDbManager.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)MainData.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)SenderConfig.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)TaskData.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)TaskDbManager.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)UserData.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)UserDbManager.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)WatcherConfig.cs" />
-  </ItemGroup>
+	<PropertyGroup>
+		<MSBuildAllProjects>$(MSBuildAllProjects);$(MSBuildThisFileFullPath)</MSBuildAllProjects>
+		<HasSharedItems>true</HasSharedItems>
+		<SharedGUID>13d330f6-1e4f-4009-9385-b0e292698a1a</SharedGUID>
+	</PropertyGroup>
+	<PropertyGroup Label="Configuration">
+		<Import_RootNamespace>IfsSync2Data</Import_RootNamespace>
+	</PropertyGroup>
+	<ItemGroup>
+		<Compile Include="$(MSBuildThisFileDirectory)ExtensionDbManager.cs" />
+		<Compile Include="$(MSBuildThisFileDirectory)FilterConfig.cs" />
+		<Compile Include="$(MSBuildThisFileDirectory)GlobalConfigData.cs" />
+		<Compile Include="$(MSBuildThisFileDirectory)InstantData.cs" />
+		<Compile Include="$(MSBuildThisFileDirectory)JobStatus.cs" />
+		<Compile Include="$(MSBuildThisFileDirectory)MainUtility.cs" />
+		<Compile Include="$(MSBuildThisFileDirectory)Schedule.cs" />
+		<Compile Include="$(MSBuildThisFileDirectory)ServiceManager.cs" />
+		<Compile Include="$(MSBuildThisFileDirectory)TrayIconConfig.cs" />
+		<Compile Include="$(MSBuildThisFileDirectory)JobData.cs" />
+		<Compile Include="$(MSBuildThisFileDirectory)JobDbManager.cs" />
+		<Compile Include="$(MSBuildThisFileDirectory)MainData.cs" />
+		<Compile Include="$(MSBuildThisFileDirectory)SenderConfig.cs" />
+		<Compile Include="$(MSBuildThisFileDirectory)TaskData.cs" />
+		<Compile Include="$(MSBuildThisFileDirectory)TaskDbManager.cs" />
+		<Compile Include="$(MSBuildThisFileDirectory)UserData.cs" />
+		<Compile Include="$(MSBuildThisFileDirectory)UserDbManager.cs" />
+		<Compile Include="$(MSBuildThisFileDirectory)WatcherConfig.cs" />
+		<Compile Include="$(MSBuildThisFileDirectory)WeekDays.cs" />
+	</ItemGroup>
 </Project>

@@ -181,7 +181,7 @@ namespace IfsSync2Data
 				using var cmd = new SQLiteCommand(conn)
 				{
 					CommandText = $"INSERT INTO '{STR_TASK_TABLE_NAME}'({STR_TASK_NAME}, {STR_FILEPATH}, {STR_NEW_FILE_PATH}, {STR_FILE_SIZE}, {STR_EVENT_TIME})" +
-															$" VALUES ('{task.TaskName}', '{task.FilePath}', '{task.NewFilePath}', {task.FileSize}, '{task.EventTime}')"
+															$" VALUES ('{task.TaskType}', '{task.FilePath}', '{task.NewFilePath}', {task.FileSize}, '{task.EventTime}')"
 				};
 				var result = cmd.ExecuteNonQuery();
 
@@ -203,9 +203,9 @@ namespace IfsSync2Data
 				var query = $"DELETE FROM '{STR_TASK_TABLE_NAME}' WHERE {STR_INDEX_NAME} = {task.Index};";
 				query += task.UploadFlag ?
 				$"\nINSERT INTO '{STR_SUCCESS_TABLE_NAME}' ( {STR_TASK_NAME}, {STR_FILEPATH}, {STR_NEW_FILE_PATH}, {STR_FILE_SIZE}, {STR_UPLOAD_TIME} ,{STR_EVENT_TIME} )" +
-													$" VALUES('{task.TaskName}', '{task.FilePath}', '{task.NewFilePath}', {task.FileSize}, '{task.UploadTime}', '{task.EventTime}');"
+													$" VALUES('{task.TaskType}', '{task.FilePath}', '{task.NewFilePath}', {task.FileSize}, '{task.UploadTime}', '{task.EventTime}');"
 				: $"\nINSERT INTO '{STR_FAILURE_TABLE_NAME}' ( {STR_TASK_NAME}, {STR_FILEPATH}, {STR_NEW_FILE_PATH}, {STR_FILE_SIZE}, {STR_UPLOAD_TIME} ,{STR_EVENT_TIME}, {STR_RESULT} )" +
-													$" VALUES('{task.TaskName}', '{task.FilePath}', '{task.NewFilePath}', {task.FileSize}, '{task.UploadTime}', '{task.EventTime}', '{task.Result.Replace("'", "\"")}');";
+													$" VALUES('{task.TaskType}', '{task.FilePath}', '{task.NewFilePath}', {task.FileSize}, '{task.UploadTime}', '{task.EventTime}', '{task.Result.Replace("'", "\"")}');";
 
 				using var cmd = new SQLiteCommand(conn) { CommandText = query };
 
@@ -246,7 +246,7 @@ namespace IfsSync2Data
 				{
 					CommandText = $"DELETE FROM '{STR_TASK_TABLE_NAME}' WHERE {STR_INDEX_NAME} = {task.Index};"
 								+ $"\nINSERT INTO '{STR_FAILURE_TABLE_NAME}' ({STR_TASK_NAME}, {STR_FILEPATH}, {STR_NEW_FILE_PATH}, {STR_FILE_SIZE}, {STR_EVENT_TIME}, {STR_UPLOAD_TIME} ,{STR_RESULT} )" +
-																$" VALUES('{task.TaskName}', '{task.FilePath}', '{task.NewFilePath}', {task.FileSize}, '{task.EventTime}', '{task.UploadTime}', '{task.Result.Replace("'", "\"")}');",
+																$" VALUES('{task.TaskType}', '{task.FilePath}', '{task.NewFilePath}', {task.FileSize}, '{task.EventTime}', '{task.UploadTime}', '{task.Result.Replace("'", "\"")}');",
 				};
 
 				int result = cmd.ExecuteNonQuery();
@@ -275,7 +275,7 @@ namespace IfsSync2Data
 					var task = new TaskData
 					{
 						Index = Convert.ToInt64(rdr[STR_INDEX_NAME]),
-						StrTaskName = rdr[STR_TASK_NAME].ToString(),
+						StrTaskType = rdr[STR_TASK_NAME].ToString(),
 						FilePath = rdr[STR_FILEPATH].ToString(),
 						NewFilePath = rdr[STR_NEW_FILE_PATH].ToString(),
 						FileSize = Convert.ToInt64(rdr[STR_FILE_SIZE]),
@@ -311,7 +311,7 @@ namespace IfsSync2Data
 					tasks.Add(new TaskData
 					{
 						Index = Convert.ToInt64(rdr[STR_INDEX_NAME]),
-						StrTaskName = rdr[STR_TASK_NAME].ToString(),
+						StrTaskType = rdr[STR_TASK_NAME].ToString(),
 						FilePath = rdr[STR_FILEPATH].ToString(),
 						NewFilePath = rdr[STR_NEW_FILE_PATH].ToString(),
 						FileSize = Convert.ToInt64(rdr[STR_FILE_SIZE]),
@@ -327,7 +327,6 @@ namespace IfsSync2Data
 			finally { _sqliteMutex.ReleaseMutex(); }
 			return tasks;
 		}
-
 		public bool Clear()
 		{
 			try
@@ -390,7 +389,7 @@ namespace IfsSync2Data
 					TaskList.Add(new TaskData
 					{
 						Index = Convert.ToInt64(rdr[STR_INDEX_NAME]),
-						StrTaskName = rdr[STR_TASK_NAME].ToString(),
+						StrTaskType = rdr[STR_TASK_NAME].ToString(),
 						FilePath = rdr[STR_FILEPATH].ToString(),
 						NewFilePath = rdr[STR_NEW_FILE_PATH].ToString(),
 						FileSize = Convert.ToInt64(rdr[STR_FILE_SIZE]),
@@ -439,7 +438,6 @@ namespace IfsSync2Data
 		}
 		public List<string> GetLog(long startIndex = 0)
 		{
-			var items = new List<string>();
 			try
 			{
 				using var conn = new SQLiteConnection($"Data Source={_filePath};Version=3;");
@@ -450,6 +448,8 @@ namespace IfsSync2Data
 
 				using var cmd = new SQLiteCommand(conn) { CommandText = $"SELECT * FROM {STR_LOG_TABLE_NAME} LIMIT 50000 OFFSET {startIndex};" };
 				using var rdr = cmd.ExecuteReader();
+
+				var items = new List<string>();
 				while (rdr.Read())
 				{
 					items.Add(rdr[STR_LOG_NAME].ToString());
@@ -458,8 +458,15 @@ namespace IfsSync2Data
 				_log.Debug($"List Count : {items.Count}");
 				return items;
 			}
-			catch (Exception e) { _log.Error(e); throw; }
-			finally { _sqliteMutex.ReleaseMutex(); }
+			catch (Exception e)
+			{
+				_log.Error($"GetLog({_filePath}, {startIndex})", e);
+				return [];
+			}
+			finally
+			{
+				_sqliteMutex.ReleaseMutex();
+			}
 		}
 	}
 }

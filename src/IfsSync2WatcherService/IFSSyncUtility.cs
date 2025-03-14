@@ -2,7 +2,7 @@
 * Copyright (c) 2021 PSPACE, inc. KSAN Development Team ksan@pspace.co.kr
 * KSAN is a suite of free software: you can redistribute it and/or modify it under the terms of
 * the GNU General Public License as published by the Free Software Foundation, either version 
-* 3 of the License.  See LICENSE for details
+* 3 of the License. See LICENSE for details
 *
 * 본 프로그램 및 관련 소스코드, 문서 등 모든 자료는 있는 그대로 제공이 됩니다.
 * KSAN 프로젝트의 개발자 및 개발사는 이 프로그램을 사용한 결과에 따른 어떠한 책임도 지지 않습니다.
@@ -110,7 +110,7 @@ namespace IfsSync2WatcherService
 			try
 			{
 				string URL;
-				if (_URL.EndsWith("/")) URL = _URL + MainData.WATCHER_SERVICE_GET_USER;
+				if (_URL.EndsWith('/')) URL = _URL + MainData.WATCHER_SERVICE_GET_USER;
 				else URL = _URL + "/" + MainData.WATCHER_SERVICE_GET_USER;
 
 				OperatingSystem os = Environment.OSVersion;
@@ -150,8 +150,10 @@ namespace IfsSync2WatcherService
 				using (WebResponse resp = request.GetResponse())
 				{
 					Stream respStream = resp.GetResponseStream();
-					using (StreamReader sr = new(respStream)) { responseText = sr.ReadToEnd(); };
-				};
+					using (StreamReader sr = new(respStream)) { responseText = sr.ReadToEnd(); }
+					;
+				}
+				;
 
 				JObject UserObj = JObject.Parse(responseText);
 
@@ -190,7 +192,7 @@ namespace IfsSync2WatcherService
 			try
 			{
 				string URL;
-				if (_URL.EndsWith("/")) URL = _URL + MainData.WATCHER_SERVICE_GET_JOBS + UserName;
+				if (_URL.EndsWith('/')) URL = _URL + MainData.WATCHER_SERVICE_GET_JOBS + UserName;
 				else URL = _URL + "/" + MainData.WATCHER_SERVICE_GET_JOBS + UserName;
 
 				HttpWebRequest request = (HttpWebRequest)WebRequest.Create(URL);
@@ -245,7 +247,7 @@ namespace IfsSync2WatcherService
 
 				JArray JobArray = JArray.Parse(jobj[STR_CONF][STR_JOBS].ToString());
 
-				List<JobData> JobList = new();
+				List<JobData> JobList = [];
 
 				if (!TargetUserid.Equals(UserName))
 					throw new Exception(string.Format("UserName Error : {0} != {1}", UserName, TargetUserid));
@@ -255,7 +257,7 @@ namespace IfsSync2WatcherService
 					JobData jobData = new()
 					{
 						IsGlobalUser = true,
-						UserID = UserID
+						UserId = UserID
 					};
 
 					//JArray PathArray = JArray.Parse(Job[STR_JOB_PATH].ToString());
@@ -282,21 +284,21 @@ namespace IfsSync2WatcherService
 
 					if (SenderSchedule.Equals(STR_SENDER_SCHEDULE_ON))
 					{
-						jobData.Policy = JobData.PolicyName.Schedule;
+						jobData.Policy = JobData.PolicyType.Schedule;
 
 						GetStringToTime(SenderStartTime, out int StartHours, out int StartMins);
 						GetStringToTime(SenderEndTime, out int EndHours, out int EndMins);
 
 						Schedule schedule = new();
 						schedule.SetAtTime(StartHours, StartMins);
-						schedule.AddWeek(Schedule.EVERY);
+						schedule.AddDay(WeekDays.Every);
 
 						if (StartHours > EndHours) schedule.ForHours = (Schedule.MaxHours - StartHours) + EndHours;
 
 						jobData.ScheduleList.Add(schedule);
 					}
 					else
-						jobData.Policy = JobData.PolicyName.RealTime;
+						jobData.Policy = JobData.PolicyType.RealTime;
 
 					JobList.Add(jobData);
 					Config.JobList = JobList;

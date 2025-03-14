@@ -11,7 +11,7 @@
             <ListView.View>
                 <GridView>
                     <GridViewColumn Header="Index"           Width="Auto" DisplayMemberBinding="{Binding Index}"/>
-                    <GridViewColumn Header="Task Name"       Width="Auto" DisplayMemberBinding="{Binding TaskName}"/>
+                    <GridViewColumn Header="Task Name"       Width="Auto" DisplayMemberBinding="{Binding StrTaskType}"/>
                     <GridViewColumn Header="File Path"       Width="Auto" DisplayMemberBinding="{Binding FilePath}"/>
                     <GridViewColumn Header="New File Path"   Width="Auto" DisplayMemberBinding="{Binding NewFilePath}"/>
                     <GridViewColumn Header="Event Time"      Width="Auto" DisplayMemberBinding="{Binding EventTime}"/>

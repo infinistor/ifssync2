@@ -32,21 +32,21 @@ namespace IfsSync2Sender
 		public static readonly string HEADER_REPLICATION = "x-ifs-replication";
 		public static readonly string HEADER_VERSION_ID = "x-ifs-version-id";
 
-		public readonly AmazonS3Client Client = null;
-		public S3Client(AmazonS3Client Client) => this.Client = Client;
+		public readonly AmazonS3Client _client = null;
+		public S3Client(AmazonS3Client client) => _client = client;
 
-		public S3Client(UserData User)
+		public S3Client(UserData user)
 		{
-			AWSCredentials Credentials;
-			AmazonS3Config S3Config = null;
+			AWSCredentials credentials;
+			AmazonS3Config s3Config = null;
 
-			if (User == null) Credentials = new AnonymousAWSCredentials();
+			if (user == null) credentials = new AnonymousAWSCredentials();
 			else
 			{
-				Credentials = new BasicAWSCredentials(User.AccessKey, User.SecretKey);
-				if (User.URL == "")
+				credentials = new BasicAWSCredentials(user.AccessKey, user.SecretKey);
+				if (user.URL == "")
 				{
-					S3Config = new AmazonS3Config()
+					s3Config = new AmazonS3Config()
 					{
 						RegionEndpoint = RegionEndpoint.APNortheast2,
 						Timeout = TimeSpan.FromSeconds(S3_TIMEOUT),
@@ -57,9 +57,9 @@ namespace IfsSync2Sender
 				}
 				else
 				{
-					S3Config = new AmazonS3Config
+					s3Config = new AmazonS3Config
 					{
-						ServiceURL = User.URL,
+						ServiceURL = user.URL,
 						Timeout = TimeSpan.FromSeconds(S3_TIMEOUT),
 						MaxErrorRetry = 2,
 						ForcePathStyle = true,
@@ -68,1381 +68,1383 @@ namespace IfsSync2Sender
 				}
 			}
 
-			Client = new AmazonS3Client(Credentials, S3Config);
+			_client = new AmazonS3Client(credentials, s3Config);
 		}
 
 		#region Bucket Function
 
 		public ListBucketsResponse ListBuckets()
 		{
-			if (Client == null) return null;
-			var Response = Client.ListBucketsAsync();
-			Response.Wait();
-			return Response.Result;
+			if (_client == null) return null;
+			var response = _client.ListBucketsAsync();
+			response.Wait();
+			return response.Result;
 		}
 
-		public PutBucketResponse PutBucket(PutBucketRequest Request)
+		public PutBucketResponse PutBucket(PutBucketRequest request)
 		{
-			if (Client == null) return null;
-			var Response = Client.PutBucketAsync(Request);
-			Response.Wait();
-			return Response.Result;
+			if (_client == null) return null;
+			var response = _client.PutBucketAsync(request);
+			response.Wait();
+			return response.Result;
 		}
-		public PutBucketResponse PutBucket(string BucketName, S3CannedACL ACL = null, string RegionName = null,
-			List<S3Grant> Grants = null, List<KeyValuePair<string, string>> HeaderList = null,
-			bool? ObjectLockEnabledForBucket = null)
+		public PutBucketResponse PutBucket(string bucketName, S3CannedACL acl = null, string regionName = null,
+			List<S3Grant> grants = null, List<KeyValuePair<string, string>> headerList = null,
+			bool? objectLockEnabledForBucket = null)
 		{
-			var Request = new PutBucketRequest() { BucketName = BucketName };
-			if (ACL != null) Request.CannedACL = ACL;
-			if (RegionName != null) Request.BucketRegionName = RegionName;
-			if (HeaderList != null)
+			var request = new PutBucketRequest() { BucketName = bucketName };
+			if (acl != null) request.CannedACL = acl;
+			if (regionName != null) request.BucketRegionName = regionName;
+			if (headerList != null)
 			{
-				Client.BeforeRequestEvent += delegate (object sender, RequestEventArgs e)
+				_client.BeforeRequestEvent += delegate (object sender, RequestEventArgs e)
 				{
 
 					var requestEvent = e as WebServiceRequestEventArgs;
-					foreach (var Header in HeaderList)
-						requestEvent.Headers.Add(Header.Key, Header.Value);
+					foreach (var header in headerList)
+						requestEvent.Headers.Add(header.Key, header.Value);
 				};
 			}
-			if (Grants != null) Request.Grants = Grants;
-			if (ObjectLockEnabledForBucket.HasValue) Request.ObjectLockEnabledForBucket = ObjectLockEnabledForBucket.Value;
+			if (grants != null) request.Grants = grants;
+			if (objectLockEnabledForBucket.HasValue) request.ObjectLockEnabledForBucket = objectLockEnabledForBucket.Value;
 
-			return PutBucket(Request);
-		}
-
-		public DeleteBucketResponse DeleteBucket(DeleteBucketRequest Request)
-		{
-			if (Client == null) return null;
-			var Response = Client.DeleteBucketAsync(Request);
-			Response.Wait();
-			return Response.Result;
-		}
-		public DeleteBucketResponse DeleteBucket(string BucketName)
-		{
-			var Request = new DeleteBucketRequest() { BucketName = BucketName };
-			return DeleteBucket(Request);
+			return PutBucket(request);
 		}
 
-		public GetBucketLocationResponse GetBucketLocation(GetBucketLocationRequest Request)
+		public DeleteBucketResponse DeleteBucket(DeleteBucketRequest request)
 		{
-			if (Client == null) return null;
-			var Response = Client.GetBucketLocationAsync(Request);
-			Response.Wait();
-			return Response.Result;
+			if (_client == null) return null;
+			var response = _client.DeleteBucketAsync(request);
+			response.Wait();
+			return response.Result;
 		}
-		public GetBucketLocationResponse GetBucketLocation(string BucketName)
+		public DeleteBucketResponse DeleteBucket(string bucketName)
 		{
-			var Request = new GetBucketLocationRequest() { BucketName = BucketName };
-			return GetBucketLocation(Request);
-		}
-
-		private PutBucketLoggingResponse PutBucketLogging(PutBucketLoggingRequest Request)
-		{
-			if (Client == null) return null;
-			var Response = Client.PutBucketLoggingAsync(Request);
-			Response.Wait();
-			return Response.Result;
-		}
-		public PutBucketLoggingResponse PutBucketLogging(string BucketName, S3BucketLoggingConfig Config)
-		{
-			var Request = new PutBucketLoggingRequest() { BucketName = BucketName, LoggingConfig = Config };
-			return PutBucketLogging(Request);
-		}
-		private GetBucketLoggingResponse GetBucketLogging(GetBucketLoggingRequest Request)
-		{
-			if (Client == null) return null;
-			var Response = Client.GetBucketLoggingAsync(Request);
-			Response.Wait();
-			return Response.Result;
-		}
-		public GetBucketLoggingResponse GetBucketLogging(string BucketName)
-		{
-			var Request = new GetBucketLoggingRequest() { BucketName = BucketName };
-			return GetBucketLogging(Request);
+			var request = new DeleteBucketRequest() { BucketName = bucketName };
+			return DeleteBucket(request);
 		}
 
-		private PutBucketNotificationResponse PutBucketNotification(PutBucketNotificationRequest Request)
+		public GetBucketLocationResponse GetBucketLocation(GetBucketLocationRequest request)
 		{
-			if (Client == null) return null;
-			var Response = Client.PutBucketNotificationAsync(Request);
-			Response.Wait();
-			return Response.Result;
+			if (_client == null) return null;
+			var response = _client.GetBucketLocationAsync(request);
+			response.Wait();
+			return response.Result;
 		}
-		public PutBucketNotificationResponse PutBucketNotification(string BucketName, List<TopicConfiguration> TopicConfigurations = null, List<QueueConfiguration> QueueConfigurations = null, List<LambdaFunctionConfiguration> LambdaFunctionConfigurations = null, string ExpectedBucketOwner = null)
+		public GetBucketLocationResponse GetBucketLocation(string bucketName)
 		{
-			var Request = new PutBucketNotificationRequest() { BucketName = BucketName };
-			if (TopicConfigurations != null) Request.TopicConfigurations = TopicConfigurations;
-			if (QueueConfigurations != null) Request.QueueConfigurations = QueueConfigurations;
-			if (LambdaFunctionConfigurations != null) Request.LambdaFunctionConfigurations = LambdaFunctionConfigurations;
-			if (ExpectedBucketOwner != null) Request.ExpectedBucketOwner = ExpectedBucketOwner;
-
-			return PutBucketNotification(Request);
-		}
-		private GetBucketNotificationResponse GetBucketNotification(GetBucketNotificationRequest Request)
-		{
-			if (Client == null) return null;
-			var Response = Client.GetBucketNotificationAsync(Request);
-			Response.Wait();
-			return Response.Result;
-		}
-		public GetBucketNotificationResponse GetBucketNotification(string BucketName)
-		{
-			var Request = new GetBucketNotificationRequest() { BucketName = BucketName };
-			return GetBucketNotification(Request);
+			var request = new GetBucketLocationRequest() { BucketName = bucketName };
+			return GetBucketLocation(request);
 		}
 
-		public PutBucketVersioningResponse PutBucketVersioning(PutBucketVersioningRequest Request)
+		private PutBucketLoggingResponse PutBucketLogging(PutBucketLoggingRequest request)
 		{
-			if (Client == null) return null;
-			var Response = Client.PutBucketVersioningAsync(Request);
-			Response.Wait();
-			return Response.Result;
+			if (_client == null) return null;
+			var response = _client.PutBucketLoggingAsync(request);
+			response.Wait();
+			return response.Result;
 		}
-		public PutBucketVersioningResponse PutBucketVersioning(string BucketName, VersionStatus Status = null)
+		public PutBucketLoggingResponse PutBucketLogging(string bucketName, S3BucketLoggingConfig config)
 		{
-			var Request = new PutBucketVersioningRequest() { BucketName = BucketName, VersioningConfig = new S3BucketVersioningConfig() { Status = Status } };
-			return PutBucketVersioning(Request);
+			var request = new PutBucketLoggingRequest() { BucketName = bucketName, LoggingConfig = config };
+			return PutBucketLogging(request);
 		}
-
-		public GetBucketVersioningResponse GetBucketVersioning(GetBucketVersioningRequest Request)
+		private GetBucketLoggingResponse GetBucketLogging(GetBucketLoggingRequest request)
 		{
-			if (Client == null) return null;
-			var Response = Client.GetBucketVersioningAsync(Request);
-			Response.Wait();
-			return Response.Result;
+			if (_client == null) return null;
+			var response = _client.GetBucketLoggingAsync(request);
+			response.Wait();
+			return response.Result;
 		}
-		public GetBucketVersioningResponse GetBucketVersioning(string BucketName)
+		public GetBucketLoggingResponse GetBucketLogging(string bucketName)
 		{
-			var Request = new GetBucketVersioningRequest() { BucketName = BucketName };
-
-			return GetBucketVersioning(Request);
+			var request = new GetBucketLoggingRequest() { BucketName = bucketName };
+			return GetBucketLogging(request);
 		}
 
-		public GetACLResponse GetACL(GetACLRequest Request)
+		private PutBucketNotificationResponse PutBucketNotification(PutBucketNotificationRequest request)
 		{
-			if (Client == null) return null;
-			var Response = Client.GetACLAsync(Request);
-			Response.Wait();
-			return Response.Result;
+			if (_client == null) return null;
+			var response = _client.PutBucketNotificationAsync(request);
+			response.Wait();
+			return response.Result;
 		}
-		public GetACLResponse GetBucketACL(string BucketName)
+		public PutBucketNotificationResponse PutBucketNotification(string bucketName, List<TopicConfiguration> topicConfigurations = null, List<QueueConfiguration> queueConfigurations = null, List<LambdaFunctionConfiguration> lambdaFunctionConfigurations = null, string expectedBucketOwner = null)
 		{
-			var Request = new GetACLRequest()
+			var request = new PutBucketNotificationRequest() { BucketName = bucketName };
+			if (topicConfigurations != null) request.TopicConfigurations = topicConfigurations;
+			if (queueConfigurations != null) request.QueueConfigurations = queueConfigurations;
+			if (lambdaFunctionConfigurations != null) request.LambdaFunctionConfigurations = lambdaFunctionConfigurations;
+			if (expectedBucketOwner != null) request.ExpectedBucketOwner = expectedBucketOwner;
+
+			return PutBucketNotification(request);
+		}
+		private GetBucketNotificationResponse GetBucketNotification(GetBucketNotificationRequest request)
+		{
+			if (_client == null) return null;
+			var response = _client.GetBucketNotificationAsync(request);
+			response.Wait();
+			return response.Result;
+		}
+		public GetBucketNotificationResponse GetBucketNotification(string bucketName)
+		{
+			var request = new GetBucketNotificationRequest() { BucketName = bucketName };
+			return GetBucketNotification(request);
+		}
+
+		public PutBucketVersioningResponse PutBucketVersioning(PutBucketVersioningRequest request)
+		{
+			if (_client == null) return null;
+			var response = _client.PutBucketVersioningAsync(request);
+			response.Wait();
+			return response.Result;
+		}
+		public PutBucketVersioningResponse PutBucketVersioning(string bucketName, VersionStatus status = null)
+		{
+			var request = new PutBucketVersioningRequest() { BucketName = bucketName, VersioningConfig = new S3BucketVersioningConfig() { Status = status } };
+			return PutBucketVersioning(request);
+		}
+
+		public GetBucketVersioningResponse GetBucketVersioning(GetBucketVersioningRequest request)
+		{
+			if (_client == null) return null;
+			var response = _client.GetBucketVersioningAsync(request);
+			response.Wait();
+			return response.Result;
+		}
+		public GetBucketVersioningResponse GetBucketVersioning(string bucketName)
+		{
+			var request = new GetBucketVersioningRequest() { BucketName = bucketName };
+
+			return GetBucketVersioning(request);
+		}
+
+		public GetACLResponse GetACL(GetACLRequest request)
+		{
+			if (_client == null) return null;
+			var response = _client.GetACLAsync(request);
+			response.Wait();
+			return response.Result;
+		}
+		public GetACLResponse GetBucketACL(string bucketName)
+		{
+			var request = new GetACLRequest()
 			{
-				BucketName = BucketName
+				BucketName = bucketName
 			};
-			return GetACL(Request);
+			return GetACL(request);
 		}
 
-		public PutACLResponse PutACL(PutACLRequest Request)
+		public PutACLResponse PutACL(PutACLRequest request)
 		{
-			if (Client == null) return null;
-			var Response = Client.PutACLAsync(Request);
-			Response.Wait();
-			return Response.Result;
+			if (_client == null) return null;
+			var response = _client.PutACLAsync(request);
+			response.Wait();
+			return response.Result;
 		}
-		public PutACLResponse PutBucketACL(string BucketName, S3CannedACL ACL = null, S3AccessControlList AccessControlPolicy = null)
+		public PutACLResponse PutBucketACL(string bucketName, S3CannedACL acl = null, S3AccessControlList accessControlPolicy = null)
 		{
-			var Request = new PutACLRequest()
+			var request = new PutACLRequest()
 			{
-				BucketName = BucketName
-			};
-
-			if (ACL != null) Request.CannedACL = ACL;
-			if (AccessControlPolicy != null) Request.AccessControlList = AccessControlPolicy;
-
-			return PutACL(Request);
-		}
-
-		public PutCORSConfigurationResponse PutCORSConfiguration(PutCORSConfigurationRequest Request)
-		{
-			if (Client == null) return null;
-			var Response = Client.PutCORSConfigurationAsync(Request);
-			Response.Wait();
-			return Response.Result;
-		}
-		public PutCORSConfigurationResponse PutCORSConfiguration(string BucketName, CORSConfiguration Configuration)
-		{
-			var Request = new PutCORSConfigurationRequest()
-			{
-				BucketName = BucketName,
-				Configuration = Configuration,
+				BucketName = bucketName
 			};
 
-			return PutCORSConfiguration(Request);
+			if (acl != null) request.CannedACL = acl;
+			if (accessControlPolicy != null) request.AccessControlList = accessControlPolicy;
+
+			return PutACL(request);
 		}
 
-		public GetCORSConfigurationResponse GetCORSConfiguration(GetCORSConfigurationRequest Request)
+		public PutCORSConfigurationResponse PutCORSConfiguration(PutCORSConfigurationRequest request)
 		{
-			if (Client == null) return null;
-			var Response = Client.GetCORSConfigurationAsync(Request);
-			Response.Wait();
-			return Response.Result;
+			if (_client == null) return null;
+			var response = _client.PutCORSConfigurationAsync(request);
+			response.Wait();
+			return response.Result;
 		}
-		public GetCORSConfigurationResponse GetCORSConfiguration(string BucketName)
+		public PutCORSConfigurationResponse PutCORSConfiguration(string bucketName, CORSConfiguration configuration)
 		{
-			var Request = new GetCORSConfigurationRequest()
+			var request = new PutCORSConfigurationRequest()
 			{
-				BucketName = BucketName,
+				BucketName = bucketName,
+				Configuration = configuration,
 			};
 
-			return GetCORSConfiguration(Request);
+			return PutCORSConfiguration(request);
 		}
 
-		public DeleteCORSConfigurationResponse DeleteCORSConfiguration(DeleteCORSConfigurationRequest Request)
+		public GetCORSConfigurationResponse GetCORSConfiguration(GetCORSConfigurationRequest request)
 		{
-			if (Client == null) return null;
-			var Response = Client.DeleteCORSConfigurationAsync(Request);
-			Response.Wait();
-			return Response.Result;
+			if (_client == null) return null;
+			var response = _client.GetCORSConfigurationAsync(request);
+			response.Wait();
+			return response.Result;
 		}
-		public DeleteCORSConfigurationResponse DeleteCORSConfiguration(string BucketName)
+		public GetCORSConfigurationResponse GetCORSConfiguration(string bucketName)
 		{
-			var Request = new DeleteCORSConfigurationRequest()
+			var request = new GetCORSConfigurationRequest()
 			{
-				BucketName = BucketName,
+				BucketName = bucketName,
 			};
 
-			return DeleteCORSConfiguration(Request);
+			return GetCORSConfiguration(request);
 		}
 
-		public GetBucketTaggingResponse GetBucketTagging(GetBucketTaggingRequest Request)
+		public DeleteCORSConfigurationResponse DeleteCORSConfiguration(DeleteCORSConfigurationRequest request)
 		{
-			if (Client == null) return null;
-			var Response = Client.GetBucketTaggingAsync(Request);
-			Response.Wait();
-			return Response.Result;
+			if (_client == null) return null;
+			var response = _client.DeleteCORSConfigurationAsync(request);
+			response.Wait();
+			return response.Result;
 		}
-		public GetBucketTaggingResponse GetBucketTagging(string BucketName)
+		public DeleteCORSConfigurationResponse DeleteCORSConfiguration(string bucketName)
 		{
-			var Request = new GetBucketTaggingRequest()
+			var request = new DeleteCORSConfigurationRequest()
 			{
-				BucketName = BucketName,
+				BucketName = bucketName,
 			};
 
-			return GetBucketTagging(Request);
+			return DeleteCORSConfiguration(request);
 		}
 
-		public PutBucketTaggingResponse PutBucketTagging(PutBucketTaggingRequest Request)
+		public GetBucketTaggingResponse GetBucketTagging(GetBucketTaggingRequest request)
 		{
-			if (Client == null) return null;
-			var Response = Client.PutBucketTaggingAsync(Request);
-			Response.Wait();
-			return Response.Result;
+			if (_client == null) return null;
+			var response = _client.GetBucketTaggingAsync(request);
+			response.Wait();
+			return response.Result;
 		}
-		public PutBucketTaggingResponse PutBucketTagging(string BucketName, List<Tag> TagSet)
+		public GetBucketTaggingResponse GetBucketTagging(string bucketName)
 		{
-			var Request = new PutBucketTaggingRequest()
+			var request = new GetBucketTaggingRequest()
 			{
-				BucketName = BucketName,
-				TagSet = TagSet,
+				BucketName = bucketName,
 			};
 
-			return PutBucketTagging(Request);
+			return GetBucketTagging(request);
 		}
 
-		public DeleteBucketTaggingResponse DeleteBucketTagging(DeleteBucketTaggingRequest Request)
+		public PutBucketTaggingResponse PutBucketTagging(PutBucketTaggingRequest request)
 		{
-			if (Client == null) return null;
-			var Response = Client.DeleteBucketTaggingAsync(Request);
-			Response.Wait();
-			return Response.Result;
+			if (_client == null) return null;
+			var response = _client.PutBucketTaggingAsync(request);
+			response.Wait();
+			return response.Result;
 		}
-		public DeleteBucketTaggingResponse DeleteBucketTagging(string BucketName)
+		public PutBucketTaggingResponse PutBucketTagging(string bucketName, List<Tag> tagSet)
 		{
-			var Request = new DeleteBucketTaggingRequest()
+			var request = new PutBucketTaggingRequest()
 			{
-				BucketName = BucketName,
+				BucketName = bucketName,
+				TagSet = tagSet,
 			};
 
-			return DeleteBucketTagging(Request);
+			return PutBucketTagging(request);
 		}
 
-		public PutLifecycleConfigurationResponse PutLifecycleConfiguration(PutLifecycleConfigurationRequest Request)
+		public DeleteBucketTaggingResponse DeleteBucketTagging(DeleteBucketTaggingRequest request)
 		{
-			if (Client == null) return null;
-			var Response = Client.PutLifecycleConfigurationAsync(Request);
-			Response.Wait();
-			return Response.Result;
+			if (_client == null) return null;
+			var response = _client.DeleteBucketTaggingAsync(request);
+			response.Wait();
+			return response.Result;
 		}
-		public PutLifecycleConfigurationResponse PutLifecycleConfiguration(string BucketName, LifecycleConfiguration Configuration)
+		public DeleteBucketTaggingResponse DeleteBucketTagging(string bucketName)
 		{
-			var Request = new PutLifecycleConfigurationRequest()
+			var request = new DeleteBucketTaggingRequest()
 			{
-				BucketName = BucketName,
-				Configuration = Configuration,
+				BucketName = bucketName,
 			};
 
-			return PutLifecycleConfiguration(Request);
+			return DeleteBucketTagging(request);
 		}
 
-		public GetLifecycleConfigurationResponse GetLifecycleConfiguration(GetLifecycleConfigurationRequest Request)
+		public PutLifecycleConfigurationResponse PutLifecycleConfiguration(PutLifecycleConfigurationRequest request)
 		{
-			if (Client == null) return null;
-			var Response = Client.GetLifecycleConfigurationAsync(Request);
-			Response.Wait();
-			return Response.Result;
+			if (_client == null) return null;
+			var response = _client.PutLifecycleConfigurationAsync(request);
+			response.Wait();
+			return response.Result;
 		}
-		public GetLifecycleConfigurationResponse GetLifecycleConfiguration(string BucketName)
+		public PutLifecycleConfigurationResponse PutLifecycleConfiguration(string bucketName, LifecycleConfiguration configuration)
 		{
-			var Request = new GetLifecycleConfigurationRequest()
+			var request = new PutLifecycleConfigurationRequest()
 			{
-				BucketName = BucketName,
+				BucketName = bucketName,
+				Configuration = configuration,
 			};
 
-			return GetLifecycleConfiguration(Request);
+			return PutLifecycleConfiguration(request);
 		}
 
-		public DeleteLifecycleConfigurationResponse DeleteLifecycleConfiguration(DeleteLifecycleConfigurationRequest Request)
+		public GetLifecycleConfigurationResponse GetLifecycleConfiguration(GetLifecycleConfigurationRequest request)
 		{
-			if (Client == null) return null;
-			var Response = Client.DeleteLifecycleConfigurationAsync(Request);
-			Response.Wait();
-			return Response.Result;
+			if (_client == null) return null;
+			var response = _client.GetLifecycleConfigurationAsync(request);
+			response.Wait();
+			return response.Result;
 		}
-		public DeleteLifecycleConfigurationResponse DeleteLifecycleConfiguration(string BucketName)
+		public GetLifecycleConfigurationResponse GetLifecycleConfiguration(string bucketName)
 		{
-			var Request = new DeleteLifecycleConfigurationRequest()
+			var request = new GetLifecycleConfigurationRequest()
 			{
-				BucketName = BucketName,
+				BucketName = bucketName,
 			};
 
-			return DeleteLifecycleConfiguration(Request);
+			return GetLifecycleConfiguration(request);
 		}
 
-		public PutBucketPolicyResponse PutBucketPolicy(PutBucketPolicyRequest Request)
+		public DeleteLifecycleConfigurationResponse DeleteLifecycleConfiguration(DeleteLifecycleConfigurationRequest request)
 		{
-			if (Client == null) return null;
-			var Response = Client.PutBucketPolicyAsync(Request);
-			Response.Wait();
-			return Response.Result;
+			if (_client == null) return null;
+			var response = _client.DeleteLifecycleConfigurationAsync(request);
+			response.Wait();
+			return response.Result;
 		}
-		public PutBucketPolicyResponse PutBucketPolicy(string BucketName, string Policy)
+		public DeleteLifecycleConfigurationResponse DeleteLifecycleConfiguration(string bucketName)
 		{
-			var Request = new PutBucketPolicyRequest()
+			var request = new DeleteLifecycleConfigurationRequest()
 			{
-				BucketName = BucketName,
-				Policy = Policy,
+				BucketName = bucketName,
 			};
 
-			return PutBucketPolicy(Request);
+			return DeleteLifecycleConfiguration(request);
 		}
 
-		public GetBucketPolicyResponse GetBucketPolicy(GetBucketPolicyRequest Request)
+		public PutBucketPolicyResponse PutBucketPolicy(PutBucketPolicyRequest request)
 		{
-			if (Client == null) return null;
-			var Response = Client.GetBucketPolicyAsync(Request);
-			Response.Wait();
-			return Response.Result;
+			if (_client == null) return null;
+			var response = _client.PutBucketPolicyAsync(request);
+			response.Wait();
+			return response.Result;
 		}
-		public GetBucketPolicyResponse GetBucketPolicy(string BucketName)
+		public PutBucketPolicyResponse PutBucketPolicy(string bucketName, string policy)
 		{
-			var Request = new GetBucketPolicyRequest()
+			var request = new PutBucketPolicyRequest()
 			{
-				BucketName = BucketName,
+				BucketName = bucketName,
+				Policy = policy,
 			};
 
-			return GetBucketPolicy(Request);
+			return PutBucketPolicy(request);
 		}
 
-		public DeleteBucketPolicyResponse DeleteBucketPolicy(DeleteBucketPolicyRequest Request)
+		public GetBucketPolicyResponse GetBucketPolicy(GetBucketPolicyRequest request)
 		{
-			if (Client == null) return null;
-			var Response = Client.DeleteBucketPolicyAsync(Request);
-			Response.Wait();
-			return Response.Result;
+			if (_client == null) return null;
+			var response = _client.GetBucketPolicyAsync(request);
+			response.Wait();
+			return response.Result;
 		}
-		public DeleteBucketPolicyResponse DeleteBucketPolicy(string BucketName)
+		public GetBucketPolicyResponse GetBucketPolicy(string bucketName)
 		{
-			var Request = new DeleteBucketPolicyRequest()
+			var request = new GetBucketPolicyRequest()
 			{
-				BucketName = BucketName,
+				BucketName = bucketName,
 			};
 
-			return DeleteBucketPolicy(Request);
+			return GetBucketPolicy(request);
 		}
 
-		public GetBucketPolicyStatusResponse GetBucketPolicyStatus(GetBucketPolicyStatusRequest Request)
+		public DeleteBucketPolicyResponse DeleteBucketPolicy(DeleteBucketPolicyRequest request)
 		{
-			if (Client == null) return null;
-			var Response = Client.GetBucketPolicyStatusAsync(Request);
-			Response.Wait();
-			return Response.Result;
+			if (_client == null) return null;
+			var response = _client.DeleteBucketPolicyAsync(request);
+			response.Wait();
+			return response.Result;
 		}
-		public GetBucketPolicyStatusResponse GetBucketPolicyStatus(string BucketName)
+		public DeleteBucketPolicyResponse DeleteBucketPolicy(string bucketName)
 		{
-			var Request = new GetBucketPolicyStatusRequest()
+			var request = new DeleteBucketPolicyRequest()
 			{
-				BucketName = BucketName,
+				BucketName = bucketName,
 			};
 
-			return GetBucketPolicyStatus(Request);
+			return DeleteBucketPolicy(request);
 		}
 
-		public PutObjectLockConfigurationResponse PutObjectLockConfiguration(PutObjectLockConfigurationRequest Request)
+		public GetBucketPolicyStatusResponse GetBucketPolicyStatus(GetBucketPolicyStatusRequest request)
 		{
-			if (Client == null) return null;
-			var Response = Client.PutObjectLockConfigurationAsync(Request);
-			Response.Wait();
-			return Response.Result;
+			if (_client == null) return null;
+			var response = _client.GetBucketPolicyStatusAsync(request);
+			response.Wait();
+			return response.Result;
 		}
-		public PutObjectLockConfigurationResponse PutObjectLockConfiguration(string BucketName, ObjectLockConfiguration ObjectLockConfiguration)
+		public GetBucketPolicyStatusResponse GetBucketPolicyStatus(string bucketName)
 		{
-			var Request = new PutObjectLockConfigurationRequest()
+			var request = new GetBucketPolicyStatusRequest()
 			{
-				BucketName = BucketName,
-				ObjectLockConfiguration = ObjectLockConfiguration,
+				BucketName = bucketName,
 			};
 
-			return PutObjectLockConfiguration(Request);
+			return GetBucketPolicyStatus(request);
 		}
 
-		public GetObjectLockConfigurationResponse GetObjectLockConfiguration(GetObjectLockConfigurationRequest Request)
+		public PutObjectLockConfigurationResponse PutObjectLockConfiguration(PutObjectLockConfigurationRequest request)
 		{
-			if (Client == null) return null;
-			var Response = Client.GetObjectLockConfigurationAsync(Request);
-			Response.Wait();
-			return Response.Result;
+			if (_client == null) return null;
+			var response = _client.PutObjectLockConfigurationAsync(request);
+			response.Wait();
+			return response.Result;
 		}
-		public GetObjectLockConfigurationResponse GetObjectLockConfiguration(string BucketName)
+		public PutObjectLockConfigurationResponse PutObjectLockConfiguration(string bucketName, ObjectLockConfiguration objectLockConfiguration)
 		{
-			var Request = new GetObjectLockConfigurationRequest()
+			var request = new PutObjectLockConfigurationRequest()
 			{
-				BucketName = BucketName,
+				BucketName = bucketName,
+				ObjectLockConfiguration = objectLockConfiguration,
 			};
 
-			return GetObjectLockConfiguration(Request);
+			return PutObjectLockConfiguration(request);
 		}
 
-		public PutPublicAccessBlockResponse PutPublicAccessBlock(PutPublicAccessBlockRequest Request)
+		public GetObjectLockConfigurationResponse GetObjectLockConfiguration(GetObjectLockConfigurationRequest request)
 		{
-			if (Client == null) return null;
-			var Response = Client.PutPublicAccessBlockAsync(Request);
-			Response.Wait();
-			return Response.Result;
+			if (_client == null) return null;
+			var response = _client.GetObjectLockConfigurationAsync(request);
+			response.Wait();
+			return response.Result;
 		}
-		public PutPublicAccessBlockResponse PutPublicAccessBlock(string BucketName, PublicAccessBlockConfiguration PublicAccessBlockConfiguration)
+		public GetObjectLockConfigurationResponse GetObjectLockConfiguration(string bucketName)
 		{
-			var Request = new PutPublicAccessBlockRequest()
+			var request = new GetObjectLockConfigurationRequest()
 			{
-				BucketName = BucketName,
-				PublicAccessBlockConfiguration = PublicAccessBlockConfiguration,
+				BucketName = bucketName,
 			};
 
-			return PutPublicAccessBlock(Request);
+			return GetObjectLockConfiguration(request);
 		}
 
-		public GetPublicAccessBlockResponse GetPublicAccessBlock(GetPublicAccessBlockRequest Request)
+		public PutPublicAccessBlockResponse PutPublicAccessBlock(PutPublicAccessBlockRequest request)
 		{
-			if (Client == null) return null;
-			var Response = Client.GetPublicAccessBlockAsync(Request);
-			Response.Wait();
-			return Response.Result;
+			if (_client == null) return null;
+			var response = _client.PutPublicAccessBlockAsync(request);
+			response.Wait();
+			return response.Result;
 		}
-		public GetPublicAccessBlockResponse GetPublicAccessBlock(string BucketName)
+		public PutPublicAccessBlockResponse PutPublicAccessBlock(string bucketName, PublicAccessBlockConfiguration publicAccessBlockConfiguration)
 		{
-			var Request = new GetPublicAccessBlockRequest()
+			var request = new PutPublicAccessBlockRequest()
 			{
-				BucketName = BucketName,
+				BucketName = bucketName,
+				PublicAccessBlockConfiguration = publicAccessBlockConfiguration,
 			};
 
-			return GetPublicAccessBlock(Request);
+			return PutPublicAccessBlock(request);
 		}
 
-		public DeletePublicAccessBlockResponse DeletePublicAccessBlock(DeletePublicAccessBlockRequest Request)
+		public GetPublicAccessBlockResponse GetPublicAccessBlock(GetPublicAccessBlockRequest request)
 		{
-			if (Client == null) return null;
-			var Response = Client.DeletePublicAccessBlockAsync(Request);
-			Response.Wait();
-			return Response.Result;
+			if (_client == null) return null;
+			var response = _client.GetPublicAccessBlockAsync(request);
+			response.Wait();
+			return response.Result;
 		}
-		public DeletePublicAccessBlockResponse DeletePublicAccessBlock(string BucketName)
+		public GetPublicAccessBlockResponse GetPublicAccessBlock(string bucketName)
 		{
-			var Request = new DeletePublicAccessBlockRequest()
+			var request = new GetPublicAccessBlockRequest()
 			{
-				BucketName = BucketName,
+				BucketName = bucketName,
 			};
 
-			return DeletePublicAccessBlock(Request);
+			return GetPublicAccessBlock(request);
 		}
 
-		public GetBucketEncryptionResponse GetBucketEncryption(GetBucketEncryptionRequest Request)
+		public DeletePublicAccessBlockResponse DeletePublicAccessBlock(DeletePublicAccessBlockRequest request)
 		{
-			if (Client == null) return null;
-			var Response = Client.GetBucketEncryptionAsync(Request);
-			Response.Wait();
-			return Response.Result;
+			if (_client == null) return null;
+			var response = _client.DeletePublicAccessBlockAsync(request);
+			response.Wait();
+			return response.Result;
 		}
-		public GetBucketEncryptionResponse GetBucketEncryption(string BucketName)
+		public DeletePublicAccessBlockResponse DeletePublicAccessBlock(string bucketName)
 		{
-			var Request = new GetBucketEncryptionRequest()
+			var request = new DeletePublicAccessBlockRequest()
 			{
-				BucketName = BucketName
+				BucketName = bucketName,
 			};
 
-			return GetBucketEncryption(Request);
+			return DeletePublicAccessBlock(request);
 		}
 
-		public PutBucketEncryptionResponse PutBucketEncryption(PutBucketEncryptionRequest Request)
+		public GetBucketEncryptionResponse GetBucketEncryption(GetBucketEncryptionRequest request)
 		{
-			if (Client == null) return null;
-			var Response = Client.PutBucketEncryptionAsync(Request);
-			Response.Wait();
-			return Response.Result;
+			if (_client == null) return null;
+			var response = _client.GetBucketEncryptionAsync(request);
+			response.Wait();
+			return response.Result;
 		}
-		public PutBucketEncryptionResponse PutBucketEncryption(string BucketName, ServerSideEncryptionConfiguration SSEConfig)
+		public GetBucketEncryptionResponse GetBucketEncryption(string bucketName)
 		{
-			var Request = new PutBucketEncryptionRequest()
+			var request = new GetBucketEncryptionRequest()
 			{
-				BucketName = BucketName,
-				ServerSideEncryptionConfiguration = SSEConfig,
+				BucketName = bucketName
 			};
 
-			return PutBucketEncryption(Request);
+			return GetBucketEncryption(request);
 		}
 
-		public DeleteBucketEncryptionResponse DeleteBucketEncryption(DeleteBucketEncryptionRequest Request)
+		public PutBucketEncryptionResponse PutBucketEncryption(PutBucketEncryptionRequest request)
 		{
-			if (Client == null) return null;
-			var Response = Client.DeleteBucketEncryptionAsync(Request);
-			Response.Wait();
-			return Response.Result;
+			if (_client == null) return null;
+			var response = _client.PutBucketEncryptionAsync(request);
+			response.Wait();
+			return response.Result;
 		}
-		public DeleteBucketEncryptionResponse DeleteBucketEncryption(string BucketName)
+		public PutBucketEncryptionResponse PutBucketEncryption(string bucketName, ServerSideEncryptionConfiguration sseConfig)
 		{
-			var Request = new DeleteBucketEncryptionRequest()
+			var request = new PutBucketEncryptionRequest()
 			{
-				BucketName = BucketName
+				BucketName = bucketName,
+				ServerSideEncryptionConfiguration = sseConfig,
 			};
 
-			return DeleteBucketEncryption(Request);
+			return PutBucketEncryption(request);
 		}
 
-		public GetBucketWebsiteResponse GetBucketWebsite(GetBucketWebsiteRequest Request)
+		public DeleteBucketEncryptionResponse DeleteBucketEncryption(DeleteBucketEncryptionRequest request)
 		{
-			if (Client == null) return null;
-			var Response = Client.GetBucketWebsiteAsync(Request);
-			Response.Wait();
-			return Response.Result;
+			if (_client == null) return null;
+			var response = _client.DeleteBucketEncryptionAsync(request);
+			response.Wait();
+			return response.Result;
 		}
-		public GetBucketWebsiteResponse GetBucketWebsite(string BucketName)
+		public DeleteBucketEncryptionResponse DeleteBucketEncryption(string bucketName)
 		{
-			var Request = new GetBucketWebsiteRequest()
+			var request = new DeleteBucketEncryptionRequest()
 			{
-				BucketName = BucketName
+				BucketName = bucketName
 			};
 
-			return GetBucketWebsite(Request);
+			return DeleteBucketEncryption(request);
 		}
 
-		public PutBucketWebsiteResponse PutBucketWebsite(PutBucketWebsiteRequest Request)
+		public GetBucketWebsiteResponse GetBucketWebsite(GetBucketWebsiteRequest request)
 		{
-			if (Client == null) return null;
-			var Response = Client.PutBucketWebsiteAsync(Request);
-			Response.Wait();
-			return Response.Result;
+			if (_client == null) return null;
+			var response = _client.GetBucketWebsiteAsync(request);
+			response.Wait();
+			return response.Result;
 		}
-		public PutBucketWebsiteResponse PutBucketWebsite(string BucketName, WebsiteConfiguration WebConfig)
+		public GetBucketWebsiteResponse GetBucketWebsite(string bucketName)
 		{
-			var Request = new PutBucketWebsiteRequest()
+			var request = new GetBucketWebsiteRequest()
 			{
-				BucketName = BucketName,
-				WebsiteConfiguration = WebConfig,
+				BucketName = bucketName
 			};
 
-			return PutBucketWebsite(Request);
+			return GetBucketWebsite(request);
 		}
 
-		public DeleteBucketWebsiteResponse DeleteBucketWebsite(DeleteBucketWebsiteRequest Request)
+		public PutBucketWebsiteResponse PutBucketWebsite(PutBucketWebsiteRequest request)
 		{
-			if (Client == null) return null;
-			var Response = Client.DeleteBucketWebsiteAsync(Request);
-			Response.Wait();
-			return Response.Result;
+			if (_client == null) return null;
+			var response = _client.PutBucketWebsiteAsync(request);
+			response.Wait();
+			return response.Result;
 		}
-		public DeleteBucketWebsiteResponse DeleteBucketWebsite(string BucketName)
+		public PutBucketWebsiteResponse PutBucketWebsite(string bucketName, WebsiteConfiguration webConfig)
 		{
-			var Request = new DeleteBucketWebsiteRequest()
+			var request = new PutBucketWebsiteRequest()
 			{
-				BucketName = BucketName
+				BucketName = bucketName,
+				WebsiteConfiguration = webConfig,
 			};
 
-			return DeleteBucketWebsite(Request);
+			return PutBucketWebsite(request);
 		}
 
-		public GetBucketInventoryConfigurationResponse GetBucketInventoryConfiguration(GetBucketInventoryConfigurationRequest Request)
+		public DeleteBucketWebsiteResponse DeleteBucketWebsite(DeleteBucketWebsiteRequest request)
 		{
-			if (Client == null) return null;
-			var Response = Client.GetBucketInventoryConfigurationAsync(Request);
-			Response.Wait();
-			return Response.Result;
+			if (_client == null) return null;
+			var response = _client.DeleteBucketWebsiteAsync(request);
+			response.Wait();
+			return response.Result;
 		}
-
-		public GetBucketInventoryConfigurationResponse GetBucketInventoryConfiguration(string BucketName, string Id)
+		public DeleteBucketWebsiteResponse DeleteBucketWebsite(string bucketName)
 		{
-			var Request = new GetBucketInventoryConfigurationRequest()
+			var request = new DeleteBucketWebsiteRequest()
 			{
-				BucketName = BucketName,
-				InventoryId = Id,
+				BucketName = bucketName
 			};
 
-			return GetBucketInventoryConfiguration(Request);
+			return DeleteBucketWebsite(request);
 		}
-		public ListBucketInventoryConfigurationsResponse ListBucketInventoryConfigurations(ListBucketInventoryConfigurationsRequest Request)
+
+		public GetBucketInventoryConfigurationResponse GetBucketInventoryConfiguration(GetBucketInventoryConfigurationRequest request)
 		{
-			if (Client == null) return null;
-			var Response = Client.ListBucketInventoryConfigurationsAsync(Request);
-			Response.Wait();
-			return Response.Result;
+			if (_client == null) return null;
+			var response = _client.GetBucketInventoryConfigurationAsync(request);
+			response.Wait();
+			return response.Result;
 		}
-		public ListBucketInventoryConfigurationsResponse ListBucketInventoryConfigurations(string BucketName)
+
+		public GetBucketInventoryConfigurationResponse GetBucketInventoryConfiguration(string bucketName, string id)
 		{
-			var Request = new ListBucketInventoryConfigurationsRequest()
+			var request = new GetBucketInventoryConfigurationRequest()
 			{
-				BucketName = BucketName,
+				BucketName = bucketName,
+				InventoryId = id,
 			};
 
-			return ListBucketInventoryConfigurations(Request);
+			return GetBucketInventoryConfiguration(request);
 		}
-
-		public PutBucketInventoryConfigurationResponse PutBucketInventoryConfiguration(PutBucketInventoryConfigurationRequest Request)
+		public ListBucketInventoryConfigurationsResponse ListBucketInventoryConfigurations(ListBucketInventoryConfigurationsRequest request)
 		{
-			if (Client == null) return null;
-			var Response = Client.PutBucketInventoryConfigurationAsync(Request);
-			Response.Wait();
-			return Response.Result;
+			if (_client == null) return null;
+			var response = _client.ListBucketInventoryConfigurationsAsync(request);
+			response.Wait();
+			return response.Result;
 		}
-		public PutBucketInventoryConfigurationResponse PutBucketInventoryConfiguration(string BucketName, string Id, InventoryConfiguration Config)
+		public ListBucketInventoryConfigurationsResponse ListBucketInventoryConfigurations(string bucketName)
 		{
-			var Request = new PutBucketInventoryConfigurationRequest()
+			var request = new ListBucketInventoryConfigurationsRequest()
 			{
-				BucketName = BucketName,
-				InventoryId = Id,
-				InventoryConfiguration = Config,
+				BucketName = bucketName,
 			};
 
-			return PutBucketInventoryConfiguration(Request);
+			return ListBucketInventoryConfigurations(request);
+		}
+
+		public PutBucketInventoryConfigurationResponse PutBucketInventoryConfiguration(PutBucketInventoryConfigurationRequest request)
+		{
+			if (_client == null) return null;
+			var response = _client.PutBucketInventoryConfigurationAsync(request);
+			response.Wait();
+			return response.Result;
+		}
+		public PutBucketInventoryConfigurationResponse PutBucketInventoryConfiguration(string bucketName, string id, InventoryConfiguration config)
+		{
+			var request = new PutBucketInventoryConfigurationRequest()
+			{
+				BucketName = bucketName,
+				InventoryId = id,
+				InventoryConfiguration = config,
+			};
+
+			return PutBucketInventoryConfiguration(request);
 		}
 		#endregion
 
 		#region Object Function
-		public PutObjectResponse PutObject(PutObjectRequest Request)
+		public PutObjectResponse PutObject(PutObjectRequest request)
 		{
-			if (Client == null) return null;
-			var Response = Client.PutObjectAsync(Request);
-			Response.Wait();
-			return Response.Result;
+			if (_client == null) return null;
+			var response = _client.PutObjectAsync(request);
+			response.Wait();
+			return response.Result;
 		}
-		public PutObjectResponse PutObject(string BucketName, string Key, string FilePath = null, string Body = null, byte[] ByteBody = null, Stream InputStream = null)
+		public PutObjectResponse PutObject(string bucketName, string key, string filePath = null, string body = null, byte[] byteBody = null, Stream inputStream = null)
 		{
-			var Request = new PutObjectRequest()
+			var request = new PutObjectRequest()
 			{
-				BucketName = BucketName,
-				Key = Key,
+				BucketName = bucketName,
+				Key = key,
 			};
 
-			if (Body != null) Request.ContentBody = Body;
-			if (ByteBody != null)
+			if (body != null) request.ContentBody = body;
+			if (byteBody != null)
 			{
-				Stream MyStream = new MemoryStream(ByteBody);
-				Request.InputStream = MyStream;
+				Stream myStream = new MemoryStream(byteBody);
+				request.InputStream = myStream;
 			}
-			if (InputStream != null) Request.InputStream = InputStream;
-			if (FilePath != null) Request.FilePath = FilePath;
+			if (inputStream != null) request.InputStream = inputStream;
+			if (filePath != null) request.FilePath = filePath;
 
-			return PutObject(Request);
+			return PutObject(request);
 		}
 
-		public GetObjectResponse GetObject(GetObjectRequest Request)
+		public GetObjectResponse GetObject(GetObjectRequest request)
 		{
-			if (Client == null) return null;
-			var Response = Client.GetObjectAsync(Request);
-			Response.Wait();
-			return Response.Result;
+			if (_client == null) return null;
+			var response = _client.GetObjectAsync(request);
+			response.Wait();
+			return response.Result;
 		}
-		public GetObjectResponse GetObject(string BucketName, string Key, string VersionId = null, ByteRange Range = null)
+		public GetObjectResponse GetObject(string bucketName, string key, string versionId = null, ByteRange range = null)
 		{
-			var Request = new GetObjectRequest()
+			var request = new GetObjectRequest()
 			{
-				BucketName = BucketName,
-				Key = Key,
+				BucketName = bucketName,
+				Key = key,
 			};
 
-			if (VersionId != null) Request.VersionId = VersionId;
-			if (Range != null) Request.ByteRange = Range;
+			if (versionId != null) request.VersionId = versionId;
+			if (range != null) request.ByteRange = range;
 
-			return GetObject(Request);
+			return GetObject(request);
 		}
 
-		public CopyObjectResponse CopyObject(CopyObjectRequest Request)
+		public CopyObjectResponse CopyObject(CopyObjectRequest request)
 		{
-			if (Client == null) return null;
-			var Response = Client.CopyObjectAsync(Request);
-			Response.Wait();
-			return Response.Result;
+			if (_client == null) return null;
+			var response = _client.CopyObjectAsync(request);
+			response.Wait();
+			return response.Result;
 		}
-		public CopyObjectResponse CopyObject(string SourceBucket, string SourceKey, string DestinationBucket, string DestinationKey,
-			List<KeyValuePair<string, string>> MetadataList = null, S3MetadataDirective MetadataDirective = S3MetadataDirective.COPY, ServerSideEncryptionMethod SSE_S3_Method = null,
-			string VersionId = null, S3CannedACL ACL = null, string ETagToMatch = null, string ETagToNotMatch = null, string ContentType = null)
+		public CopyObjectResponse CopyObject(string sourceBucket, string sourceKey, string destinationBucket, string destinationKey,
+			List<KeyValuePair<string, string>> metadataList = null, S3MetadataDirective metadataDirective = S3MetadataDirective.COPY, ServerSideEncryptionMethod sse_s3_method = null,
+			string versionId = null, S3CannedACL acl = null, string eTagToMatch = null, string eTagToNotMatch = null, string contentType = null)
 		{
-			var Request = new CopyObjectRequest()
+			var request = new CopyObjectRequest()
 			{
-				SourceBucket = SourceBucket,
-				SourceKey = SourceKey,
-				DestinationBucket = DestinationBucket,
-				DestinationKey = DestinationKey,
-				MetadataDirective = MetadataDirective,
+				SourceBucket = sourceBucket,
+				SourceKey = sourceKey,
+				DestinationBucket = destinationBucket,
+				DestinationKey = destinationKey,
+				MetadataDirective = metadataDirective,
 			};
-			if (ACL != null) Request.CannedACL = ACL;
-			if (ContentType != null) Request.ContentType = ContentType;
-			if (MetadataList != null)
+			if (acl != null) request.CannedACL = acl;
+			if (contentType != null) request.ContentType = contentType;
+			if (metadataList != null)
 			{
-				foreach (var MetaData in MetadataList)
-					Request.Metadata[MetaData.Key] = MetaData.Value;
+				foreach (var metaData in metadataList)
+					request.Metadata[metaData.Key] = metaData.Value;
 			}
-			if (VersionId != null) Request.SourceVersionId = VersionId;
-			if (ETagToMatch != null) Request.ETagToMatch = ETagToMatch;
-			if (ETagToNotMatch != null) Request.ETagToNotMatch = ETagToNotMatch;
+			if (versionId != null) request.SourceVersionId = versionId;
+			if (eTagToMatch != null) request.ETagToMatch = eTagToMatch;
+			if (eTagToNotMatch != null) request.ETagToNotMatch = eTagToNotMatch;
 
 			//SSE-S3
-			if (SSE_S3_Method != null) Request.ServerSideEncryptionMethod = SSE_S3_Method;
+			if (sse_s3_method != null) request.ServerSideEncryptionMethod = sse_s3_method;
 
-			return CopyObject(Request);
+			return CopyObject(request);
 		}
 
-		public ListObjectsResponse ListObjects(ListObjectsRequest Request)
+		public ListObjectsResponse ListObjects(ListObjectsRequest request)
 		{
-			if (Client == null) return null;
-			var Response = Client.ListObjectsAsync(Request);
-			Response.Wait();
-			return Response.Result;
+			if (_client == null) return null;
+			var response = _client.ListObjectsAsync(request);
+			response.Wait();
+			return response.Result;
 		}
-		public ListObjectsResponse ListObjects(string BucketName, string Delimiter = null, string Marker = null,
-											int MaxKeys = -1, string Prefix = null, string EncodingTypeName = null)
+		public ListObjectsResponse ListObjects(string bucketName, string delimiter = null, string marker = null,
+											int maxKeys = -1, string prefix = null, string encodingTypeName = null)
 		{
-			var Request = new ListObjectsRequest() { BucketName = BucketName };
+			var request = new ListObjectsRequest() { BucketName = bucketName };
 
-			if (Delimiter != null) Request.Delimiter = Delimiter;
-			if (Marker != null) Request.Marker = Marker;
-			if (Prefix != null) Request.Prefix = Prefix;
-			if (EncodingTypeName != null) Request.Encoding = new EncodingType(EncodingTypeName);
+			if (delimiter != null) request.Delimiter = delimiter;
+			if (marker != null) request.Marker = marker;
+			if (prefix != null) request.Prefix = prefix;
+			if (encodingTypeName != null) request.Encoding = new EncodingType(encodingTypeName);
 
-			if (MaxKeys >= 0) Request.MaxKeys = MaxKeys;
+			if (maxKeys >= 0) request.MaxKeys = maxKeys;
 
-			return ListObjects(Request);
-
-		}
-
-		public ListObjectsV2Response ListObjectsV2(ListObjectsV2Request Request)
-		{
-			if (Client == null) return null;
-			var Response = Client.ListObjectsV2Async(Request);
-			Response.Wait();
-			return Response.Result;
-		}
-		public ListObjectsV2Response ListObjectsV2(string BucketName, string Delimiter = null, string ContinuationToken = null,
-					int MaxKeys = -1, string Prefix = null, string StartAfter = null, string EncodingTypeName = null,
-					bool? FetchOwner = null)
-		{
-			var Request = new ListObjectsV2Request() { BucketName = BucketName };
-
-			if (Delimiter != null) Request.Delimiter = Delimiter;
-			if (ContinuationToken != null) Request.ContinuationToken = ContinuationToken;
-			if (Prefix != null) Request.Prefix = Prefix;
-			if (StartAfter != null) Request.StartAfter = StartAfter;
-			if (EncodingTypeName != null) Request.Encoding = new EncodingType(EncodingTypeName);
-			if (FetchOwner != null) Request.FetchOwner = FetchOwner.Value;
-
-			if (MaxKeys >= 0) Request.MaxKeys = MaxKeys;
-
-			return ListObjectsV2(Request);
+			return ListObjects(request);
 
 		}
 
-		public ListVersionsResponse ListVersions(ListVersionsRequest Request)
+		public ListObjectsV2Response ListObjectsV2(ListObjectsV2Request request)
 		{
-			if (Client == null) return null;
-			var Response = Client.ListVersionsAsync(Request);
-			Response.Wait();
-			return Response.Result;
+			if (_client == null) return null;
+			var response = _client.ListObjectsV2Async(request);
+			response.Wait();
+			return response.Result;
 		}
-		public ListVersionsResponse ListVersions(string BucketName, string NextKeyMarker = null, string NextVersionIdMarker = null, string Prefix = null, string Delimiter = null, int MaxKeys = 1000)
+		public ListObjectsV2Response ListObjectsV2(string bucketName, string delimiter = null, string continuationToken = null,
+					int maxKeys = -1, string prefix = null, string startAfter = null, string encodingTypeName = null,
+					bool? fetchOwner = null)
 		{
-			var Request = new ListVersionsRequest()
+			var request = new ListObjectsV2Request() { BucketName = bucketName };
+
+			if (delimiter != null) request.Delimiter = delimiter;
+			if (continuationToken != null) request.ContinuationToken = continuationToken;
+			if (prefix != null) request.Prefix = prefix;
+			if (startAfter != null) request.StartAfter = startAfter;
+			if (encodingTypeName != null) request.Encoding = new EncodingType(encodingTypeName);
+			if (fetchOwner != null) request.FetchOwner = fetchOwner.Value;
+
+			if (maxKeys >= 0) request.MaxKeys = maxKeys;
+
+			return ListObjectsV2(request);
+
+		}
+
+		public ListVersionsResponse ListVersions(ListVersionsRequest request)
+		{
+			if (_client == null) return null;
+			var response = _client.ListVersionsAsync(request);
+			response.Wait();
+			return response.Result;
+		}
+		public ListVersionsResponse ListVersions(string bucketName, string nextKeyMarker = null, string nextVersionIdMarker = null, string prefix = null, string delimiter = null, int maxKeys = 1000)
+		{
+			var request = new ListVersionsRequest()
 			{
-				BucketName = BucketName,
-				MaxKeys = MaxKeys
+				BucketName = bucketName,
+				MaxKeys = maxKeys
 			};
-			if (NextKeyMarker != null) Request.KeyMarker = NextKeyMarker;
-			if (NextVersionIdMarker != null) Request.VersionIdMarker = NextVersionIdMarker;
-			if (Prefix != null) Request.Prefix = Prefix;
-			if (Delimiter != null) Request.Delimiter = Delimiter;
+			if (nextKeyMarker != null) request.KeyMarker = nextKeyMarker;
+			if (nextVersionIdMarker != null) request.VersionIdMarker = nextVersionIdMarker;
+			if (prefix != null) request.Prefix = prefix;
+			if (delimiter != null) request.Delimiter = delimiter;
 
-			return ListVersions(Request);
+			return ListVersions(request);
 		}
 
-		public DeleteObjectResponse DeleteObject(DeleteObjectRequest Request)
+		public DeleteObjectResponse DeleteObject(DeleteObjectRequest request)
 		{
-			if (Client == null) return null;
-			var Response = Client.DeleteObjectAsync(Request);
-			Response.Wait();
-			return Response.Result;
+			if (_client == null) return null;
+			var response = _client.DeleteObjectAsync(request);
+			response.Wait();
+			return response.Result;
 		}
-		public DeleteObjectResponse DeleteObject(string BucketName, string Key, string VersionId = null, bool BypassGovernanceRetention = true)
+		public DeleteObjectResponse DeleteObject(string bucketName, string key, string versionId = null, bool bypassGovernanceRetention = true)
 		{
-			var Request = new DeleteObjectRequest()
+			var request = new DeleteObjectRequest()
 			{
-				BucketName = BucketName,
-				Key = Key,
-				VersionId = VersionId,
-				BypassGovernanceRetention = BypassGovernanceRetention
-			};
-
-			return DeleteObject(Request);
-		}
-
-		public DeleteObjectsResponse DeleteObjects(DeleteObjectsRequest Request)
-		{
-			if (Client == null) return null;
-			var Response = Client.DeleteObjectsAsync(Request);
-			Response.Wait();
-			return Response.Result;
-		}
-		public DeleteObjectsResponse DeleteObjects(string BucketName, List<KeyVersion> KeyList, bool? BypassGovernanceRetention = null, bool? Quiet = null)
-		{
-			var Request = new DeleteObjectsRequest()
-			{
-				BucketName = BucketName,
-				Objects = KeyList
+				BucketName = bucketName,
+				Key = key,
+				VersionId = versionId,
+				BypassGovernanceRetention = bypassGovernanceRetention
 			};
 
-			if (BypassGovernanceRetention.HasValue) Request.BypassGovernanceRetention = BypassGovernanceRetention.Value;
-			if (Quiet.HasValue) Request.Quiet = Quiet.Value;
-
-			return DeleteObjects(Request);
+			return DeleteObject(request);
 		}
 
-		public GetObjectMetadataResponse GetObjectMetadata(GetObjectMetadataRequest Request)
+		public DeleteObjectsResponse DeleteObjects(DeleteObjectsRequest request)
 		{
-			if (Client == null) return null;
-			var Response = Client.GetObjectMetadataAsync(Request);
-			Response.Wait();
-			return Response.Result;
+			if (_client == null) return null;
+			var response = _client.DeleteObjectsAsync(request);
+			response.Wait();
+			return response.Result;
 		}
-		public GetObjectMetadataResponse GetObjectMetadata(string BucketName, string Key, string VersionId = null)
+		public DeleteObjectsResponse DeleteObjects(string bucketName, List<KeyVersion> keyList, bool? bypassGovernanceRetention = null, bool? quiet = null)
 		{
-			var Request = new GetObjectMetadataRequest()
+			var request = new DeleteObjectsRequest()
 			{
-				BucketName = BucketName,
-				Key = Key
+				BucketName = bucketName,
+				Objects = keyList
+			};
+
+			if (bypassGovernanceRetention.HasValue) request.BypassGovernanceRetention = bypassGovernanceRetention.Value;
+			if (quiet.HasValue) request.Quiet = quiet.Value;
+
+			return DeleteObjects(request);
+		}
+
+		public GetObjectMetadataResponse GetObjectMetadata(GetObjectMetadataRequest request)
+		{
+			if (_client == null) return null;
+			var response = _client.GetObjectMetadataAsync(request);
+			response.Wait();
+			return response.Result;
+		}
+		public GetObjectMetadataResponse GetObjectMetadata(string bucketName, string key, string versionId = null)
+		{
+			var request = new GetObjectMetadataRequest()
+			{
+				BucketName = bucketName,
+				Key = key
 			};
 
 			//Version
-			if (VersionId != null) Request.VersionId = VersionId;
+			if (versionId != null) request.VersionId = versionId;
 
-			return GetObjectMetadata(Request);
+			return GetObjectMetadata(request);
 		}
 
-		public GetACLResponse GetObjectACL(string BucketName, string Key, string VersionId = null)
+		public GetACLResponse GetObjectACL(string bucketName, string key, string versionId = null)
 		{
-			var Request = new GetACLRequest()
+			var request = new GetACLRequest()
 			{
-				BucketName = BucketName,
-				Key = Key
+				BucketName = bucketName,
+				Key = key
 			};
 
-			if (VersionId != null) Request.VersionId = VersionId;
+			if (versionId != null) request.VersionId = versionId;
 
-			return GetACL(Request);
+			return GetACL(request);
 		}
 
-		public PutACLResponse PutObjectACL(string BucketName, string Key, S3CannedACL ACL = null, S3AccessControlList AccessControlPolicy = null)
+		public PutACLResponse PutObjectACL(string bucketName, string key, S3CannedACL acl = null, S3AccessControlList accessControlPolicy = null)
 		{
-			var Request = new PutACLRequest()
+			var request = new PutACLRequest()
 			{
-				BucketName = BucketName,
-				Key = Key
+				BucketName = bucketName,
+				Key = key
 			};
-			if (ACL != null) Request.CannedACL = ACL;
-			if (AccessControlPolicy != null) Request.AccessControlList = AccessControlPolicy;
+			if (acl != null) request.CannedACL = acl;
+			if (accessControlPolicy != null) request.AccessControlList = accessControlPolicy;
 
-			return PutACL(Request);
+			return PutACL(request);
 		}
 
-		public GetObjectTaggingResponse GetObjectTagging(GetObjectTaggingRequest Request)
+		public GetObjectTaggingResponse GetObjectTagging(GetObjectTaggingRequest request)
 		{
-			if (Client == null) return null;
-			var Response = Client.GetObjectTaggingAsync(Request);
-			Response.Wait();
-			return Response.Result;
+			if (_client == null) return null;
+			var response = _client.GetObjectTaggingAsync(request);
+			response.Wait();
+			return response.Result;
 		}
-		public GetObjectTaggingResponse GetObjectTagging(string BucketName, string Key, string VersionId = null)
+		public GetObjectTaggingResponse GetObjectTagging(string bucketName, string key, string versionId = null)
 		{
-			var Request = new GetObjectTaggingRequest()
+			var request = new GetObjectTaggingRequest()
 			{
-				BucketName = BucketName,
-				Key = Key,
-			};
-
-			if (VersionId != null) Request.VersionId = VersionId;
-
-			return GetObjectTagging(Request);
-		}
-
-		public PutObjectTaggingResponse PutObjectTagging(PutObjectTaggingRequest Request)
-		{
-			if (Client == null) return null;
-			var Response = Client.PutObjectTaggingAsync(Request);
-			Response.Wait();
-			return Response.Result;
-		}
-		public PutObjectTaggingResponse PutObjectTagging(string BucketName, string Key, Tagging Tagging)
-		{
-			var Request = new PutObjectTaggingRequest()
-			{
-				BucketName = BucketName,
-				Key = Key,
-				Tagging = Tagging,
+				BucketName = bucketName,
+				Key = key,
 			};
 
-			return PutObjectTagging(Request);
+			if (versionId != null) request.VersionId = versionId;
+
+			return GetObjectTagging(request);
 		}
 
-		public DeleteObjectTaggingResponse DeleteObjectTagging(DeleteObjectTaggingRequest Request)
+		public PutObjectTaggingResponse PutObjectTagging(PutObjectTaggingRequest request)
 		{
-			if (Client == null) return null;
-			var Response = Client.DeleteObjectTaggingAsync(Request);
-			Response.Wait();
-			return Response.Result;
+			if (_client == null) return null;
+			var response = _client.PutObjectTaggingAsync(request);
+			response.Wait();
+			return response.Result;
 		}
-		public DeleteObjectTaggingResponse DeleteObjectTagging(string BucketName, string Key)
+		public PutObjectTaggingResponse PutObjectTagging(string bucketName, string key, Tagging tagging)
 		{
-			var Request = new DeleteObjectTaggingRequest()
+			var request = new PutObjectTaggingRequest()
 			{
-				BucketName = BucketName,
-				Key = Key,
+				BucketName = bucketName,
+				Key = key,
+				Tagging = tagging,
 			};
 
-			return DeleteObjectTagging(Request);
+			return PutObjectTagging(request);
 		}
 
-		public GetObjectRetentionResponse GetObjectRetention(GetObjectRetentionRequest Request)
+		public DeleteObjectTaggingResponse DeleteObjectTagging(DeleteObjectTaggingRequest request)
 		{
-			if (Client == null) return null;
-			var Response = Client.GetObjectRetentionAsync(Request);
-			Response.Wait();
-			return Response.Result;
+			if (_client == null) return null;
+			var response = _client.DeleteObjectTaggingAsync(request);
+			response.Wait();
+			return response.Result;
 		}
-		public GetObjectRetentionResponse GetObjectRetention(string BucketName, string Key, string VersionId = null)
+		public DeleteObjectTaggingResponse DeleteObjectTagging(string bucketName, string key)
 		{
-			var Request = new GetObjectRetentionRequest()
+			var request = new DeleteObjectTaggingRequest()
 			{
-				BucketName = BucketName,
-				Key = Key,
+				BucketName = bucketName,
+				Key = key,
 			};
 
-			if (VersionId != null) Request.VersionId = VersionId;
-
-			return GetObjectRetention(Request);
+			return DeleteObjectTagging(request);
 		}
 
-		public PutObjectRetentionResponse PutObjectRetention(PutObjectRetentionRequest Request)
+		public GetObjectRetentionResponse GetObjectRetention(GetObjectRetentionRequest request)
 		{
-			if (Client == null) return null;
-			var Response = Client.PutObjectRetentionAsync(Request);
-			Response.Wait();
-			return Response.Result;
+			if (_client == null) return null;
+			var response = _client.GetObjectRetentionAsync(request);
+			response.Wait();
+			return response.Result;
 		}
-		public PutObjectRetentionResponse PutObjectRetention(string BucketName, string Key, ObjectLockRetention Retention,
-			string ContentMD5 = null, string VersionId = null, bool BypassGovernanceRetention = false)
+		public GetObjectRetentionResponse GetObjectRetention(string bucketName, string key, string versionId = null)
 		{
-			var Request = new PutObjectRetentionRequest()
+			var request = new GetObjectRetentionRequest()
 			{
-				BucketName = BucketName,
-				Key = Key,
-				Retention = Retention,
-				BypassGovernanceRetention = BypassGovernanceRetention
-			};
-			if (ContentMD5 != null) Request.ContentMD5 = ContentMD5;
-			if (VersionId != null) Request.VersionId = VersionId;
-
-			return PutObjectRetention(Request);
-		}
-
-
-		public PutObjectLegalHoldResponse PutObjectLegalHold(PutObjectLegalHoldRequest Request)
-		{
-			if (Client == null) return null;
-			var Response = Client.PutObjectLegalHoldAsync(Request);
-			Response.Wait();
-			return Response.Result;
-		}
-		public PutObjectLegalHoldResponse PutObjectLegalHold(string BucketName, string Key, ObjectLockLegalHold LegalHold)
-		{
-			var Request = new PutObjectLegalHoldRequest()
-			{
-				BucketName = BucketName,
-				Key = Key,
-				LegalHold = LegalHold,
+				BucketName = bucketName,
+				Key = key,
 			};
 
-			return PutObjectLegalHold(Request);
+			if (versionId != null) request.VersionId = versionId;
+
+			return GetObjectRetention(request);
 		}
 
-		public GetObjectLegalHoldResponse GetObjectLegalHold(GetObjectLegalHoldRequest Request)
+		public PutObjectRetentionResponse PutObjectRetention(PutObjectRetentionRequest request)
 		{
-			if (Client == null) return null;
-			var Response = Client.GetObjectLegalHoldAsync(Request);
-			Response.Wait();
-			return Response.Result;
+			if (_client == null) return null;
+			var response = _client.PutObjectRetentionAsync(request);
+			response.Wait();
+			return response.Result;
 		}
-		public GetObjectLegalHoldResponse GetObjectLegalHold(string BucketName, string Key, string VersionId = null)
+		public PutObjectRetentionResponse PutObjectRetention(string bucketName, string key, ObjectLockRetention retention,
+			string contentMD5 = null, string versionId = null, bool bypassGovernanceRetention = false)
 		{
-			var Request = new GetObjectLegalHoldRequest()
+			var request = new PutObjectRetentionRequest()
 			{
-				BucketName = BucketName,
-				Key = Key,
+				BucketName = bucketName,
+				Key = key,
+				Retention = retention,
+				BypassGovernanceRetention = bypassGovernanceRetention
+			};
+			if (contentMD5 != null) request.ContentMD5 = contentMD5;
+			if (versionId != null) request.VersionId = versionId;
+
+			return PutObjectRetention(request);
+		}
+
+
+		public PutObjectLegalHoldResponse PutObjectLegalHold(PutObjectLegalHoldRequest request)
+		{
+			if (_client == null) return null;
+			var response = _client.PutObjectLegalHoldAsync(request);
+			response.Wait();
+			return response.Result;
+		}
+		public PutObjectLegalHoldResponse PutObjectLegalHold(string bucketName, string key, ObjectLockLegalHold legalHold)
+		{
+			var request = new PutObjectLegalHoldRequest()
+			{
+				BucketName = bucketName,
+				Key = key,
+				LegalHold = legalHold,
 			};
 
-			if (VersionId != null) Request.VersionId = VersionId;
-
-			return GetObjectLegalHold(Request);
+			return PutObjectLegalHold(request);
 		}
 
-
-		public GetBucketReplicationResponse GetBucketReplication(GetBucketReplicationRequest Request)
+		public GetObjectLegalHoldResponse GetObjectLegalHold(GetObjectLegalHoldRequest request)
 		{
-			if (Client == null) return null;
-			var Response = Client.GetBucketReplicationAsync(Request);
-			Response.Wait();
-			return Response.Result;
+			if (_client == null) return null;
+			var response = _client.GetObjectLegalHoldAsync(request);
+			response.Wait();
+			return response.Result;
 		}
-		public GetBucketReplicationResponse GetBucketReplication(string BucketName)
+		public GetObjectLegalHoldResponse GetObjectLegalHold(string bucketName, string key, string versionId = null)
 		{
-			var Request = new GetBucketReplicationRequest()
+			var request = new GetObjectLegalHoldRequest()
 			{
-				BucketName = BucketName,
+				BucketName = bucketName,
+				Key = key,
 			};
 
-			return GetBucketReplication(Request);
+			if (versionId != null) request.VersionId = versionId;
+
+			return GetObjectLegalHold(request);
 		}
 
-		public PutBucketReplicationResponse PutBucketReplication(PutBucketReplicationRequest Request)
+
+		public GetBucketReplicationResponse GetBucketReplication(GetBucketReplicationRequest request)
 		{
-			if (Client == null) return null;
-			var Response = Client.PutBucketReplicationAsync(Request);
-			Response.Wait();
-			return Response.Result;
+			if (_client == null) return null;
+			var response = _client.GetBucketReplicationAsync(request);
+			response.Wait();
+			return response.Result;
 		}
-		public PutBucketReplicationResponse PutBucketReplication(string BucketName, ReplicationConfiguration Configuration, string Token = null, string ExpectedBucketOwner = null)
+		public GetBucketReplicationResponse GetBucketReplication(string bucketName)
 		{
-			var Request = new PutBucketReplicationRequest()
+			var request = new GetBucketReplicationRequest()
 			{
-				BucketName = BucketName,
-				Configuration = Configuration
+				BucketName = bucketName,
 			};
 
-			if (!string.IsNullOrWhiteSpace(Token)) Request.Token = Token;
-
-			return PutBucketReplication(Request);
+			return GetBucketReplication(request);
 		}
 
-		public DeleteBucketReplicationResponse DeleteBucketReplication(DeleteBucketReplicationRequest Request)
+		public PutBucketReplicationResponse PutBucketReplication(PutBucketReplicationRequest request)
 		{
-			if (Client == null) return null;
-			var Response = Client.DeleteBucketReplicationAsync(Request);
-			Response.Wait();
-			return Response.Result;
+			if (_client == null) return null;
+			var response = _client.PutBucketReplicationAsync(request);
+			response.Wait();
+			return response.Result;
 		}
-		public DeleteBucketReplicationResponse DeleteBucketReplication(string BucketName)
+		public PutBucketReplicationResponse PutBucketReplication(string bucketName, ReplicationConfiguration configuration, string token = null, string expectedBucketOwner = null)
 		{
-			var Request = new DeleteBucketReplicationRequest()
+			var request = new PutBucketReplicationRequest()
 			{
-				BucketName = BucketName,
+				BucketName = bucketName,
+				Configuration = configuration
 			};
 
-			return DeleteBucketReplication(Request);
+			if (!string.IsNullOrWhiteSpace(token)) request.Token = token;
+
+			return PutBucketReplication(request);
+		}
+
+		public DeleteBucketReplicationResponse DeleteBucketReplication(DeleteBucketReplicationRequest request)
+		{
+			if (_client == null) return null;
+			var response = _client.DeleteBucketReplicationAsync(request);
+			response.Wait();
+			return response.Result;
+		}
+		public DeleteBucketReplicationResponse DeleteBucketReplication(string bucketName)
+		{
+			var request = new DeleteBucketReplicationRequest()
+			{
+				BucketName = bucketName,
+			};
+
+			return DeleteBucketReplication(request);
 		}
 		#endregion
 
 		#region Multipart Function
-		public InitiateMultipartUploadResponse InitiateMultipartUpload(InitiateMultipartUploadRequest Request)
+		public InitiateMultipartUploadResponse InitiateMultipartUpload(InitiateMultipartUploadRequest request)
 		{
-			if (Client == null) return null;
-			var Response = Client.InitiateMultipartUploadAsync(Request);
-			Response.Wait();
-			return Response.Result;
+			if (_client == null) return null;
+			var response = _client.InitiateMultipartUploadAsync(request);
+			response.Wait();
+			return response.Result;
 		}
-		public InitiateMultipartUploadResponse InitiateMultipartUpload(string BucketName, string Key, string ContentType = null, List<KeyValuePair<string, string>> MetadataList = null)
+		public InitiateMultipartUploadResponse InitiateMultipartUpload(string bucketName, string key, string contentType = null, List<KeyValuePair<string, string>> metadataList = null)
 		{
-			var Request = new InitiateMultipartUploadRequest()
+			var request = new InitiateMultipartUploadRequest()
 			{
-				BucketName = BucketName,
-				Key = Key
+				BucketName = bucketName,
+				Key = key
 			};
-			if (MetadataList != null)
+			if (metadataList != null)
 			{
-				foreach (var MetaData in MetadataList)
-					Request.Metadata[MetaData.Key] = MetaData.Value;
+				foreach (var metaData in metadataList)
+					request.Metadata[metaData.Key] = metaData.Value;
 			}
-			if (ContentType != null) Request.ContentType = ContentType;
+			if (contentType != null) request.ContentType = contentType;
 
-			return InitiateMultipartUpload(Request);
+			return InitiateMultipartUpload(request);
 		}
 
-		public UploadPartResponse UploadPart(UploadPartRequest Request)
+		public UploadPartResponse UploadPart(UploadPartRequest request)
 		{
-			if (Client == null) return null;
-			var Response = Client.UploadPartAsync(Request);
-			Response.Wait();
-			return Response.Result;
+			if (_client == null) return null;
+			var response = _client.UploadPartAsync(request);
+			response.Wait();
+			return response.Result;
 		}
-		public UploadPartResponse UploadPart(string BucketName, string Key, string UploadId, int PartNumber, long PartSize = -1, string FilePath = null, long FilePosition = 0, Stream InputStream = null)
+		public UploadPartResponse UploadPart(string bucketName, string key, string uploadId, int partNumber, long partSize = -1, string filePath = null, long filePosition = 0, Stream inputStream = null)
 		{
-			var Request = new UploadPartRequest()
+			var request = new UploadPartRequest()
 			{
-				BucketName = BucketName,
-				Key = Key,
-				PartNumber = PartNumber,
-				UploadId = UploadId,
+				BucketName = bucketName,
+				Key = key,
+				PartNumber = partNumber,
+				UploadId = uploadId,
 			};
 
-			if (PartSize >= 0) Request.PartSize = PartSize;
+			if (partSize >= 0) request.PartSize = partSize;
 
-			if (FilePath != null)
+			if (filePath != null)
 			{
-				Request.FilePath = FilePath;
-				Request.FilePosition = FilePosition;
+				request.FilePath = filePath;
+				request.FilePosition = filePosition;
 			}
-			if (InputStream != null) Request.InputStream = InputStream;
+			if (inputStream != null) request.InputStream = inputStream;
 
-			return UploadPart(Request);
+			return UploadPart(request);
 		}
 
-		public CopyPartResponse CopyPart(CopyPartRequest Request)
+		public CopyPartResponse CopyPart(CopyPartRequest request)
 		{
-			if (Client == null) return null;
-			var Response = Client.CopyPartAsync(Request);
-			Response.Wait();
-			return Response.Result;
+			if (_client == null) return null;
+			var response = _client.CopyPartAsync(request);
+			response.Wait();
+			return response.Result;
 		}
-		public CopyPartResponse CopyPart(string SourceBucket, string SourceKey, string DestinationBucket, string DestinationKey, string UploadId, int PartNumber, long Start, long End, string VersionId = null)
+		public CopyPartResponse CopyPart(string sourceBucket, string sourceKey, string destinationBucket, string destinationKey, string uploadId, int partNumber, long start, long end, string versionId = null)
 		{
-			var Request = new CopyPartRequest()
+			var request = new CopyPartRequest()
 			{
-				SourceBucket = SourceBucket,
-				SourceKey = SourceKey,
-				DestinationBucket = DestinationBucket,
-				DestinationKey = DestinationKey,
-				UploadId = UploadId,
-				PartNumber = PartNumber,
-				FirstByte = Start,
-				LastByte = End,
+				SourceBucket = sourceBucket,
+				SourceKey = sourceKey,
+				DestinationBucket = destinationBucket,
+				DestinationKey = destinationKey,
+				UploadId = uploadId,
+				PartNumber = partNumber,
+				FirstByte = start,
+				LastByte = end,
 			};
 
-			if (VersionId != null) Request.SourceVersionId = VersionId;
+			if (versionId != null) request.SourceVersionId = versionId;
 
-			return CopyPart(Request);
+			return CopyPart(request);
 		}
-		public CompleteMultipartUploadResponse CompleteMultipartUpload(CompleteMultipartUploadRequest Request)
+		public CompleteMultipartUploadResponse CompleteMultipartUpload(CompleteMultipartUploadRequest request)
 		{
-			if (Client == null) return null;
-			var Response = Client.CompleteMultipartUploadAsync(Request);
-			Response.Wait();
-			return Response.Result;
+			if (_client == null) return null;
+			var response = _client.CompleteMultipartUploadAsync(request);
+			response.Wait();
+			return response.Result;
 		}
-		public CompleteMultipartUploadResponse CompleteMultipartUpload(string BucketName, string Key, string UploadId, List<PartETag> Parts)
+		public CompleteMultipartUploadResponse CompleteMultipartUpload(string bucketName, string key, string uploadId, List<PartETag> parts)
 		{
-			var Request = new CompleteMultipartUploadRequest()
+			var request = new CompleteMultipartUploadRequest()
 			{
-				BucketName = BucketName,
-				Key = Key,
-				UploadId = UploadId,
-				PartETags = Parts
+				BucketName = bucketName,
+				Key = key,
+				UploadId = uploadId,
+				PartETags = parts
 			};
 
-			return CompleteMultipartUpload(Request);
+			return CompleteMultipartUpload(request);
 		}
 
-		public AbortMultipartUploadResponse AbortMultipartUpload(AbortMultipartUploadRequest Request)
+		public AbortMultipartUploadResponse AbortMultipartUpload(AbortMultipartUploadRequest request)
 		{
-			if (Client == null) return null;
-			var Response = Client.AbortMultipartUploadAsync(Request);
-			Response.Wait();
-			return Response.Result;
+			if (_client == null) return null;
+			var response = _client.AbortMultipartUploadAsync(request);
+			response.Wait();
+			return response.Result;
 		}
-		public AbortMultipartUploadResponse AbortMultipartUpload(string BucketName, string Key, string UploadId)
+		public AbortMultipartUploadResponse AbortMultipartUpload(string bucketName, string key, string uploadId)
 		{
-			var Request = new AbortMultipartUploadRequest()
+			var request = new AbortMultipartUploadRequest()
 			{
-				BucketName = BucketName,
-				Key = Key,
-				UploadId = UploadId,
+				BucketName = bucketName,
+				Key = key,
+				UploadId = uploadId,
 			};
 
-			return AbortMultipartUpload(Request);
+			return AbortMultipartUpload(request);
 		}
 
-		public ListMultipartUploadsResponse ListMultipartUploads(ListMultipartUploadsRequest Request)
+		public ListMultipartUploadsResponse ListMultipartUploads(ListMultipartUploadsRequest request)
 		{
-			if (Client == null) return null;
-			var Response = Client.ListMultipartUploadsAsync(Request);
-			Response.Wait();
-			return Response.Result;
+			if (_client == null) return null;
+			var response = _client.ListMultipartUploadsAsync(request);
+			response.Wait();
+			return response.Result;
 		}
-		public ListMultipartUploadsResponse ListMultipartUploads(string BucketName, string Prefix = null, string Delimiter = null, int MaxKeys = -1,
-			string UploadIdMarker = null, string KeyMarker = null)
+		public ListMultipartUploadsResponse ListMultipartUploads(string bucketName, string prefix = null, string delimiter = null, int maxKeys = -1,
+			string uploadIdMarker = null, string keyMarker = null)
 		{
-			var Request = new ListMultipartUploadsRequest()
+			var request = new ListMultipartUploadsRequest()
 			{
-				BucketName = BucketName
+				BucketName = bucketName
 			};
 
-			if (Prefix != null) Request.Prefix = Prefix;
-			if (Delimiter != null) Request.Delimiter = Delimiter;
-			if (MaxKeys > 0) Request.MaxUploads = MaxKeys;
-			if (UploadIdMarker != null) Request.UploadIdMarker = UploadIdMarker;
-			if (KeyMarker != null) Request.KeyMarker = KeyMarker;
+			if (prefix != null) request.Prefix = prefix;
+			if (delimiter != null) request.Delimiter = delimiter;
+			if (maxKeys > 0) request.MaxUploads = maxKeys;
+			if (uploadIdMarker != null) request.UploadIdMarker = uploadIdMarker;
+			if (keyMarker != null) request.KeyMarker = keyMarker;
 
-			return ListMultipartUploads(Request);
+			return ListMultipartUploads(request);
 		}
 
-		public ListPartsResponse ListParts(ListPartsRequest Request)
+		public ListPartsResponse ListParts(ListPartsRequest request)
 		{
-			if (Client == null) return null;
-			var Response = Client.ListPartsAsync(Request);
-			Response.Wait();
-			return Response.Result;
+			if (_client == null) return null;
+			var response = _client.ListPartsAsync(request);
+			response.Wait();
+			return response.Result;
 		}
-		public ListPartsResponse ListParts(string BucketName, string Key, string UploadId, int PartNumberMarker = 0, int MaxKeys = 0)
+		public ListPartsResponse ListParts(string bucketName, string key, string uploadId, int partNumberMarker = 0, int maxKeys = 0)
 		{
-			var Request = new ListPartsRequest()
+			var request = new ListPartsRequest()
 			{
-				BucketName = BucketName,
-				Key = Key,
-				UploadId = UploadId,
+				BucketName = bucketName,
+				Key = key,
+				UploadId = uploadId,
 			};
-			if (PartNumberMarker > 0) Request.PartNumberMarker = PartNumberMarker.ToString();
-			if (MaxKeys > 0) Request.MaxParts = MaxKeys;
+			if (partNumberMarker > 0) request.PartNumberMarker = partNumberMarker.ToString();
+			if (maxKeys > 0) request.MaxParts = maxKeys;
 
-			return ListParts(Request);
+			return ListParts(request);
 		}
 		#endregion
 
 		#region TransferUtility Function
-		public void Upload(string BucketName, string Key, string FilePath, long PartSize = 10 * 1024 * 1024, int ThreadCount = 10,
-			Stream Body = null, byte[] ByteBody = null, string ContentType = null,
-			List<Tag> TagSet = null, 
-			List<KeyValuePair<string, string>> MetadataList = null, List<KeyValuePair<string, string>> HeaderList = null)
+		public void Upload(string bucketName, string key, string filePath, int threadCount = 10,
+			long minSizeBeforePartUpload = 100 * 1024 * 1024, long partSize = 10 * 1024 * 1024,
+			Stream body = null, byte[] byteBody = null, string contentType = null,
+			List<Tag> tagSet = null,
+			List<KeyValuePair<string, string>> metadataList = null, List<KeyValuePair<string, string>> headerList = null)
 		{
-			var TransferUtilityConfig = new TransferUtilityConfig()
+			var transferUtilityConfig = new TransferUtilityConfig()
 			{
-				MinSizeBeforePartUpload = PartSize,
-				ConcurrentServiceRequests = ThreadCount,
-
+				MinSizeBeforePartUpload = minSizeBeforePartUpload,
+				ConcurrentServiceRequests = threadCount,
 			};
-			var Transfer = new TransferUtility(Client, TransferUtilityConfig);
+			var transfer = new TransferUtility(_client, transferUtilityConfig);
 
-			var Request = new TransferUtilityUploadRequest()
+			var request = new TransferUtilityUploadRequest()
 			{
-				BucketName = BucketName,
-				FilePath = FilePath,
+				BucketName = bucketName,
+				FilePath = filePath,
+				PartSize = partSize,
+				ChecksumAlgorithm = ChecksumAlgorithm.CRC32C,
 			};
 
-			if (Key != null) Request.Key = Key;
-			if (Body != null) Request.InputStream = Body;
-			if (ByteBody != null)
+			if (key != null) request.Key = key;
+			if (body != null) request.InputStream = body;
+			if (byteBody != null)
 			{
-				Stream MyStream = new MemoryStream(ByteBody);
-				Request.InputStream = MyStream;
+				Stream myStream = new MemoryStream(byteBody);
+				request.InputStream = myStream;
 			}
-			if (FilePath != null) Request.FilePath = FilePath;
-			if (ContentType != null) Request.ContentType = ContentType;
-			if (MetadataList != null)
+			if (filePath != null) request.FilePath = filePath;
+			if (contentType != null) request.ContentType = contentType;
+			if (metadataList != null)
 			{
-				foreach (var MetaData in MetadataList)
-					Request.Metadata[MetaData.Key] = MetaData.Value;
+				foreach (var metaData in metadataList)
+					request.Metadata[metaData.Key] = metaData.Value;
 			}
-			if (HeaderList != null)
+			if (headerList != null)
 			{
-				foreach (var Header in HeaderList)
-					Request.Headers[Header.Key] = Header.Value;
+				foreach (var header in headerList)
+					request.Headers[header.Key] = header.Value;
 			}
 
 			//Tag
-			if (TagSet != null) Request.TagSet = TagSet;
+			if (tagSet != null) request.TagSet = tagSet;
 
-			Transfer.Upload(Request);
+			transfer.Upload(request);
 		}
 
-		public void Download(string BucketName, string Key, string FilePath, string VersionId = null)
+		public void Download(string bucketName, string key, string filePath, string versionId = null)
 		{
-			TransferUtility Transfer = new(Client);
+			TransferUtility transfer = new(_client);
 
-			var Request = new TransferUtilityDownloadRequest()
+			var request = new TransferUtilityDownloadRequest()
 			{
-				BucketName = BucketName,
-				Key = Key,
-				FilePath = FilePath,
+				BucketName = bucketName,
+				Key = key,
+				FilePath = filePath,
 			};
 
-			if (VersionId != null) Request.VersionId = VersionId;
+			if (versionId != null) request.VersionId = versionId;
 
-			Transfer.Download(Request);
+			transfer.Download(request);
 		}
 
-		public RestoreObjectResponse RestoreObject(RestoreObjectRequest Request)
+		public RestoreObjectResponse RestoreObject(RestoreObjectRequest request)
 		{
-			if (Client == null) return null;
-			var Response = Client.RestoreObjectAsync(Request);
+			if (_client == null) return null;
+			var response = _client.RestoreObjectAsync(request);
 
-			Response.Wait();
-			return Response.Result;
+			response.Wait();
+			return response.Result;
 		}
 
-		public RestoreObjectResponse RestoreObject(string BucketName, string Key, string VersionId = null, int Days = -1)
+		public RestoreObjectResponse RestoreObject(string bucketName, string key, string versionId = null, int days = -1)
 		{
-			var Request = new RestoreObjectRequest()
+			var request = new RestoreObjectRequest()
 			{
-				BucketName = BucketName,
-				Key = Key,
+				BucketName = bucketName,
+				Key = key,
 			};
-			if (VersionId != null) Request.VersionId = VersionId;
-			if (Days > 0) Request.Days = Days;
+			if (versionId != null) request.VersionId = versionId;
+			if (days > 0) request.Days = days;
 
-			return RestoreObject(Request);
+			return RestoreObject(request);
 		}
 
 
 		#endregion
 
 		#region S3Util
-		public bool DoesS3BucketExist(string BucketName)
+		public bool DoesS3BucketExist(string bucketName)
 		{
-			try { return AmazonS3Util.DoesS3BucketExistV2Async(Client, BucketName).Result; }
+			try { return AmazonS3Util.DoesS3BucketExistV2Async(_client, bucketName).Result; }
 			catch (Exception) { return false; }
 
 		}
 		#endregion
 
 		#region ETC Function
-		public string GeneratePresignedURL(string BucketName, string Key, DateTime Expires, HttpVerb Verb,
-			ServerSideEncryptionMethod SSE_S3_Method = null, string ContentType = null)
+		public string GeneratePresignedURL(string bucketName, string key, DateTime expires, HttpVerb verb,
+			ServerSideEncryptionMethod sse_s3_method = null, string contentType = null)
 		{
-			var Request = new GetPreSignedUrlRequest()
+			var request = new GetPreSignedUrlRequest()
 			{
-				BucketName = BucketName,
-				Key = Key,
-				Expires = Expires,
-				Verb = Verb,
+				BucketName = bucketName,
+				Key = key,
+				Expires = expires,
+				Verb = verb,
 				Protocol = Protocol.HTTP
 			};
 
-			if (SSE_S3_Method != null) Request.ServerSideEncryptionMethod = SSE_S3_Method;
-			if (ContentType != null) Request.ContentType = ContentType;
+			if (sse_s3_method != null) request.ServerSideEncryptionMethod = sse_s3_method;
+			if (contentType != null) request.ContentType = contentType;
 
-			return Client.GetPreSignedURL(Request);
+			return _client.GetPreSignedURL(request);
 		}
 		#endregion
 	}

@@ -21,10 +21,7 @@ namespace IfsSync2Data
 	public class JobDbManager
 	{
 		#region Define
-		const string CONNECTION_FAILED = "SQLiteConnection fail";
 		/******************** Global Job List Attribute *************************/
-		const string STR_GLOBAL_JOB_TABLE_NAME = "GlobalJobList";
-		const string STR_GLOBAL_SCHEDULE_TABLE_NAME = "GlobalScheduleList";
 		const string SQLITE_SEQUENCE = "sqlite_sequence";
 		const string SQLITE_SEQUENCE_SEQ = "seq";
 
@@ -33,6 +30,7 @@ namespace IfsSync2Data
 		const string STR_JOB_ID = "Id";
 		const string STR_JOB_HOSTNAME = "HostName";
 		const string STR_JOB_NAME = "JobName";
+		const string STR_JOB_GLOBAL = "Global";
 		const string STR_JOB_IS_GLOBAL_USER = "IsGlobalUser";
 		const string STR_JOB_USER_ID = "UserID";
 		const string STR_JOB_POLICY_NAME = "PolicyName";
@@ -93,6 +91,7 @@ namespace IfsSync2Data
 								 $"'{STR_JOB_ID}' INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT," +
 								 $"'{STR_JOB_HOSTNAME}' TEXT, " +
 								 $"'{STR_JOB_NAME}' TEXT NOT NULL, " +
+								 $"'{STR_JOB_GLOBAL}' BOOL NOT NULL DEFAULT FALSE, " +
 								 $"'{STR_JOB_IS_GLOBAL_USER}' BOOL NOT NULL, " +
 								 $"'{STR_JOB_USER_ID}' INTEGER NOT NULL, " +
 								 $"'{STR_JOB_POLICY_NAME}' TEXT NOT NULL, " +
@@ -105,37 +104,10 @@ namespace IfsSync2Data
 								 $"'{STR_JOB_VSS_FILE_EXT}' TEXT NULL, " +
 								 $"'{STR_JOB_REMOVE}' BOOL NOT NULL DEFAULT TRUE," +
 								 $"'{STR_JOB_IS_INIT}' BOOL NOT NULL DEFAULT TRUE," +
-								 $"'{STR_JOB_FILTER_UPDATE}' BOOL NOT NULL DEFAULT TRUE," +
-								 $"'{STR_JOB_SENDER_UPDATE}' BOOL NOT NULL DEFAULT TRUE);" +
-					//Global JobList
-					$"Create Table IF NOT EXISTS '{STR_GLOBAL_JOB_TABLE_NAME}'(" +
-								 $"'{STR_JOB_ID}' INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT," +
-								 $"'{STR_JOB_HOSTNAME}' TEXT, " +
-								 $"'{STR_JOB_NAME}' TEXT NOT NULL, " +
-								 $"'{STR_JOB_IS_GLOBAL_USER}' BOOL NOT NULL, " +
-								 $"'{STR_JOB_USER_ID}' INTEGER NOT NULL, " +
-								 $"'{STR_JOB_POLICY_NAME}' TEXT NOT NULL, " +
-								 $"'{STR_JOB_PATH}' TEXT NULL, " +
-								 $"'{STR_JOB_BLACK_PATH}' TEXT NULL, " +
-								 $"'{STR_JOB_BLACK_FILE}' TEXT NULL, " +
-								 $"'{STR_JOB_BLACK_FILE_EXT}' TEXT NULL, " +
-								 $"'{STR_JOB_WHITE_FILE}' TEXT NOT NULL, " +
-								 $"'{STR_JOB_WHITE_FILE_EXT}' TEXT NOT NULL, " +
-								 $"'{STR_JOB_VSS_FILE_EXT}' TEXT NULL, " +
-								 $"'{STR_JOB_REMOVE}' BOOL NOT NULL DEFAULT TRUE," +
-								 $"'{STR_JOB_IS_INIT}' BOOL NOT NULL DEFAULT TRUE," +
-								 $"'{STR_JOB_FILTER_UPDATE}' BOOL NOT NULL DEFAULT TRUE," +
-								 $"'{STR_JOB_SENDER_UPDATE}' BOOL NOT NULL DEFAULT TRUE);" +
+								 $"'{STR_JOB_FILTER_UPDATE}' BOOL NOT NULL DEFAULT FALSE," +
+								 $"'{STR_JOB_SENDER_UPDATE}' BOOL NOT NULL DEFAULT FALSE);" +
 					//ScheduleList
 					$"Create Table IF NOT EXISTS '{STR_SCHEDULE_TABLE_NAME}'(" +
-								 $"'{STR_SCHEDULE_ID}' INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT," +
-								 $"'{STR_SCHEDULE_JOB_ID}' INTEGER NOT NULL, " +
-								 $"'{STR_SCHEDULE_WEEKS}' INTEGER NOT NULL, " +
-								 $"'{STR_SCHEDULE_AT_TIME}' INTEGER NOT NULL, " +
-								 $"'{STR_SCHEDULE_FOR_HOURS}' INTEGER NOT NULL, " +
-								 $"FOREIGN KEY('{STR_SCHEDULE_JOB_ID}') REFERENCES '{STR_JOB_TABLE_NAME}'('{STR_JOB_ID}') ON DELETE CASCADE);" +
-					//GlobalScheduleList
-					$"Create Table IF NOT EXISTS '{STR_GLOBAL_SCHEDULE_TABLE_NAME}'(" +
 								 $"'{STR_SCHEDULE_ID}' INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT," +
 								 $"'{STR_SCHEDULE_JOB_ID}' INTEGER NOT NULL, " +
 								 $"'{STR_SCHEDULE_WEEKS}' INTEGER NOT NULL, " +
@@ -152,15 +124,13 @@ namespace IfsSync2Data
 			finally { _mutex.ReleaseMutex(); }
 		}
 
-		public bool Insert(JobData job, bool global = false)
+		public bool Insert(JobData job)
 		{
 			if (!File.Exists(_filePath) && !CreateDBFile())
 				return false;
 
 			try
 			{
-				var tableName = GetTableName(global);
-
 				_mutex.WaitOne();
 				using var conn = new SQLiteConnection($"Data Source={_filePath};Version=3;");
 				conn.Open();
@@ -168,24 +138,23 @@ namespace IfsSync2Data
 				using var cmd = new SQLiteCommand(conn)
 				{
 					CommandText =
-					$"INSERT INTO '{tableName}' ({STR_JOB_HOSTNAME}, {STR_JOB_NAME}, {STR_JOB_IS_GLOBAL_USER}, {STR_JOB_USER_ID}, {STR_JOB_PATH}, {STR_JOB_BLACK_PATH}, {STR_JOB_BLACK_FILE}, {STR_JOB_BLACK_FILE_EXT}, {STR_JOB_WHITE_FILE}, {STR_JOB_WHITE_FILE_EXT}, {STR_JOB_VSS_FILE_EXT}, {STR_JOB_POLICY_NAME}, {STR_JOB_IS_INIT})" +
-					$" VALUES('{job.HostName}', '{job.JobName}', {job.IsGlobalUser}, {job.UserID}, '{job.StrPath}', '{job.StrBlackPath}', '{job.StrBlackFile}', '{job.StrBlackFileExt}', '{job.StrWhiteFile}', '{job.StrWhiteFileExt}', '{job.StrVSSFileExt}', '{job.StrPolicy}', {true});",
+					$"INSERT INTO '{STR_JOB_TABLE_NAME}' ({STR_JOB_GLOBAL}, {STR_JOB_HOSTNAME}, {STR_JOB_NAME}, {STR_JOB_IS_GLOBAL_USER}, {STR_JOB_USER_ID}, {STR_JOB_PATH}, {STR_JOB_BLACK_PATH}, {STR_JOB_BLACK_FILE}, {STR_JOB_BLACK_FILE_EXT}, {STR_JOB_WHITE_FILE}, {STR_JOB_WHITE_FILE_EXT}, {STR_JOB_VSS_FILE_EXT}, {STR_JOB_POLICY_NAME})" +
+					$" VALUES('{job.Global}', '{job.HostName}', '{job.JobName}', {job.IsGlobalUser}, {job.UserId}, '{job.StrPath}', '{job.StrBlackPath}', '{job.StrBlackFile}', '{job.StrBlackFileExt}', '{job.StrWhiteFile}', '{job.StrWhiteFileExt}', '{job.StrVSSFileExt}', '{job.StrPolicy}');",
 				};
 
 				int result = cmd.ExecuteNonQuery();
-				if (result > 0) { _log.Debug($"Success({result}): {cmd.CommandText}"); return true; }
-				else { _log.Error($"Failed({result}) : {cmd.CommandText}"); return false; }
+				if (result > 0) { _log.Debug($"Insert : {cmd.CommandText} : {result}"); return true; }
+				else { _log.Error($"Insert failed : {cmd.CommandText} : {result}"); return false; }
 			}
 			catch (Exception e) { _log.Error(e); return false; }
 			finally { _mutex.ReleaseMutex(); }
 		}
-		public bool Update(JobData job, bool global = false)
+		public bool Update(JobData job)
 		{
 			if (!File.Exists(_filePath)) return false;
 
 			try
 			{
-				var tableName = GetTableName(global);
 				_mutex.WaitOne();
 
 				using var conn = new SQLiteConnection($"Data Source={_filePath};Version=3;");
@@ -193,8 +162,8 @@ namespace IfsSync2Data
 
 				using var cmd = new SQLiteCommand(conn)
 				{
-					CommandText = $"UPDATE '{tableName}' SET {STR_JOB_IS_GLOBAL_USER} = {job.IsGlobalUser} , " +
-									$"{STR_JOB_USER_ID} = {job.UserID} , " +
+					CommandText = $"UPDATE '{STR_JOB_TABLE_NAME}' SET {STR_JOB_IS_GLOBAL_USER} = {job.IsGlobalUser} , " +
+									$"{STR_JOB_USER_ID} = {job.UserId} , " +
 									$"{STR_JOB_POLICY_NAME} = '{job.StrPolicy}', " +
 									$"{STR_JOB_PATH} = '{job.StrPath}', " +
 									$"{STR_JOB_BLACK_PATH} = '{job.StrBlackPath}', " +
@@ -210,58 +179,55 @@ namespace IfsSync2Data
 									$"WHERE {STR_JOB_ID} = {job.Id}; ",
 				};
 				int result = cmd.ExecuteNonQuery();
-				if (result > 0) { _log.Debug($"Success({result}): {cmd.CommandText}"); return true; }
-				else { _log.Error($"Failed({result}) : {cmd.CommandText}"); return false; }
+				if (result > 0) { _log.Debug($"Update : {cmd.CommandText} : {result}"); return true; }
+				else { _log.Error($"Update failed : {cmd.CommandText} : {result}"); return false; }
 			}
 			catch (Exception e) { _log.Error(e); return false; }
 			finally { _mutex.ReleaseMutex(); }
 		}
-		public bool Delete(int jobId, bool global = false)
+		public bool Delete(int jobId)
 		{
 			if (!File.Exists(_filePath)) return false;
 
 			try
 			{
-				var tableName = GetTableName(global);
 				_mutex.WaitOne();
 
 				using var conn = new SQLiteConnection($"Data Source={_filePath};Version=3;");
 				conn.Open();
 
-				using var cmd = new SQLiteCommand(conn) { CommandText = $"DELETE FROM '{tableName}' WHERE {STR_JOB_ID} = {jobId}" };
+				using var cmd = new SQLiteCommand(conn) { CommandText = $"DELETE FROM '{STR_JOB_TABLE_NAME}' WHERE {STR_JOB_ID} = {jobId}" };
 				int result = cmd.ExecuteNonQuery();
 
-				if (result > 0) { _log.Debug($"Success({result}): {cmd.CommandText}"); return true; }
-				else { _log.Error($"Failed({result}) : {cmd.CommandText}"); return false; }
+				if (result > 0) { _log.Debug($"Delete : {cmd.CommandText} : {result}"); return true; }
+				else { _log.Error($"Delete failed : {cmd.CommandText} : {result}"); return false; }
 			}
 			catch (Exception e) { _log.Error(e); return false; }
 			finally { _mutex.ReleaseMutex(); }
 		}
 
-		public bool DeleteCascadeForUser(int userId, bool isGlobalUser, bool global = false)
+		public bool DeleteCascadeForUser(int userId, bool isGlobalUser)
 		{
 			if (!File.Exists(_filePath)) return false;
 
 			try
 			{
-				var tableName = GetTableName(global);
-
 				_mutex.WaitOne();
 				using var conn = new SQLiteConnection($"Data Source={_filePath};Version=3;");
 				conn.Open();
 
 				using var cmd = new SQLiteCommand(conn)
-				{ CommandText = $"DELETE FROM '{tableName}' WHERE {STR_JOB_USER_ID} = {userId} AND {STR_JOB_IS_GLOBAL_USER} = {isGlobalUser};" };
+				{ CommandText = $"DELETE FROM '{STR_JOB_TABLE_NAME}' WHERE {STR_JOB_USER_ID} = {userId} AND {STR_JOB_IS_GLOBAL_USER} = {isGlobalUser};" };
 
 				int result = cmd.ExecuteNonQuery();
-				if (result > 0) { _log.Debug($"Success({result}): {cmd.CommandText}"); return true; }
-				else { _log.Error($"Failed({result}) : {cmd.CommandText}"); return false; }
+				if (result > 0) { _log.Debug($"DeleteCascadeForUser : {cmd.CommandText} : {result}"); return true; }
+				else { _log.Error($"DeleteCascadeForUser failed : {cmd.CommandText} : {result}"); return false; }
 			}
 			catch (Exception e) { _log.Error(e); return false; }
 			finally { _mutex.ReleaseMutex(); }
 		}
 
-		bool InsertScheduleList(JobData job, bool global = false)
+		bool InsertScheduleList(JobData job)
 		{
 			if (!File.Exists(_filePath)) return false;
 			if (job.Id < 1) job.Id = GetJobDataId(job.HostName, job.JobName);
@@ -273,8 +239,6 @@ namespace IfsSync2Data
 
 			try
 			{
-				var tableName = GetTableName(global);
-
 				_mutex.WaitOne();
 				using var conn = new SQLiteConnection($"Data Source={_filePath};Version=3;");
 
@@ -282,7 +246,7 @@ namespace IfsSync2Data
 
 				using (var cmd = new SQLiteCommand(conn))
 				{
-					cmd.CommandText = $"DELETE FROM '{tableName}' WHERE {STR_SCHEDULE_JOB_ID} = {job.Id}";
+					cmd.CommandText = $"DELETE FROM '{STR_SCHEDULE_TABLE_NAME}' WHERE {STR_SCHEDULE_JOB_ID} = {job.Id}";
 					cmd.ExecuteNonQuery();
 				}
 
@@ -291,13 +255,13 @@ namespace IfsSync2Data
 				{
 					using var cmd = new SQLiteCommand(conn)
 					{
-						CommandText = $"INSERT INTO '{tableName}' ( {STR_SCHEDULE_JOB_ID} , {STR_SCHEDULE_WEEKS} , {STR_SCHEDULE_AT_TIME} , {STR_SCHEDULE_FOR_HOURS} )" +
+						CommandText = $"INSERT INTO '{STR_SCHEDULE_TABLE_NAME}' ( {STR_SCHEDULE_JOB_ID} , {STR_SCHEDULE_WEEKS} , {STR_SCHEDULE_AT_TIME} , {STR_SCHEDULE_FOR_HOURS} )" +
 														$" VALUES ('{job.Id}', '{item.Weeks}', '{item.AtTime}', '{item.ForHours}')"
 					};
 					if (cmd.ExecuteNonQuery() > 0)
-						_log.Debug($"Insert Schedule Job {job.JobName}");
+						_log.Debug($"InsertScheduleList : {cmd.CommandText}");
 					else
-						_log.Error($"Failed Schedule Job ({job.JobName}) : {cmd.CommandText}");
+						_log.Error($"InsertScheduleList failed : {cmd.CommandText}");
 				}
 
 				return true;
@@ -306,69 +270,89 @@ namespace IfsSync2Data
 			finally { _mutex.ReleaseMutex(); }
 		}
 
-		public bool UpdateIsInit(JobData job, bool flag, bool global = false)
+		public bool UpdateIsInit(JobData job, bool flag)
 		{
 			if (!File.Exists(_filePath)) return false;
 
 			try
 			{
-				var tableName = GetTableName(global);
 				_mutex.WaitOne();
 
 				using var conn = new SQLiteConnection($"Data Source={_filePath};Version=3;");
 				conn.Open();
 
-				using var cmd = new SQLiteCommand(conn) { CommandText = $"UPDATE '{tableName}' SET {STR_JOB_IS_INIT} = {flag} WHERE {STR_JOB_ID} = {job.Id};" };
+				using var cmd = new SQLiteCommand(conn) { CommandText = $"UPDATE '{STR_JOB_TABLE_NAME}' SET {STR_JOB_IS_INIT} = {flag} WHERE {STR_JOB_ID} = {job.Id};" };
 				int result = cmd.ExecuteNonQuery();
 
-				if (result > 0) { _log.Debug($"Success({result})"); return true; }
-				else { _log.Error($"Failed({result}) : {cmd.CommandText}"); return false; }
+				if (result > 0) { _log.Debug($"UpdateIsInit : {cmd.CommandText} : {result}"); return true; }
+				else { _log.Error($"UpdateIsInit failed : {cmd.CommandText} : {result}"); return false; }
 			}
 			catch (Exception e) { _log.Error(e); return false; }
 			finally { _mutex.ReleaseMutex(); }
 		}
-		public bool UpdateFilterCheck(JobData job, bool global = false)
+		public bool UpdateFilterCheck(JobData job)
+		{
+			try
+			{
+				if (job == null || job.Id < 1) return false;
+				if (!File.Exists(_filePath)) return false;
+
+				_mutex.WaitOne();
+
+				using var conn = new SQLiteConnection($"Data Source={_filePath};Version=3;");
+				conn.Open();
+
+				using var cmd = new SQLiteCommand(conn) { CommandText = $"UPDATE '{STR_JOB_TABLE_NAME}' SET {STR_JOB_FILTER_UPDATE} = {false} WHERE {STR_JOB_ID} = {job.Id};" };
+				int result = cmd.ExecuteNonQuery();
+
+				if (result > 0) { _log.Debug($"UpdateFilterCheck : {cmd.CommandText} : {result}"); return true; }
+				else { _log.Error($"UpdateFilterCheck failed : {cmd.CommandText} : {result}"); return false; }
+			}
+			catch (Exception e) { _log.Error(e); return false; }
+			finally { _mutex.ReleaseMutex(); }
+		}
+		public bool UpdateSenderCheck(JobData job)
 		{
 			if (!File.Exists(_filePath)) return false;
 
 			try
 			{
-				var tableName = GetTableName(global);
 				_mutex.WaitOne();
 
 				using var conn = new SQLiteConnection($"Data Source={_filePath};Version=3;");
 				conn.Open();
 
-				using var cmd = new SQLiteCommand(conn) { CommandText = $"UPDATE '{tableName}' SET {STR_JOB_FILTER_UPDATE} = {false} WHERE {STR_JOB_ID} = {job.Id};" };
+				using var cmd = new SQLiteCommand(conn) { CommandText = $"UPDATE '{STR_JOB_TABLE_NAME}' SET {STR_JOB_SENDER_UPDATE} = {false} WHERE {STR_JOB_ID} = {job.Id};" };
 				int result = cmd.ExecuteNonQuery();
 
-				if (result > 0) { _log.Debug($"Success({result})"); return true; }
-				else { _log.Error($"Failed({result}) : {cmd.CommandText}"); return false; }
+				if (result > 0) { _log.Debug($"UpdateSenderCheck : {cmd.CommandText} : {result}"); return true; }
+				else { _log.Error($"UpdateSenderCheck failed : {cmd.CommandText} : {result}"); return false; }
 			}
 			catch (Exception e) { _log.Error(e); return false; }
 			finally { _mutex.ReleaseMutex(); }
 		}
-		public bool UpdateSenderCheck(JobData job, bool global = false)
+		public bool UpdateAllCheck(JobData job)
 		{
-			if (!File.Exists(_filePath)) return false;
-
 			try
 			{
-				var tableName = GetTableName(global);
+				if (job == null || job.Id < 1) return false;
+				if (!File.Exists(_filePath)) return false;
+
 				_mutex.WaitOne();
 
 				using var conn = new SQLiteConnection($"Data Source={_filePath};Version=3;");
 				conn.Open();
 
-				using var cmd = new SQLiteCommand(conn) { CommandText = $"UPDATE '{tableName}' SET {STR_JOB_SENDER_UPDATE} = {false} WHERE {STR_JOB_ID} = {job.Id};" };
+				using var cmd = new SQLiteCommand(conn) { CommandText = $"UPDATE '{STR_JOB_TABLE_NAME}' SET {STR_JOB_FILTER_UPDATE} = {false} , {STR_JOB_SENDER_UPDATE} = {false} WHERE {STR_JOB_ID} = {job.Id};" };
 				int result = cmd.ExecuteNonQuery();
 
-				if (result > 0) { _log.Debug($"Success({result}): {cmd.CommandText}"); return true; }
-				else { _log.Error($"Failed({result}) : {cmd.CommandText}"); return false; }
+				if (result > 0) { _log.Debug($"UpdateFilterCheck : {cmd.CommandText} : {result}"); return true; }
+				else { _log.Error($"UpdateFilterCheck failed : {cmd.CommandText} : {result}"); return false; }
 			}
 			catch (Exception e) { _log.Error(e); return false; }
 			finally { _mutex.ReleaseMutex(); }
 		}
+
 		public int GetJobDataId(string hostName, string jobName)
 		{
 			int id = 0;
@@ -384,9 +368,8 @@ namespace IfsSync2Data
 
 				while (rdr.Read()) id = Convert.ToInt32(rdr[STR_JOB_ID]);
 
-
-				if (id > 0) _log.Debug($"Success : {cmd.CommandText}");
-				else _log.Error($"Failed : {cmd.CommandText}");
+				if (id > 0) _log.Debug($"GetJobDataId : {cmd.CommandText} : {id}");
+				else _log.Error($"GetJobDataId failed : {cmd.CommandText} : {id}");
 			}
 			catch (Exception e) { _log.Error(e); }
 			finally { _mutex.ReleaseMutex(); }
@@ -405,14 +388,14 @@ namespace IfsSync2Data
 				using var cmd = new SQLiteCommand(conn) { CommandText = $"SELECT count(*) FROM '{STR_JOB_TABLE_NAME}' WHERE {STR_JOB_HOSTNAME} = '{hostName}' AND {STR_JOB_NAME} = '{jobName}';" };
 				int result = Convert.ToInt32(cmd.ExecuteScalar());
 
-				if (result > 0) { _log.Debug($"Success({result}): {cmd.CommandText}"); return true; }
-				else { _log.Error($"Failed({result}) : {cmd.CommandText}"); return false; }
+				if (result > 0) { _log.Debug($"IsJobName : {cmd.CommandText} : {result}"); return true; }
+				else { _log.Debug($"IsJobName failed : {cmd.CommandText} : {result}"); return false; }
 			}
 			catch (Exception e) { _log.Error(e); return false; }
 			finally { _mutex.ReleaseMutex(); }
 		}
 
-		public List<JobData> GetJobs(bool global = false)
+		public List<JobData> GetJobs()
 		{
 			var items = new List<JobData>();
 			try
@@ -424,11 +407,7 @@ namespace IfsSync2Data
 				using var conn = new SQLiteConnection($"Data Source={_filePath};Version=3;");
 				conn.Open();
 
-				string tableName = string.Empty;
-				if (global) tableName = STR_GLOBAL_JOB_TABLE_NAME;
-				else tableName = STR_JOB_TABLE_NAME;
-
-				using var jobCmd = new SQLiteCommand(conn) { CommandText = $"SELECT * FROM '{tableName}'" };
+				using var jobCmd = new SQLiteCommand(conn) { CommandText = $"SELECT * FROM '{STR_JOB_TABLE_NAME}'" };
 				using var jobRdr = jobCmd.ExecuteReader();
 
 				while (jobRdr.Read())
@@ -436,10 +415,11 @@ namespace IfsSync2Data
 					var Data = new JobData
 					{
 						Id = Convert.ToInt32(jobRdr[STR_JOB_ID]),
+						Global = Convert.ToBoolean(jobRdr[STR_JOB_GLOBAL]),
 						HostName = jobRdr[STR_JOB_HOSTNAME].ToString(),
 						JobName = jobRdr[STR_JOB_NAME].ToString(),
 						IsGlobalUser = Convert.ToBoolean(jobRdr[STR_JOB_IS_GLOBAL_USER]),
-						UserID = Convert.ToInt32(jobRdr[STR_JOB_USER_ID]),
+						UserId = Convert.ToInt32(jobRdr[STR_JOB_USER_ID]),
 						StrPolicy = jobRdr[STR_JOB_POLICY_NAME].ToString(),
 						StrPath = jobRdr[STR_JOB_PATH].ToString(),
 						StrBlackPath = jobRdr[STR_JOB_BLACK_PATH].ToString(),
@@ -452,11 +432,10 @@ namespace IfsSync2Data
 						IsInit = Convert.ToBoolean(jobRdr[STR_JOB_IS_INIT]),
 						FilterUpdate = Convert.ToBoolean(jobRdr[STR_JOB_FILTER_UPDATE]),
 						SenderUpdate = Convert.ToBoolean(jobRdr[STR_JOB_SENDER_UPDATE]),
-						Global = global
 					};
 
 					//Get Schedule
-					if (Data.Policy == JobData.PolicyName.Schedule)
+					if (Data.Policy == JobData.PolicyType.Schedule)
 					{
 						using var scheduleCmd = new SQLiteCommand(conn);
 						scheduleCmd.CommandText = string.Format("SELECT * FROM {0} WHERE {1} = {2};", STR_SCHEDULE_TABLE_NAME, STR_SCHEDULE_JOB_ID, Data.Id);
@@ -466,8 +445,8 @@ namespace IfsSync2Data
 						{
 							Data.ScheduleList.Add(new Schedule()
 							{
-								ID = Convert.ToInt32(ScheduleRdr[STR_SCHEDULE_ID]),
-								JobID = Convert.ToInt32(ScheduleRdr[STR_SCHEDULE_JOB_ID]),
+								Id = Convert.ToInt32(ScheduleRdr[STR_SCHEDULE_ID]),
+								JobId = Convert.ToInt32(ScheduleRdr[STR_SCHEDULE_JOB_ID]),
 								Weeks = Convert.ToInt32(ScheduleRdr[STR_SCHEDULE_WEEKS]),
 								AtTime = Convert.ToInt32(ScheduleRdr[STR_SCHEDULE_AT_TIME]),
 								ForHours = Convert.ToInt32(ScheduleRdr[STR_SCHEDULE_FOR_HOURS]),
@@ -478,13 +457,17 @@ namespace IfsSync2Data
 					items.Add(Data);
 				}
 
-				_log.Debug($"{tableName} : {items.Count}");
+				_log.Debug($"GetJobs : {jobCmd.CommandText} : {items.Count}");
 				return items;
 			}
-			catch (Exception e) { _log.Error(e); throw; }
+			catch (Exception e)
+			{
+				_log.Error(e);
+				return [];
+			}
 			finally { _mutex.ReleaseMutex(); }
 		}
-		public List<JobData> GetJobs(string HostName = "")
+		public List<JobData> GetJobs(string HostName)
 		{
 			if (!File.Exists(_filePath)) CreateDBFile();
 			try
@@ -504,10 +487,11 @@ namespace IfsSync2Data
 					var Data = new JobData
 					{
 						Id = Convert.ToInt32(jobRdr[STR_JOB_ID]),
+						Global = Convert.ToBoolean(jobRdr[STR_JOB_GLOBAL]),
 						HostName = jobRdr[STR_JOB_HOSTNAME].ToString(),
 						JobName = jobRdr[STR_JOB_NAME].ToString(),
 						IsGlobalUser = Convert.ToBoolean(jobRdr[STR_JOB_IS_GLOBAL_USER]),
-						UserID = Convert.ToInt32(jobRdr[STR_JOB_USER_ID]),
+						UserId = Convert.ToInt32(jobRdr[STR_JOB_USER_ID]),
 						StrPolicy = jobRdr[STR_JOB_POLICY_NAME].ToString(),
 						StrPath = jobRdr[STR_JOB_PATH].ToString(),
 						StrBlackPath = jobRdr[STR_JOB_BLACK_PATH].ToString(),
@@ -520,11 +504,10 @@ namespace IfsSync2Data
 						IsInit = Convert.ToBoolean(jobRdr[STR_JOB_IS_INIT]),
 						FilterUpdate = Convert.ToBoolean(jobRdr[STR_JOB_FILTER_UPDATE]),
 						SenderUpdate = Convert.ToBoolean(jobRdr[STR_JOB_SENDER_UPDATE]),
-						Global = false
 					};
 
 					//Get Schedule
-					if (Data.Policy == JobData.PolicyName.Schedule)
+					if (Data.Policy == JobData.PolicyType.Schedule)
 					{
 						using var scheduleCmd = new SQLiteCommand(conn) { CommandText = $"SELECT * FROM {STR_SCHEDULE_TABLE_NAME} WHERE {STR_SCHEDULE_JOB_ID} = {Data.Id};" };
 						using var scheduleRdr = scheduleCmd.ExecuteReader();
@@ -533,8 +516,8 @@ namespace IfsSync2Data
 						{
 							var Item = new Schedule()
 							{
-								ID = Convert.ToInt32(scheduleRdr[STR_SCHEDULE_ID]),
-								JobID = Convert.ToInt32(scheduleRdr[STR_SCHEDULE_JOB_ID]),
+								Id = Convert.ToInt32(scheduleRdr[STR_SCHEDULE_ID]),
+								JobId = Convert.ToInt32(scheduleRdr[STR_SCHEDULE_JOB_ID]),
 								Weeks = Convert.ToInt32(scheduleRdr[STR_SCHEDULE_WEEKS]),
 								AtTime = Convert.ToInt32(scheduleRdr[STR_SCHEDULE_AT_TIME]),
 								ForHours = Convert.ToInt32(scheduleRdr[STR_SCHEDULE_FOR_HOURS]),
@@ -546,13 +529,17 @@ namespace IfsSync2Data
 					items.Add(Data);
 				}
 
-				_log.Debug($"{HostName} : {items.Count}");
+				_log.Debug($"GetJobs : {jobCmd.CommandText} : {items.Count}");
 				return items;
 			}
-			catch (Exception e) { _log.Error(e); throw; }
+			catch (Exception e)
+			{
+				_log.Error(e);
+				return [];
+			}
 			finally { _mutex.ReleaseMutex(); }
 		}
-		public JobData GetJob(int ID, bool Global = false)
+		public JobData GetJob(int Id)
 		{
 			if (!File.Exists(_filePath)) CreateDBFile();
 			try
@@ -562,11 +549,7 @@ namespace IfsSync2Data
 				using var conn = new SQLiteConnection($"Data Source={_filePath};Version=3;");
 				conn.Open();
 
-				string tableName = string.Empty;
-				if (Global) tableName = STR_GLOBAL_JOB_TABLE_NAME;
-				else tableName = STR_JOB_TABLE_NAME;
-
-				using var cmd = new SQLiteCommand(conn) { CommandText = $"SELECT * FROM '{tableName}' WHERE {STR_JOB_ID}={ID}" };
+				using var cmd = new SQLiteCommand(conn) { CommandText = $"SELECT * FROM '{STR_JOB_TABLE_NAME}' WHERE {STR_JOB_ID}={Id}" };
 				using var rdr = cmd.ExecuteReader();
 
 				rdr.Read();
@@ -574,10 +557,11 @@ namespace IfsSync2Data
 				var Data = new JobData
 				{
 					Id = Convert.ToInt32(rdr[STR_JOB_ID]),
+					Global = Convert.ToBoolean(rdr[STR_JOB_GLOBAL]),
 					HostName = rdr[STR_JOB_HOSTNAME].ToString(),
 					JobName = rdr[STR_JOB_NAME].ToString(),
 					IsGlobalUser = Convert.ToBoolean(rdr[STR_JOB_IS_GLOBAL_USER]),
-					UserID = Convert.ToInt32(rdr[STR_JOB_USER_ID]),
+					UserId = Convert.ToInt32(rdr[STR_JOB_USER_ID]),
 					StrPolicy = rdr[STR_JOB_POLICY_NAME].ToString(),
 					StrPath = rdr[STR_JOB_PATH].ToString(),
 					StrBlackPath = rdr[STR_JOB_BLACK_PATH].ToString(),
@@ -590,11 +574,10 @@ namespace IfsSync2Data
 					IsInit = Convert.ToBoolean(rdr[STR_JOB_IS_INIT]),
 					FilterUpdate = Convert.ToBoolean(rdr[STR_JOB_FILTER_UPDATE]),
 					SenderUpdate = Convert.ToBoolean(rdr[STR_JOB_SENDER_UPDATE]),
-					Global = Global
 				};
 
 				//Get Schedule
-				if (Data.Policy == JobData.PolicyName.Schedule)
+				if (Data.Policy == JobData.PolicyType.Schedule)
 				{
 					using var scheduleCmd = new SQLiteCommand(conn);
 					scheduleCmd.CommandText = string.Format(
@@ -606,8 +589,8 @@ namespace IfsSync2Data
 					{
 						Data.ScheduleList.Add(new Schedule()
 						{
-							ID = Convert.ToInt32(scheduleRdr[STR_SCHEDULE_ID]),
-							JobID = Convert.ToInt32(scheduleRdr[STR_SCHEDULE_JOB_ID]),
+							Id = Convert.ToInt32(scheduleRdr[STR_SCHEDULE_ID]),
+							JobId = Convert.ToInt32(scheduleRdr[STR_SCHEDULE_JOB_ID]),
 							Weeks = Convert.ToInt32(scheduleRdr[STR_SCHEDULE_WEEKS]),
 							AtTime = Convert.ToInt32(scheduleRdr[STR_SCHEDULE_AT_TIME]),
 							ForHours = Convert.ToInt32(scheduleRdr[STR_SCHEDULE_FOR_HOURS]),
@@ -615,23 +598,26 @@ namespace IfsSync2Data
 					}
 				}
 
-				_log.Debug($"Job : {Data.JobName}");
+				_log.Debug($"GetJob : {cmd.CommandText} : {Data.JobName}");
 				return Data;
 			}
-			catch (Exception e) { _log.Error(e); throw; }
+			catch (Exception e)
+			{
+				_log.Error(e);
+				return null;
+			}
 			finally { _mutex.ReleaseMutex(); }
 		}
 
-		public bool PutJobData(JobData Data)
+		public bool PutJobData(JobData data)
 		{
-			if (Data.Id > 0) { if (!Update(Data)) return false; }
-			else { if (!Insert(Data)) return false; }
+			if (data.Id > 0) { if (!Update(data)) return false; }
+			else { if (!Insert(data)) return false; }
 
-			if (Data.Policy == JobData.PolicyName.Schedule) return InsertScheduleList(Data);
+			if (data.Policy == JobData.PolicyType.Schedule) return InsertScheduleList(data);
 			return true;
 		}
-
-		public int NextGlobalJobIndex()
+		public int NextJobIndex()
 		{
 			int Index = 0;
 			try
@@ -641,21 +627,18 @@ namespace IfsSync2Data
 				using var conn = new SQLiteConnection($"Data Source={_filePath};Version=3;");
 				conn.Open();
 
-				using var cmd = new SQLiteCommand(conn) { CommandText = $"SELECT * FROM '{SQLITE_SEQUENCE}' WHERE name = '{STR_GLOBAL_JOB_TABLE_NAME}'" };
+				using var cmd = new SQLiteCommand(conn) { CommandText = $"SELECT * FROM '{SQLITE_SEQUENCE}' WHERE name = '{STR_JOB_TABLE_NAME}'" };
 				using var rdr = cmd.ExecuteReader();
 				while (rdr.Read())
 				{
 					Index = Convert.ToInt32(rdr[SQLITE_SEQUENCE_SEQ]);
 				}
 
-
-				_log.Debug($"Success : {cmd.CommandText}");
+				_log.Debug($"NextJobIndex : {cmd.CommandText} : {Index}");
 			}
 			catch (Exception e) { _log.Error(e); }
 			finally { _mutex.ReleaseMutex(); }
 			return Index + 1;
 		}
-
-		static string GetTableName(bool global) => global ? STR_GLOBAL_JOB_TABLE_NAME : STR_JOB_TABLE_NAME;
 	}
 }

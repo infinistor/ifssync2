@@ -66,6 +66,15 @@ namespace IfsSync2Data
 		}
 #pragma warning restore CA1416
 
+		public void Init()
+		{
+			Analysis = false;
+			Running = false;
+			Total = 0;
+			Upload = 0;
+			Percent = 0;
+		}
+
 		public void Clear()
 		{
 			Total = Upload = Percent = 0;

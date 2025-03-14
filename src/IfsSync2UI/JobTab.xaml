@@ -234,7 +234,20 @@
                     <RowDefinition Height="25"/>
                     <RowDefinition Height="*"/>
                 </Grid.RowDefinitions>
-                <Label Grid.Row="0" Content="Extension List" Style="{StaticResource JobTitleStyle}"/>
+                <Grid Grid.Row="0">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <Label Grid.Column="0" Content="Extension List" Style="{StaticResource JobTitleStyle}"/>
+                    <CheckBox Grid.Column="1" 
+                             Content="All" 
+                             x:Name="CB_ExtensionAll" 
+                             VerticalAlignment="Center"
+                             Margin="0,0,5,0"
+                             Checked="ExtensionAll_Checked"
+                             Unchecked="ExtensionAll_Unchecked"/>
+                </Grid>
                 <ListBox Grid.Row="1" Margin="5" x:Name="L_ExtensionList" KeyDown="ExtensionListKeyDownEvent" BorderBrush="#FFCECECE" SelectionMode="Extended" ItemsSource="{Binding}" Grid.ColumnSpan="2" />
                 <Label Grid.Row="3" Content="Selected Extension List" Style="{StaticResource JobTitleStyle}"/>
                 <ListBox Grid.Row="4" Margin="5" x:Name="L_SelectedExtensionList" BorderBrush="#FFCECECE" SelectionMode="Extended" ItemsSource="{Binding}" Grid.ColumnSpan="2"/>
@@ -276,8 +289,8 @@
                         <ColumnDefinition Width="*"/>
                     </Grid.ColumnDefinitions>
                     <Image Grid.Column="0" Grid.Row="0" x:Name="Image_Filter" Width="16" Height="16" Source="/IfsSync2UI;component/Res/CircleGray.png"/>
-                    <Label Grid.Column="1" Grid.Row="0" Content="Monitor" x:Name="L_Monitor" Style="{StaticResource JobStateLabelStyle}"/>
-                    <Label Grid.Column="2" Grid.Row="0" x:Name="State_Filter" Content="비활성화" Style="{StaticResource JobStateLabelStyle}"/>
+                    <Label Grid.Column="1" Grid.Row="0" Content="Monitor" x:Name="L_Monitor" Style="{StaticResource JobStatusLabelStyle}"/>
+                    <Label Grid.Column="2" Grid.Row="0" x:Name="State_Filter" Content="비활성화" Style="{StaticResource JobStatusLabelStyle}"/>
                 </Grid>
             </Border>
             <Border Grid.Row="2" BorderBrush="#5F5F5F" BorderThickness="1, 0, 1, 0">
@@ -288,8 +301,8 @@
                         <ColumnDefinition Width="*"/>
                     </Grid.ColumnDefinitions>
                     <Image Grid.Column="0" Grid.Row="1" x:Name="Image_VSS" Width="16" Height="16" Source="/IfsSync2UI;component/Res/CircleGray.png"/>
-                    <Label Grid.Column="1" Grid.Row="1" Content="VSS"      x:Name="L_VSS" Style="{StaticResource JobStateLabelStyle}"/>
-                    <Label Grid.Column="2" Grid.Row="1" x:Name="State_VSS" Content="비활성화" Style="{StaticResource JobStateLabelStyle}"/>
+                    <Label Grid.Column="1" Grid.Row="1" Content="VSS"      x:Name="L_VSS" Style="{StaticResource JobStatusLabelStyle}"/>
+                    <Label Grid.Column="2" Grid.Row="1" x:Name="State_VSS" Content="비활성화" Style="{StaticResource JobStatusLabelStyle}"/>
                 </Grid>
             </Border>
             <Border Grid.Row="3" BorderBrush="#5F5F5F" BorderThickness="1">
@@ -300,8 +313,8 @@
                         <ColumnDefinition Width="*"/>
                     </Grid.ColumnDefinitions>
                     <Image Grid.Column="0" Grid.Row="2" x:Name="Image_Sender" Width="16" Height="16" Source="/IfsSync2UI;component/Res/CircleGray.png"/>
-                    <Label Grid.Column="1" Grid.Row="2" Content="Sender"      x:Name="L_Sender" Style="{StaticResource JobStateLabelStyle}"/>
-                    <Label Grid.Column="2" Grid.Row="2" x:Name="State_Sender" Content="비활성화" Style="{StaticResource JobStateLabelStyle}"/>
+                    <Label Grid.Column="1" Grid.Row="2" Content="Sender"      x:Name="L_Sender" Style="{StaticResource JobStatusLabelStyle}"/>
+                    <Label Grid.Column="2" Grid.Row="2" x:Name="State_Sender" Content="비활성화" Style="{StaticResource JobStatusLabelStyle}"/>
                 </Grid>
             </Border>
         </Grid>

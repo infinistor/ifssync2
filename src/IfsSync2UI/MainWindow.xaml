@@ -18,7 +18,32 @@
             <RowDefinition Height="40"/>
         </Grid.RowDefinitions>
         <TextBlock Grid.Column="1" Grid.Row="0" x:Name="L_MainTitle" Text="Text" Width="auto" Style="{StaticResource MainTitleStyle}" />
-        <Button Grid.Column="1" Grid.Row="0" x:Name="B_JobType" Content="RealTime Job" Style="{StaticResource MainButtonStyle}" Visibility="Hidden"/>
+        <Button Grid.Column="1" Grid.Row="0" x:Name="SettingsButton" Width="32" Height="32" Margin="930,0,0,0" Click="SettingsButtonClieck">
+            <Button.Style>
+                <Style TargetType="Button">
+                    <Setter Property="Background" Value="Transparent"/>
+                    <Setter Property="BorderBrush" Value="Transparent"/>
+                    <Setter Property="Template">
+                        <Setter.Value>
+                            <ControlTemplate TargetType="Button">
+                                <Border Background="{TemplateBinding Background}">
+                                    <Path Data="M24,13.616v-3.232c-1.651-0.587-2.694-0.752-3.219-2.019v-0.001c-0.527-1.271,0.1-2.134,0.847-3.707l-2.285-2.285c-1.561,0.742-2.433,1.375-3.707,0.847h-0.001c-1.269-0.526-1.435-1.576-2.019-3.219h-3.232c-0.582,1.635-0.749,2.692-2.019,3.219h-0.001c-1.271,0.528-2.132-0.098-3.707-0.847L2.289,4.495c0.745,1.568,1.375,2.434,0.847,3.707C2.609,9.471,1.567,9.636,0,10.224v3.232c1.632,0.58,2.692,0.749,3.219,2.019c0.53,1.282-0.114,2.166-0.847,3.707l2.285,2.286c1.562-0.743,2.434-1.375,3.707-0.847h0.001c1.27,0.526,1.436,1.579,2.019,3.219h3.232c0.582-1.636,0.75-2.69,2.027-3.222c1.262-0.524,2.12,0.101,3.698,0.845l2.285-2.286c-0.744-1.563-1.375-2.433-0.848-3.706c0.527-1.271,1.588-1.44,3.221-2.021zm-12,2.384c-2.209,0-4-1.791-4-4s1.791-4,4-4s4,1.791,4,4S14.209,16,12,16z" 
+                                          Fill="{DynamicResource {x:Static SystemColors.ControlTextBrushKey}}"
+                                          Width="20" Height="20"
+                                          Stretch="Uniform"/>
+                                </Border>
+                            </ControlTemplate>
+                        </Setter.Value>
+                    </Setter>
+                    <Style.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter Property="Cursor" Value="Hand"/>
+                            <Setter Property="Opacity" Value="0.8"/>
+                        </Trigger>
+                    </Style.Triggers>
+                </Style>
+            </Button.Style>
+        </Button>
         <TabControl x:Name="MainTab" Grid.Row="1" Grid.Column="1" SelectionChanged="MainTab_SelectionChanged" BorderThickness="0">
             <TabControl.Resources>
                 <Style TargetType="TabItem">
@@ -78,7 +103,7 @@
                                                 <RowDefinition Height="*"/>
                                             </Grid.RowDefinitions>
                                             <Label Grid.Row="0" Content="RealTime Job Name" Style="{StaticResource EditTitleStyle}"/>
-                                            <TextBox Grid.Row="1" x:Name="T_RealTimeName"  KeyDown="Txb_RealTimeTextEnterEvent" MouseUp="PopupTextBoxMouseUp" Style="{StaticResource EditTextBoxStyle}"/>
+                                            <TextBox Grid.Row="1" x:Name="T_RealTimeName" KeyDown="Txb_RealTimeTextEnterEvent" MouseUp="PopupTextBoxMouseUp" Style="{StaticResource EditTextBoxStyle}"/>
                                             <Grid Grid.Row="2">
                                                 <Grid.ColumnDefinitions>
                                                     <ColumnDefinition Width="*"/>
@@ -163,7 +188,7 @@
                                     <GridViewColumn Header="Status" Width="80">
                                         <GridViewColumn.CellTemplate>
                                             <DataTemplate>
-                                                <TextBlock Text="{Binding Status}" Style="{StaticResource ListViewStyle}"  Width="80" VerticalAlignment="Center" HorizontalAlignment="Center" TextAlignment="Center"/>
+                                                <TextBlock Text="{Binding StatusText}" Style="{StaticResource ListViewStyle}"  Width="80" VerticalAlignment="Center" HorizontalAlignment="Center" TextAlignment="Center"/>
                                             </DataTemplate>
                                         </GridViewColumn.CellTemplate>
                                     </GridViewColumn>
@@ -480,7 +505,7 @@
                                         </Popup>
                                     </Grid>
                                 </Grid>
-                                <TextBlock Grid.Row="0" Grid.RowSpan="2" Grid.ColumnSpan="2" x:Name="T_EmptyStorage_2" Text="AWS S3로 설정한 경우&#10;Quota 사용 정보를&#10;표시할 수 없습니다." Style="{StaticResource  TextBlockStyle}" />
+                                <TextBlock Grid.Row="0" Grid.RowSpan="2" Grid.ColumnSpan="2" x:Name="T_EmptyStorage_2" Text="S3로 설정한 경우&#10;Quota 사용 정보를&#10;표시할 수 없습니다." Style="{StaticResource  TextBlockStyle}" />
                                 <Grid Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="2" x:Name="G_Quota_2">
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="*"/>
@@ -605,7 +630,7 @@
                                         </Popup>
                                     </Grid>
                                 </Grid>
-                                <TextBlock Grid.Row="0" Grid.RowSpan="2" Grid.ColumnSpan="2" x:Name="T_EmptyStorage_3" Text="AWS S3로 설정한 경우&#10;Quota 사용 정보를&#10;표시할 수 없습니다." Style="{StaticResource  TextBlockStyle}" />
+                                <TextBlock Grid.Row="0" Grid.RowSpan="2" Grid.ColumnSpan="2" x:Name="T_EmptyStorage_3" Text="S3로 설정한 경우&#10;Quota 사용 정보를&#10;표시할 수 없습니다." Style="{StaticResource  TextBlockStyle}" />
                                 <Grid Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="2" x:Name="G_Quota_3">
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="*"/>
@@ -730,7 +755,7 @@
                                         </Popup>
                                     </Grid>
                                 </Grid>
-                                <TextBlock Grid.Row="0" Grid.RowSpan="2" Grid.ColumnSpan="2" x:Name="T_EmptyStorage_4" Text="AWS S3로 설정한 경우&#10;Quota 사용 정보를&#10;표시할 수 없습니다." Style="{StaticResource  TextBlockStyle}" />
+                                <TextBlock Grid.Row="0" Grid.RowSpan="2" Grid.ColumnSpan="2" x:Name="T_EmptyStorage_4" Text="S3로 설정한 경우&#10;Quota 사용 정보를&#10;표시할 수 없습니다." Style="{StaticResource  TextBlockStyle}" />
                                 <Grid Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="2" x:Name="G_Quota_4">
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="*"/>

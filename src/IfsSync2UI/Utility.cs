@@ -2,7 +2,7 @@
 * Copyright (c) 2021 PSPACE, inc. KSAN Development Team ksan@pspace.co.kr
 * KSAN is a suite of free software: you can redistribute it and/or modify it under the terms of
 * the GNU General Public License as published by the Free Software Foundation, either version 
-* 3 of the License.  See LICENSE for details
+* 3 of the License. See LICENSE for details
 *
 * 본 프로그램 및 관련 소스코드, 문서 등 모든 자료는 있는 그대로 제공이 됩니다.
 * KSAN 프로젝트의 개발자 및 개발사는 이 프로그램을 사용한 결과에 따른 어떠한 책임도 지지 않습니다.
@@ -12,7 +12,6 @@ using Newtonsoft.Json.Linq;
 using System;
 using System.ComponentModel;
 using System.Drawing;
-using System.IO;
 using System.Net;
 using System.Net.NetworkInformation;
 using System.Net.Security;
@@ -23,8 +22,12 @@ using System.Windows;
 using System.Windows.Interop;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
+using System.Net.Http;
+using System.Net.Http.Headers;
+using System.Runtime.Versioning;
+using IfsSync2Data;
 
-namespace IfsSync2Data
+namespace IfsSync2UI
 {
 	#region FileIcon
 	[StructLayout(LayoutKind.Sequential, CharSet = CharSet.Auto)]
@@ -62,33 +65,11 @@ namespace IfsSync2Data
 
 	static class Utility
 	{
+		static readonly char[] SpecialCharacters = { '\\', '/', ':', '*', '?', '"', '<', '>', '|' };
+
 		public static void ErrorMessageBox(string Msg, string Title)
 		{
 			MessageBox.Show(Msg, Title, MessageBoxButton.OK, MessageBoxImage.Error, MessageBoxResult.OK, MessageBoxOptions.DefaultDesktopOnly);
-		}
-
-		public static bool GetVolumeSize(string URL, out long Total, out long Used)
-		{
-			try
-			{
-				string url = URL + MainData.CURL_GET_S3_VOLUME_SIZE;
-				HttpWebRequest request = (HttpWebRequest)WebRequest.Create(url);
-				request.Method = MainData.CURL_STR_GET_METHOD;
-				request.ContentType = MainData.CURL_STR_CONTENT_TYPE;
-				request.Timeout = MainData.CURL_TIMEOUT_DELAY;
-				ServerCertificateValidationCallback();
-
-				// Response 처리
-				using WebResponse resp = request.GetResponse();
-				long.TryParse(resp.Headers[MainData.CURL_GET_S3_VOLUME_TOTAL_SIZE], out Total);
-				long.TryParse(resp.Headers[MainData.CURL_GET_S3_VOLUME_USED_SIZE], out Used);
-			}
-			catch
-			{
-				Total = Used = 0;
-				return false;
-			}
-			return true;
 		}
 
 		public static void ServerCertificateValidationCallback()
@@ -96,26 +77,15 @@ namespace IfsSync2Data
 			if (ServicePointManager.ServerCertificateValidationCallback == null)
 			{
 				ServicePointManager.ServerCertificateValidationCallback +=
-				delegate (Object obj, X509Certificate certificate, X509Chain chain, SslPolicyErrors errors) { return true; };
+				delegate (object obj, X509Certificate certificate, X509Chain chain, SslPolicyErrors errors) { return true; };
 			}
 		}
 
-		public static bool FileNameSpecialCharactersErrorCheck(string FileName)
+		public static bool SpecialCharactersErrorCheck(string FileName)
 		{
-			char[] SpecialCharacters = { '\\', '/', ':', '*', '?', '"', '<', '>', '|' };
-
-			foreach (char Special in SpecialCharacters) if (FileName.IndexOf(Special) >= 0) return true;
+			foreach (char Special in SpecialCharacters) if (FileName.Contains(Special)) return true;
 			return false;
 		}
-
-		public static bool ExtensionCharactersErrorCheck(string FileName)
-		{
-			char[] SpecialCharacters = { '\\', '/', ':', '*', '?', '"', '<', '>', '|' };
-
-			foreach (char Special in SpecialCharacters) if (FileName.IndexOf(Special) >= 0) return true;
-			return false;
-		}
-
 		/************************* Get Global User **********************************/
 
 		static readonly string STR_IP = "ip";
@@ -171,44 +141,26 @@ namespace IfsSync2Data
 						$"\"{STR_GROUP}\":\"0\"," +
 						$"\"{STR_PC_NAME}\":\"{pcName}\"}}";
 
-			HttpWebRequest request = (HttpWebRequest)WebRequest.Create(URL);
-			request.Method = MainData.CURL_STR_POST_METHOD;
-			request.ContentType = MainData.CURL_STR_CONTENT_TYPE;
-			request.Timeout = MainData.CURL_TIMEOUT_DELAY;
-			//Error evasion
-			ServerCertificateValidationCallback();
-			// POST할 데이타를 Request Stream에 쓴다
-			byte[] bytes = Encoding.ASCII.GetBytes(data);
-			request.ContentLength = bytes.Length; // 바이트수 지정
+			using var client = new HttpClient();
+			client.Timeout = TimeSpan.FromMilliseconds(MainData.CURL_TIMEOUT_DELAY);
 
-			using (Stream reqStream = request.GetRequestStream())
-			{
-				reqStream.Write(bytes, 0, bytes.Length);
-			}
-
-			// Response 처리
-			string responseText = string.Empty;
-			using (var resp = request.GetResponse())
-			{
-				Stream respStream = resp.GetResponseStream();
-				using (var sr = new StreamReader(respStream)) { responseText = sr.ReadToEnd(); }
-			}
+			var content = new StringContent(data, Encoding.UTF8, MainData.CURL_STR_CONTENT_TYPE);
+			var response = client.PostAsync(URL, content).Result;
+			var responseText = response.Content.ReadAsStringAsync().Result;
 
 			JObject UserObj = JObject.Parse(responseText);
 
-
 			if (!int.TryParse(UserObj[STR_RET].ToString(), out int ret))
 			{
-				throw new Exception(STR_RET + " is Not int");
+				throw new ArgumentException(STR_RET + " is Not int");
 			}
 			if (ret != 0)
 			{
 				string ErrorMsg = UserObj[STR_ERR_MSG].ToString();
-				throw new Exception(ErrorMsg);
+				throw new InvalidOperationException(ErrorMsg);
 			}
 
-			//Get User Data
-			var User = new UserData()
+			return new UserData()
 			{
 				URL = UserObj[STR_S3PROXY].ToString(),
 				UserName = UserObj[STR_USERID].ToString(),
@@ -217,8 +169,6 @@ namespace IfsSync2Data
 				StorageName = UserObj[STR_TENANT_KEY].ToString(),
 				Debug = false
 			};
-
-			return User;
 		}
 		public static UserData GetGlobalUser(string _URL, string IP, string HostName, string MAC, string PcName)
 		{
@@ -235,41 +185,27 @@ namespace IfsSync2Data
 							$"\"{STR_GROUP}\":\"0\"," +
 							$"\"{STR_PC_NAME}\":\"{PcName}\"}}";
 
-			HttpWebRequest request = (HttpWebRequest)WebRequest.Create(URL);
-			request.Method = MainData.CURL_STR_POST_METHOD;
-			request.ContentType = MainData.CURL_STR_CONTENT_TYPE;
-			request.Timeout = MainData.CURL_TIMEOUT_DELAY;
-			//Error evasion
-			ServerCertificateValidationCallback();
-			// POST할 데이타를 Request Stream에 쓴다
-			byte[] bytes = Encoding.ASCII.GetBytes(data);
-			request.ContentLength = bytes.Length; // 바이트수 지정
+			using var client = new HttpClient();
+			client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue(MainData.CURL_STR_CONTENT_TYPE));
+			client.Timeout = TimeSpan.FromMilliseconds(MainData.CURL_TIMEOUT_DELAY);
 
-			using (var reqStream = request.GetRequestStream()) { reqStream.Write(bytes, 0, bytes.Length); }
-
-			// Response 처리
-			string responseText = string.Empty;
-			using (WebResponse resp = request.GetResponse())
-			{
-				var respStream = resp.GetResponseStream();
-				using (var sr = new StreamReader(respStream)) { responseText = sr.ReadToEnd(); };
-			}
+			var content = new StringContent(data, Encoding.UTF8, MainData.CURL_STR_CONTENT_TYPE);
+			var response = client.PostAsync(URL, content).Result;
+			var responseText = response.Content.ReadAsStringAsync().Result;
 
 			JObject UserObj = JObject.Parse(responseText);
 
-
 			if (!int.TryParse(UserObj[STR_RET].ToString(), out int ret))
 			{
-				throw new Exception(STR_RET + " is Not int");
+				throw new ArgumentException(STR_RET + " is Not int");
 			}
 			if (ret != 0)
 			{
 				string ErrorMsg = UserObj[STR_ERR_MSG].ToString();
-				throw new Exception(ErrorMsg);
+				throw new InvalidOperationException(ErrorMsg);
 			}
 
-			//Get User Data
-			var User = new UserData()
+			return new UserData()
 			{
 				URL = UserObj[STR_S3PROXY].ToString(),
 				UserName = UserObj[STR_USERID].ToString(),
@@ -278,8 +214,6 @@ namespace IfsSync2Data
 				StorageName = UserObj[STR_TENANT_KEY].ToString(),
 				Debug = false
 			};
-
-			return User;
 		}
 		/*****************************Get Icon***************************************/
 		[DllImport("shell32.dll", CharSet = CharSet.Auto)]
@@ -300,36 +234,34 @@ namespace IfsSync2Data
 		[DllImport("gdi32.dll", SetLastError = true)]
 		static extern bool DeleteObject(IntPtr hObject);
 
+		[SupportedOSPlatform("windows10.0")]
 		public static ImageSource IconToImageSource(this Icon icon)
 		{
 			ImageSource wpfBitmap = null;
-			try
+			Bitmap bitmap = icon.ToBitmap();
+			IntPtr hBitmap = bitmap.GetHbitmap();
+
+			wpfBitmap = Imaging.CreateBitmapSourceFromHBitmap(
+				hBitmap,
+				IntPtr.Zero,
+				Int32Rect.Empty,
+				BitmapSizeOptions.FromEmptyOptions());
+
+			if (!DeleteObject(hBitmap))
 			{
-				Bitmap bitmap = icon.ToBitmap();
-				IntPtr hBitmap = bitmap.GetHbitmap();
-
-				wpfBitmap = Imaging.CreateBitmapSourceFromHBitmap(
-					hBitmap,
-					IntPtr.Zero,
-					Int32Rect.Empty,
-					BitmapSizeOptions.FromEmptyOptions());
-
-				if (!DeleteObject(hBitmap))
-				{
-					throw new Win32Exception();
-				}
+				throw new Win32Exception();
 			}
-			catch { }
-
 			return wpfBitmap;
 		}
 
+		[SupportedOSPlatform("windows10.0")]
 		public static ImageSource GetIconImageSource(string path)
 		{
 			Icon defaultIcon = GetIcon(path, IconSize.Small, ItemState.Close);
 			return IconToImageSource(defaultIcon);
 		}
 
+		[SupportedOSPlatform("windows10.0")]
 		public static Icon GetIcon(string path, IconSize size, ItemState state)
 		{
 			var flags = ICON | USE_FILE_ATTRIBUTES;
@@ -338,17 +270,12 @@ namespace IfsSync2Data
 			if (Equals(size, IconSize.Small)) { flags += SMALL_ICON; }
 			else { flags += LARGE_ICON; }
 
-			var shfi = new SHFileInfo();
-			var res = SHGetFileInfo(path, FILE_ATTRIBUTE_DIRECTORY, out shfi, (uint)Marshal.SizeOf(shfi), flags);
+			var res = SHGetFileInfo(path, FILE_ATTRIBUTE_DIRECTORY, out var shfi, (uint)Marshal.SizeOf<SHFileInfo>(), flags);
 			if (Equals(res, IntPtr.Zero)) throw Marshal.GetExceptionForHR(Marshal.GetHRForLastWin32Error());
+
 			try
 			{
-				Icon.FromHandle(shfi.hIcon);
 				return (Icon)Icon.FromHandle(shfi.hIcon).Clone();
-			}
-			catch
-			{
-				throw;
 			}
 			finally
 			{
@@ -357,3 +284,4 @@ namespace IfsSync2Data
 		}
 	}
 }
+

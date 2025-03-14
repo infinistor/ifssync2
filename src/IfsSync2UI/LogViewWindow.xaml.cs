@@ -16,12 +16,14 @@ using System.Windows.Controls;
 using System.Windows.Forms;
 using IfsSync2Data;
 using log4net;
+using System.Runtime.Versioning;
 
 namespace IfsSync2UI
 {
 	/// <summary>
 	/// LogViewWindow.xaml에 대한 상호 작용 논리
 	/// </summary>
+	[SupportedOSPlatform("windows6.1")]
 	public partial class LogViewWindow : Window
 	{
 		private static readonly ILog log = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);

@@ -2,7 +2,7 @@
 * Copyright (c) 2021 PSPACE, inc. KSAN Development Team ksan@pspace.co.kr
 * KSAN is a suite of free software: you can redistribute it and/or modify it under the terms of
 * the GNU General Public License as published by the Free Software Foundation, either version 
-* 3 of the License.  See LICENSE for details
+* 3 of the License. See LICENSE for details
 *
 * 본 프로그램 및 관련 소스코드, 문서 등 모든 자료는 있는 그대로 제공이 됩니다.
 * KSAN 프로젝트의 개발자 및 개발사는 이 프로그램을 사용한 결과에 따른 어떠한 책임도 지지 않습니다.
@@ -13,19 +13,19 @@ using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
-using System.Drawing;
 using System.IO;
 using System.Reflection;
 using System.Threading;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
-using System.Windows.Media;
 using IfsSync2Data;
 using System.Timers;
+using System.Runtime.Versioning;
 
 namespace IfsSync2UI
 {
+	[SupportedOSPlatform("windows10.0")]
 	public partial class JobTab : UserControl
 	{
 		private readonly static string CLASS_NAME = "JobTab";
@@ -42,31 +42,30 @@ namespace IfsSync2UI
 		private static readonly string Root = "MyPC";
 		private readonly ObservableCollection<TreeNode> TreeList;
 		private readonly ObservableCollection<DirectoryData> DirectoryList;
-		private readonly string RootPath;
 		public readonly JobData Job;
 
 		/*************************** Job State *************************************/
-		private JobState State = null;
-		private readonly System.Timers.Timer StateCheckTimer;
+		private JobStatus _status = null;
+		private readonly System.Timers.Timer StatusCheckTimer;
 		/************************ Schedule Data *************************************/
-		private readonly List<CheckBox> WeekCheckBoxList = new();
+		private readonly List<CheckBox> WeekCheckBoxList = [];
 
 		/*************************** Db Data ***************************************/
-		private readonly UserDbManager UserDb;
-		private readonly JobDbManager JobDb;
-		private readonly ExtensionDbManager ExtDb;
-		private readonly TaskDbManager TaskDb;
+		readonly UserDbManager _userDb;
+		readonly JobDbManager _jobDb;
+		readonly ExtensionDbManager _extDb;
+		readonly TaskDbManager _taskDb;
 
 		/************************ Extension List ************************************/
-		private readonly List<string> ExtensionList = new();
-		private readonly ObservableCollection<string> FindExtensionList = new();
+		private readonly List<string> ExtensionList = [];
+		private readonly ObservableCollection<string> FindExtensionList = [];
 
 		/************************* Analysis Data ************************************/
 		private readonly ProgressData Analysis = new();
 		private Thread AnalysisThread = null;
-		public bool BackupStart = false;
+		public bool BackupStart { get; set; } = false;
 		/*************************** VSS Data ************************************/
-		private readonly List<string> VSSFileExt = new();
+		private readonly List<string> VSSFileExt = [];
 		private readonly string VSSFILEEXTLIST = "pst|ost|db";
 
 		/*************************** Log Data ************************************/
@@ -74,17 +73,16 @@ namespace IfsSync2UI
 		private readonly System.Timers.Timer UpdateLogTimer;
 		private long StartPoint = 0;
 		/****************************** Init *************************************/
-		public JobTab(TabItem Tab, JobData job, string _RootPath, bool _NewTab = false)
+		public JobTab(TabItem Tab, JobData job, bool _NewTab = false)
 		{
 			NewTab = _NewTab;
 			ThisTab = Tab;
 			Job = job;
-			RootPath = _RootPath;
-			DirectoryList = new ObservableCollection<DirectoryData>();
-			UserDb = new UserDbManager();
-			JobDb = new JobDbManager();
-			ExtDb = new ExtensionDbManager();
-			TaskDb = new TaskDbManager(job.JobName);
+			DirectoryList = [];
+			_userDb = new();
+			_jobDb = new();
+			_extDb = new();
+			_taskDb = new(job.JobName);
 
 			InitializeComponent();
 			VSSFileExtInit();
@@ -92,16 +90,23 @@ namespace IfsSync2UI
 			ScheduleInit();
 
 			//dir Tree Create
-			TreeList = new ObservableCollection<TreeNode>();
+			TreeList = [];
 
 			UserDataListUpdate();
 			SourceSelectionUpdate();
 			ExtensionListUpdate();
 			Bindings();
 
-			StateCheckTimer = new System.Timers.Timer() { Interval = MainData.DEFAULT_STATUS_CHECK_DELAY };
-			StateCheckTimer.Elapsed += new ElapsedEventHandler(StateCheck);
+			// ALL 확장자 체크 상태 초기화 추가
+			if (Job.WhiteFileExt.Contains("ALL"))
+			{
+				CB_ExtensionAll.IsChecked = true;
+				// 확장자 관련 컨트롤 비활성화
+				DisableExtensionControls();
+			}
 
+			StatusCheckTimer = new System.Timers.Timer() { Interval = MainData.DEFAULT_STATUS_CHECK_DELAY };
+			StatusCheckTimer.Elapsed += new ElapsedEventHandler(StatusCheck);
 
 			UpdateLogTimer = new System.Timers.Timer { Interval = MainData.DEFAULT_STATUS_CHECK_DELAY };
 			UpdateLogTimer.Elapsed += new ElapsedEventHandler(LogUpdate);
@@ -133,9 +138,9 @@ namespace IfsSync2UI
 		}
 		private void StateInit()
 		{
-			if (State == null) State = new JobState(Job.HostName, Job.JobName, true);
+			_status ??= new JobStatus(Job.HostName, Job.JobName, true);
 
-			StateCheckTimer.Start();
+			StatusCheckTimer.Start();
 			UpdateLogTimer.Start();
 		}
 		private void Bindings()
@@ -155,32 +160,34 @@ namespace IfsSync2UI
 
 			switch (Job.Policy)
 			{
-				case JobData.PolicyName.Now:
+				case JobData.PolicyType.Now:
 					Grid_Instant.Visibility = Visibility.Visible;
 					L_Monitor.Content = "VSS";
 					L_VSS.Content = "Analysis";
 					L_Sender.Content = "Upload";
 					L_Monitor.ToolTip = "네트워크 드라이브에서는 VSS가 적용되지 않습니다.";
 					break;
-				case JobData.PolicyName.Schedule:
+				case JobData.PolicyType.Schedule:
 					Grid_Schedule.Visibility = Visibility.Visible;
 					B_Save.Visibility = Visibility.Visible;
 					break;
-				case JobData.PolicyName.RealTime:
+				case JobData.PolicyType.RealTime:
 					B_Save.Visibility = Visibility.Visible;
 					break;
 			}
 		}
-
 		public void Close()
 		{
 			LogViewWindow?.Close();
-			if (Job.Policy == JobData.PolicyName.Now) Analysis.End();
+			if (Job.Policy == JobData.PolicyType.Now) Analysis.Quit();
 		}
 		public void Delete()
 		{
-			if (Job.Id > 0) JobDb.Delete(Job.Id);
+			if (Job.Id > 0) _jobDb.Delete(Job.Id);
 			log.Info($"Deleted : {Job.JobName}");
+
+			StatusCheckTimer.Stop();
+			UpdateLogTimer.Stop();
 		}
 		private void ChangeData(bool Changed)
 		{
@@ -201,7 +208,7 @@ namespace IfsSync2UI
 			if (!NewTab)
 			{
 				B_LogView.IsEnabled = true;
-				if (Job.Policy != JobData.PolicyName.Now)
+				if (Job.Policy != JobData.PolicyType.Now)
 				{
 					C_UserList.IsEnabled = false;
 					B_StorageRefresh.Visibility = Visibility.Hidden;
@@ -219,20 +226,20 @@ namespace IfsSync2UI
 		{
 			C_UserList.Items.Clear();
 
-			GlobalUserList = UserDb.GetUsers(true);
-			NormalUserList = UserDb.GetUsers(Environment.UserName);
+			GlobalUserList = _userDb.GetUsers(true);
+			NormalUserList = _userDb.GetUsers(Environment.UserName);
 
 			foreach (UserData User in GlobalUserList) C_UserList.Items.Add(User.StorageName);
 			foreach (UserData User in NormalUserList) C_UserList.Items.Add(User.StorageName);
 
-			if (Job.UserID != -1)
+			if (Job.UserId != -1)
 			{
 				string StorageName = string.Empty;
 
 				if (Job.IsGlobalUser) StorageName = MainData.MAIN_STORAGE_NAME;
 				else
 					foreach (UserData User in NormalUserList)
-						if (User.Id == Job.UserID) StorageName = User.StorageName;
+						if (User.Id == Job.UserId) StorageName = User.StorageName;
 
 				if (!string.IsNullOrWhiteSpace(StorageName)) C_UserList.SelectedItem = StorageName;
 			}
@@ -303,16 +310,16 @@ namespace IfsSync2UI
 
 			Schedule Schedules = new();
 			//Get Day of the Week
-			if (C_Every.IsChecked.Value) Schedules.AddWeek(Schedule.EVERY);
+			if (C_Every.IsChecked.Value) Schedules.AddDay(WeekDays.Every);
 			else
 			{
-				if (C_Sunday.IsChecked.Value) Schedules.AddWeek(Schedule.SUNDAY);
-				if (C_Monday.IsChecked.Value) Schedules.AddWeek(Schedule.MONDAY);
-				if (C_Tuesday.IsChecked.Value) Schedules.AddWeek(Schedule.TUESDAY);
-				if (C_Wednesday.IsChecked.Value) Schedules.AddWeek(Schedule.WEDNESDAY);
-				if (C_Thursday.IsChecked.Value) Schedules.AddWeek(Schedule.THURSDAY);
-				if (C_Friday.IsChecked.Value) Schedules.AddWeek(Schedule.FRIDAY);
-				if (C_Saturday.IsChecked.Value) Schedules.AddWeek(Schedule.SATURDAY);
+				if (C_Sunday.IsChecked.Value) Schedules.AddDay(WeekDays.Sunday);
+				if (C_Monday.IsChecked.Value) Schedules.AddDay(WeekDays.Monday);
+				if (C_Tuesday.IsChecked.Value) Schedules.AddDay(WeekDays.Tuesday);
+				if (C_Wednesday.IsChecked.Value) Schedules.AddDay(WeekDays.Wednesday);
+				if (C_Thursday.IsChecked.Value) Schedules.AddDay(WeekDays.Thursday);
+				if (C_Friday.IsChecked.Value) Schedules.AddDay(WeekDays.Friday);
+				if (C_Saturday.IsChecked.Value) Schedules.AddDay(WeekDays.Saturday);
 			}
 			Schedules.SetAtTime(C_Hours.SelectedIndex, C_Mins.SelectedIndex);
 
@@ -356,21 +363,18 @@ namespace IfsSync2UI
 				Utility.ErrorMessageBox("Error : Extension List is Empty", "Save");
 				return;
 			}
-			if (Job.Policy == JobData.PolicyName.Schedule)
+			if (Job.Policy == JobData.PolicyType.Schedule && Job.ScheduleList.Count == 0)
 			{
-				if (Job.ScheduleList.Count == 0)
-				{
-					Utility.ErrorMessageBox("Error : Schedule List is Empty", "Save");
-					return;
-				}
+				Utility.ErrorMessageBox("Error : Schedule List is Empty", "Save");
+				return;
 			}
 
-			if (!JobDb.PutJobData(Job))
+			if (!_jobDb.PutJobData(Job))
 			{
 				Utility.ErrorMessageBox("Error : Failed to save job", "Save");
 				return;
 			}
-			if (Job.Id < 0) Job.Id = JobDb.GetJobDataId(Job.HostName, Job.JobName);
+			if (Job.Id < 0) Job.Id = _jobDb.GetJobDataId(Job.HostName, Job.JobName);
 			if (NewTab)
 			{
 				Job.StrBlackPath = MainData.DEFAULT_BLACK_PATH_LIST;
@@ -454,13 +458,16 @@ namespace IfsSync2UI
 			log.Info("Load root directory");
 
 			string userName = "Default";
-
-			string myUserPath = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+			string myUserPath = string.Empty;
 			try
 			{
+				myUserPath = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
 				userName = Environment.UserName;
 			}
-			catch { }
+			catch (Exception ex)
+			{
+				log.Error($"LoadDrive : {ex.Message}");
+			}
 
 			var myUserItem = new TreeNode()
 			{
@@ -475,7 +482,7 @@ namespace IfsSync2UI
 			TreeList.Add(myUserItem);
 			TreeList.Add(root);
 		}
-		private void GetPCSubDirectories(TreeNode node)
+		private static void GetPCSubDirectories(TreeNode node)
 		{
 			if (node == null) return;
 			if (node.Children.Count > 0) return;
@@ -485,21 +492,21 @@ namespace IfsSync2UI
 			{
 				DirectoryInfo dirInfo = new(node.FullPath);
 
-				foreach (DirectoryInfo subDir in dirInfo.GetDirectories())
+				foreach (var subDir in dirInfo.GetDirectories())
 				{
 					if (subDir.Name == "Documents and Settings" ||
 						subDir.Name == "System Volume Information" ||
-						subDir.FullName.IndexOf("$") > 0)
+						subDir.FullName.Contains('$'))
 						continue;
 
-					Icon defaultIcon = Utility.GetIcon(subDir.FullName, IconSize.Small, ItemState.Close);
-					ImageSource fileIcon = Utility.IconToImageSource(defaultIcon);
+					var defaultIcon = Utility.GetIcon(subDir.FullName, IconSize.Small, ItemState.Close);
+					var defaultIconSource = Utility.IconToImageSource(defaultIcon);
 
 					var item = new TreeNode()
 					{
 						Name = subDir.Name,
 						FullPath = subDir.FullName,
-						FileIcon = Utility.GetIconImageSource(subDir.FullName) //FileIcon = fileIcon
+						FileIcon = Utility.GetIconImageSource(subDir.FullName) ?? defaultIconSource
 					};
 					node.Children.Add(item);
 				}
@@ -540,7 +547,7 @@ namespace IfsSync2UI
 			}
 			log.Info(DirPath);
 		}
-		private bool CheckCheckBox(TreeNode Node, string DirPath)
+		private static bool CheckCheckBox(TreeNode Node, string DirPath)
 		{
 			foreach (var childNode in Node.Children)
 			{
@@ -554,11 +561,8 @@ namespace IfsSync2UI
 					return true;
 				}
 
-				if (childNode.Children.Count > 0)
-				{
-					if (CheckCheckBox(childNode, DirPath))
-						return true;
-				}
+				if (childNode.Children.Count > 0 && CheckCheckBox(childNode, DirPath))
+					return true;
 			}
 			return false;
 		}
@@ -574,39 +578,29 @@ namespace IfsSync2UI
 		{
 			foreach (var node in TreeList)
 			{
-				if (node.FullPath == DirPath)
+				if (node.FullPath == DirPath && node.IsChecked == true)
 				{
-					if (node.IsChecked == true)
-					{
-						node.IsChecked = false;
-						return;
-					}
+					node.IsChecked = false;
+					return;
 				}
-				if (node.Children.Count > 0)
-				{
-					if (UncheckCheckBox(node, DirPath)) return;
-				}
+				if (node.Children.Count > 0 && UncheckCheckBox(node, DirPath))
+					return;
 			}
 			log.Info(DirPath);
 		}
-		private bool UncheckCheckBox(TreeNode Node, string DirPath)
+		private static bool UncheckCheckBox(TreeNode Node, string DirPath)
 		{
 			bool uncheck = false;
 
 			foreach (var childNode in Node.Children)
 			{
-				if (childNode.FullPath == DirPath)
+				if (childNode.FullPath == DirPath && childNode.IsChecked == true)
 				{
-					if (childNode.IsChecked == true)
-					{
-						childNode.IsChecked = false;
-						return true;
-					}
+					childNode.IsChecked = false;
+					return true;
 				}
-				if (childNode.Children.Count > 0)
-				{
-					if (UncheckCheckBox(childNode, DirPath)) return true;
-				}
+				if (childNode.Children.Count > 0 && UncheckCheckBox(childNode, DirPath))
+					return true;
 			}
 			return uncheck;
 		}
@@ -635,12 +629,12 @@ namespace IfsSync2UI
 			UpdateButton();
 		}
 
-		private bool AddPath(string DirPath)
+		private void AddPath(string DirPath)
 		{
 			try
 			{
-				if (DirPath == Root) { }
-				else if (!Job.ExistsDirectory(DirPath))
+				if (DirPath == Root) return;
+				if (!Job.ExistsDirectory(DirPath))
 				{
 					ListViewAdd(DirPath);
 					Job.Path.Add(DirPath);
@@ -652,7 +646,6 @@ namespace IfsSync2UI
 			}
 
 			ChangeData(true);
-			return true;
 		}
 
 		private bool DeletePath(string DirPath)
@@ -685,7 +678,7 @@ namespace IfsSync2UI
 			{
 				try
 				{
-					List<string> DeletePathList = new();
+					List<string> DeletePathList = [];
 
 					foreach (var SubDirectory in Job.Path) if (SubDirectory.StartsWith(MainPath)) DeletePathList.Add(SubDirectory);
 					foreach (string SubPath in DeletePathList) DeletePath(SubPath);
@@ -706,11 +699,11 @@ namespace IfsSync2UI
 			}
 			return false;
 		}
-		private bool IsCheckedSubNode(TreeNode Node, string DirPath)
+		private static bool IsCheckedSubNode(TreeNode Node, string DirPath)
 		{
 			foreach (var SubNode in Node.Children)
 			{
-				if (SubNode.Name.Equals(DirPath)) if (SubNode.IsAllChildrenChecked()) return true;
+				if (SubNode.Name.Equals(DirPath) && SubNode.IsAllChildrenChecked()) return true;
 			}
 			return false;
 		}
@@ -729,10 +722,8 @@ namespace IfsSync2UI
 						return;
 					}
 
-					if (Node.Children.Count > 0)
-					{
-						if (FindNodeToPath(Node, DirPath)) return;
-					}
+					if (Node.Children.Count > 0 && FindNodeToPath(Node, DirPath))
+						return;
 				}
 			}
 		}
@@ -749,10 +740,8 @@ namespace IfsSync2UI
 					return true;
 				}
 
-				if (childNode.Children.Count > 0)
-				{
-					if (FindNodeToPath(childNode, TargetPath)) return true;
-				}
+				if (childNode.Children.Count > 0 && FindNodeToPath(childNode, TargetPath))
+					return true;
 			}
 			return false;
 		}
@@ -800,7 +789,7 @@ namespace IfsSync2UI
 
 		private void ExtensionListUpdate()
 		{
-			List<string> ExtList = ExtDb.GetExtensionList();
+			List<string> ExtList = _extDb.GetExtensionList();
 
 			if (ExtList == null || ExtList.Count == 0)
 			{
@@ -821,7 +810,6 @@ namespace IfsSync2UI
 			FindExtensionList.Clear();
 			if (string.IsNullOrWhiteSpace(T_ExtensionName.Text))
 			{
-				//B_ExtAdd.IsEnabled = false;
 				foreach (string Ext in ExtensionList)
 					if (!Job.WhiteFileExt.Contains(Ext)) FindExtensionList.Add(Ext);
 			}
@@ -831,14 +819,11 @@ namespace IfsSync2UI
 
 				foreach (string Ext in ExtensionList)
 				{
-					if (!Job.WhiteFileExt.Contains(Ext))
-					{
-						if (Ext.Contains(FindExt)) FindExtensionList.Add(Ext);
-					}
+					if (!Job.WhiteFileExt.Contains(Ext) && Ext.Contains(FindExt))
+						FindExtensionList.Add(Ext);
 				}
 
 				if (FindExtensionList.Count == 0) B_ExtAdd.IsEnabled = true;
-				//else B_ExtAdd.IsEnabled = false;
 			}
 		}
 
@@ -859,18 +844,18 @@ namespace IfsSync2UI
 			{
 				string Extension = T_ExtensionName.Text.ToLower();
 
-				if (Utility.ExtensionCharactersErrorCheck(Extension))
+				if (Utility.SpecialCharactersErrorCheck(Extension))
 				{
 					Utility.ErrorMessageBox("확장자명에 다음 단어를 사용할 수 없습니다.\n[\\, /, :, *, ?, \", <, >, |]", "Extension");
 					return;
 				}
-				if (ExtDb.Check(Extension))
+				if (_extDb.Check(Extension))
 				{
 					Utility.ErrorMessageBox("해당 확장자명이 목록에 이미 존재합니다!", "Extension");
 					return;
 				}
 
-				if (ExtDb.Insert(Extension))
+				if (_extDb.Insert(Extension))
 				{
 					T_ExtensionName.Text = string.Empty;
 					ExtensionListUpdate();
@@ -965,7 +950,7 @@ namespace IfsSync2UI
 				while (L_ExtensionList.SelectedIndex >= 0)
 				{
 					string del = L_ExtensionList.SelectedItem.ToString();
-					ExtDb.Delete(del);
+					_extDb.Delete(del);
 					FindExtensionList.Remove(del);
 				}
 			}
@@ -978,30 +963,30 @@ namespace IfsSync2UI
 
 		#region Analysis
 
-		private bool AnalysisRun()
+		private void AnalysisRun()
 		{
 			log.Info("Start");
-			TaskDb.InsertLog("Analysis Start!");
+			_taskDb.InsertLog("Analysis Start!");
 			Analysis.Start();
 			Stopwatch sw = new();
 			sw.Start();
-			State.Filter = true;
-			State.Quit = false;
+			_status.Filter = true;
+			_status.Quit = false;
 
 			//Analysis Init
 			ButtonLock(false);
 
 			//Analysis
-			List<string> ExtensionList = new(Job.WhiteFileExt);
-			List<string> DirectoryList = new(Job.Path);
+			List<string> extensionList = [.. Job.WhiteFileExt];
+			List<string> directoryList = [.. Job.Path];
 
 			//Directory Search
-			foreach (var myDir in DirectoryList)
+			foreach (var myDir in directoryList)
 			{
 				if (Analysis.IsQuit) break;
 				try
 				{
-					SubDirectory(myDir, ExtensionList);
+					SubDirectory(myDir, extensionList);
 				}
 				catch (Exception e)
 				{
@@ -1011,16 +996,15 @@ namespace IfsSync2UI
 
 			ButtonLock(true);
 			sw.Stop();
-			State.Filter = false;
-			State.Quit = true;
+			_status.Filter = false;
+			_status.Quit = true;
 
-			if (Analysis.IsQuit) return false;
-			Analysis.End();
+			if (Analysis.IsQuit) return;
+			Analysis.Quit();
 
-			log.Info($"End. Time : {sw.ElapsedMilliseconds.ToString()}ms");
-			TaskDb.InsertLog($"Analysis End. Time : {sw.ElapsedMilliseconds.ToString()}ms");
-			TaskDb.InsertLog($"Upload File Count : {Analysis.UploadFileCount}\tUpload File Size : {MainData.SizeToString(Analysis.UploadFileSize)}");
-			return true;
+			log.Info($"End. Time : {sw.ElapsedMilliseconds}ms");
+			_taskDb.InsertLog($"Analysis End. Time : {sw.ElapsedMilliseconds}ms");
+			_taskDb.InsertLog($"Upload File Count : {Analysis.UploadFileCount}\tUpload File Size : {MainData.SizeToString(Analysis.UploadFileSize)}");
 		}
 
 		private void SubDirectory(string ParentDirectory, List<string> ExtensionList)
@@ -1032,7 +1016,7 @@ namespace IfsSync2UI
 			foreach (DirectoryInfo dInfo in dInfoParent.GetDirectories())
 			{
 				if (Analysis.IsQuit) break;
-				try { SubDirectory(dInfo.FullName, ExtensionList); } catch { };
+				try { SubDirectory(dInfo.FullName, ExtensionList); } catch (Exception ex) { log.Error(ex); }
 			}
 			AddBackupFile(ParentDirectory, ExtensionList);
 		}
@@ -1041,24 +1025,23 @@ namespace IfsSync2UI
 			//add File List
 			string[] files = Directory.GetFiles(ParentDirectory);
 
+			// ALL 확장자 처리를 먼저 체크
+			bool isAllExtension = ExtensionList.Contains("ALL");
+
 			// 파일 나열
 			foreach (string file in files)
 			{
-
 				if (Analysis.IsQuit) break;
 				FileInfo info = new(file);
 
 				if (!info.Exists) continue;
 
 				if ((info.Attributes & FileAttributes.System) == FileAttributes.System) { /*empty*/ }
-				else if (ExtensionList.Contains(info.Extension.Replace(".", "").ToLower()))
+				else if ((isAllExtension || ExtensionList.Contains(info.Extension.Replace(".", "").ToLower()))
+						 && info.FullName.IndexOf('$') < 0)
 				{
-					if (info.FullName.IndexOf("$") < 0)
-					{
-						Analysis.UploadFileCount++;
-						Analysis.UploadFileSize += info.Length;
-
-					}
+					Analysis.UploadFileCount++;
+					Analysis.UploadFileSize += info.Length;
 				}
 				Analysis.CheckCount++;
 			}
@@ -1069,12 +1052,12 @@ namespace IfsSync2UI
 		{
 			RootPath = string.Empty;
 
-			foreach (string Root in Job.Path)
+			foreach (string root in Job.Path)
 			{
-				DirectoryInfo dir = new(Root);
+				DirectoryInfo dir = new(root);
 				if (!dir.Exists)
 				{
-					RootPath = Root;
+					RootPath = root;
 					return true;
 				}
 			}
@@ -1127,19 +1110,19 @@ namespace IfsSync2UI
 			if (PathCheck(out string ErrorPath)) { Utility.ErrorMessageBox(string.Format("[{0}] is not exists!", ErrorPath), CLASS_NAME); return; }
 			if (C_UserList.SelectedIndex < GlobalUserList.Count)
 			{
-				Job.UserID = GlobalUserList[C_UserList.SelectedIndex].Id;
+				Job.UserId = GlobalUserList[C_UserList.SelectedIndex].Id;
 				Job.IsGlobalUser = true;
 			}
 			else
 			{
-				Job.UserID = NormalUserList[C_UserList.SelectedIndex - GlobalUserList.Count].Id;
+				Job.UserId = NormalUserList[C_UserList.SelectedIndex - GlobalUserList.Count].Id;
 				Job.IsGlobalUser = false;
 			}
-			State.Quit = false;
+			_status.Quit = false;
 			InstantData instantData = new();
-			instantData.Analysis = false;
+			instantData.Init();
 
-			if (!JobDb.PutJobData(Job))
+			if (!_jobDb.PutJobData(Job))
 			{
 				Utility.ErrorMessageBox("Error : Failed to save job", "Save");
 				return;
@@ -1147,10 +1130,9 @@ namespace IfsSync2UI
 
 			ChangeData(false);
 			ButtonLock(false);
-			if (Job.Id < 0) Job.Id = JobDb.GetJobDataId(Job.HostName, Job.JobName);
-			//BackupStart = true;
-
+			if (Job.Id < 0) Job.Id = _jobDb.GetJobDataId(Job.HostName, Job.JobName);
 		}
+
 		private void Btn_Analysis(object sender, RoutedEventArgs e)
 		{
 			if (Analysis.IsRunning) { Utility.ErrorMessageBox("Analysis is Running!", CLASS_NAME); return; }
@@ -1177,39 +1159,38 @@ namespace IfsSync2UI
 
 			if (C_UserList.SelectedIndex < GlobalUserList.Count)
 			{
-				Job.UserID = GlobalUserList[C_UserList.SelectedIndex].Id;
+				Job.UserId = GlobalUserList[C_UserList.SelectedIndex].Id;
 				Job.IsGlobalUser = true;
 			}
 			else
 			{
-				Job.UserID = NormalUserList[C_UserList.SelectedIndex - GlobalUserList.Count].Id;
+				Job.UserId = NormalUserList[C_UserList.SelectedIndex - GlobalUserList.Count].Id;
 				Job.IsGlobalUser = false;
 			}
 		}
 
 		private void Btn_InstantQuit(object sender, RoutedEventArgs e)
 		{
-			if (Analysis.IsRunning) TaskDb.InsertLog("Analysis Stop!");
+			if (Analysis.IsRunning) _taskDb.InsertLog("Analysis Stop!");
 
-			State.Quit = true;
-			Analysis.Stop();
+			_status.Quit = true;
+			_jobDb.UpdateFilterCheck(Job);
+			Analysis.Quit();
 
 		}
 		#endregion Instant Backup
 
-		#region State
+		#region Status
 
-		private void StateCheck(object sender, ElapsedEventArgs e)
+		private void StatusCheck(object sender, ElapsedEventArgs e)
 		{
-			if (Job.Policy == JobData.PolicyName.Now)
+			if (Job.Policy == JobData.PolicyType.Now)
 			{
-				//if (State.Error) State.Quit = true;
-
 				if (Analysis.IsRunning) ButtonLock(false);
-				else if (!State.Quit) ButtonLock(false);
+				else if (!_status.Quit) ButtonLock(false);
 				else
 				{
-					if (State.Filter || State.VSS || State.Sender) { ButtonLock(false); BackupStart = true; }
+					if (_status.Filter || _status.VSS || _status.Sender) { ButtonLock(false); BackupStart = true; }
 					else
 					{
 						if (BackupStart) { BackupStart = false; }
@@ -1218,11 +1199,11 @@ namespace IfsSync2UI
 				}
 			}
 
-			if (State.Filter) Image_Filter.Dispatcher.Invoke(delegate
+			if (_status.Filter) Image_Filter.Dispatcher.Invoke(delegate
 			{
 				Image_Filter.Source = Image_CircleBlue.Source;
 				State_Filter.Content = "구동중";
-				if (Job.Policy == JobData.PolicyName.Now)
+				if (Job.Policy == JobData.PolicyType.Now)
 				{
 					Image_VSS.Source = Image_CircleBlue.Source;
 					State_VSS.Content = "분석중";
@@ -1230,7 +1211,7 @@ namespace IfsSync2UI
 			});
 			else Image_Filter.Dispatcher.Invoke(delegate
 			{
-				if (Job.Policy == JobData.PolicyName.Now)
+				if (Job.Policy == JobData.PolicyType.Now)
 				{
 					if (BackupStart)
 					{
@@ -1251,9 +1232,9 @@ namespace IfsSync2UI
 
 			});
 
-			if (State.VSS) Image_VSS.Dispatcher.Invoke(delegate
+			if (_status.VSS) Image_VSS.Dispatcher.Invoke(delegate
 			{
-				if (Job.Policy == JobData.PolicyName.Now)
+				if (Job.Policy == JobData.PolicyType.Now)
 				{
 					Image_Filter.Source = Image_CircleBlue.Source;
 					State_Filter.Content = "활성화";
@@ -1266,7 +1247,7 @@ namespace IfsSync2UI
 			});
 			else Image_VSS.Dispatcher.Invoke(delegate
 			{
-				if (Job.Policy == JobData.PolicyName.Now)
+				if (Job.Policy == JobData.PolicyType.Now)
 				{
 					Image_Filter.Source = Image_CircleGray.Source;
 					State_Filter.Content = "비활성화";
@@ -1278,10 +1259,10 @@ namespace IfsSync2UI
 				}
 			});
 
-			if (State.Sender) Image_Sender.Dispatcher.Invoke(delegate { Image_Sender.Source = Image_TriangleGreen.Source; State_Sender.Content = "업로드중"; });
+			if (_status.Sender) Image_Sender.Dispatcher.Invoke(delegate { Image_Sender.Source = Image_TriangleGreen.Source; State_Sender.Content = "업로드중"; });
 			else Image_Sender.Dispatcher.Invoke(delegate { Image_Sender.Source = Image_SquareGray.Source; State_Sender.Content = "정지"; });
 
-			if (State.Error) Image_Sender.Dispatcher.Invoke(delegate { Image_Sender.Source = Image_TriangleRed.Source; State_Sender.Content = "접속에러"; });
+			if (_status.Error) Image_Sender.Dispatcher.Invoke(delegate { Image_Sender.Source = Image_TriangleRed.Source; State_Sender.Content = "접속에러"; });
 
 		}
 
@@ -1312,9 +1293,9 @@ namespace IfsSync2UI
 
 		private void LogUpdate(object sender, ElapsedEventArgs e)
 		{
-			List<string> LogList = TaskDb.GetLog(StartPoint);
+			var LogList = _taskDb.GetLog(StartPoint);
 
-			if (LogList.Count > 0)
+			if (LogList?.Count > 0)
 			{
 				StartPoint += LogList.Count;
 
@@ -1332,6 +1313,60 @@ namespace IfsSync2UI
 		}
 
 		#endregion Log View
+
+		private void ExtensionAll_Checked(object sender, RoutedEventArgs e)
+		{
+			Job.WhiteFileExt.Clear();
+			Job.VSSFileExt.Clear();
+			Job.WhiteFileExt.Add("ALL");
+			ExtensionListUpdate();
+			ChangeData(true);
+			UpdateButton();
+
+			DisableExtensionControls();
+		}
+
+		private void ExtensionAll_Unchecked(object sender, RoutedEventArgs e)
+		{
+			// ALL 확장자 제거
+			Job.WhiteFileExt.Remove("ALL");
+
+			// 확장자 관련 컨트롤 활성화
+			EnableExtensionControls();
+
+			ExtensionListUpdate();
+			UpdateButton();
+		}
+
+		// 확장자 컨트롤 비활성화를 위한 헬퍼 메서드
+		private void DisableExtensionControls()
+		{
+			T_ExtensionName.IsEnabled = false;
+			B_ExtAdd.IsEnabled = false;
+			B_ExtDel.IsEnabled = false;
+			L_ExtensionList.IsEnabled = false;
+			L_SelectedExtensionList.IsEnabled = false;
+			B_ExtensionAllDelete.IsEnabled = false;
+			B_ExtensionDelete.IsEnabled = false;
+			B_ExtensionAdd.IsEnabled = false;
+			B_ExtensionAllAdd.IsEnabled = false;
+			B_ExtensionRefresh.IsEnabled = false;
+		}
+
+		// 확장자 컨트롤 활성화를 위한 헬퍼 메서드 추가
+		private void EnableExtensionControls()
+		{
+			T_ExtensionName.IsEnabled = true;
+			B_ExtAdd.IsEnabled = true;
+			B_ExtDel.IsEnabled = true;
+			L_ExtensionList.IsEnabled = true;
+			L_SelectedExtensionList.IsEnabled = true;
+			B_ExtensionAllDelete.IsEnabled = true;
+			B_ExtensionDelete.IsEnabled = true;
+			B_ExtensionAdd.IsEnabled = true;
+			B_ExtensionAllAdd.IsEnabled = true;
+			B_ExtensionRefresh.IsEnabled = true;
+		}
 
 	}
 }

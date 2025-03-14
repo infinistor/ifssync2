@@ -2,7 +2,7 @@
 * Copyright (c) 2021 PSPACE, inc. KSAN Development Team ksan@pspace.co.kr
 * KSAN is a suite of free software: you can redistribute it and/or modify it under the terms of
 * the GNU General Public License as published by the Free Software Foundation, either version 
-* 3 of the License.  See LICENSE for details
+* 3 of the License. See LICENSE for details
 *
 * 본 프로그램 및 관련 소스코드, 문서 등 모든 자료는 있는 그대로 제공이 됩니다.
 * KSAN 프로젝트의 개발자 및 개발사는 이 프로그램을 사용한 결과에 따른 어떠한 책임도 지지 않습니다.
@@ -25,84 +25,86 @@ using System.Windows.Input;
 using System.Windows.Controls.Primitives;
 using System.Threading;
 using Amazon;
+using System.Runtime.Versioning;
 
 [assembly: XmlConfigurator(ConfigFile = "IfsSync2UILogConfig.xml", Watch = true)]
 
 namespace IfsSync2UI
 {
+	[SupportedOSPlatform("windows10.0")]
 	public partial class MainWindow : Window
 	{
-		const double MaxAngle = 360;
+		const double MAX_ANGLE = 360;
 		const string NULL_STORAGE_NAME = "N/A";
 
-		static readonly ILog log = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
+		static readonly ILog _log = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
 
-		readonly ObservableCollection<JobDetailData> JobDetailList = [];
+		readonly ObservableCollection<JobDetailData> _jobDetailList = [];
 
-		StorageData MainStorage = null;
-		readonly StorageUI MainStorageUI = null;
+		StorageData _mainStorage = null;
+		readonly StorageUI _mainStorageUI = null;
 
-		readonly List<StorageData> StorageList = [];
-		readonly List<StorageUI> StorageUIList = [];
+		readonly List<StorageData> _storageList = [];
+		readonly List<StorageUI> _storageUIList = [];
 
-		readonly WatcherConfig WatcherConfigs;
+		readonly WatcherConfig _watcherConfigs;
 
 		/***************************** SQL ************************************/
-		readonly JobDbManager JobSQL;
-		readonly UserDbManager UserSQL;
+		readonly JobDbManager _jobSQL;
+		readonly UserDbManager _userSQL;
 		/***************************** Timer ***********************************/
-		readonly System.Timers.Timer UpdateJobListTimer;
-		readonly System.Timers.Timer UpdateStorageListTimer;
+		readonly System.Timers.Timer _updateJobListTimer;
+		readonly System.Timers.Timer _updateStorageListTimer;
 
 		const int JOB_TIMER_DELAY = 5000;
 		const int STORAGE_TIMER_DELAY = 60000;
 		/**************************Toggle Button*******************************/
-		ToggleButton SelectedBtn = null;
-		Mutex mutex = null;
-		int GlobalCount = 0;
+		ToggleButton _selectedBtn = null;
+		Mutex _mutex = null;
+		int _globalCount = 0;
 
 		public MainWindow()
 		{
 			DuplicateExecution(MainData.MUTEX_NAME_UI);
 
 			MainUtility.DeleteOldLogs(MainData.GetLogFolder("IfsSync2UI"));
-			log.Info("Main Start");
-			WatcherConfigs = new WatcherConfig(true);
-			JobSQL = new JobDbManager();
-			UserSQL = new UserDbManager();
+			_log.Info("Main Start");
+			_watcherConfigs = new WatcherConfig(true);
+			_jobSQL = new JobDbManager();
+			_userSQL = new UserDbManager();
 
 			InitializeComponent();
-			MainStorageUI = new StorageUI(Storage_1, L_StorageName_1, L_URL_1, P_Graph_1, L_SizeRate_1, L_Total_1, L_Used_1, L_Free_1, T_StorageName, T_S3FileManagerURL);
-			StorageUIList.Add(new StorageUI(Storage_2, L_StorageName_2, L_URL_2, P_Graph_2, L_SizeRate_2, L_Total_2, L_Used_2, L_Free_2, T_EditStorage_2, T_EditS3FileManagerURL_2, B_Edit_2, T_EditURL_2, T_EditAccessKey_2, T_EditAccessSecret_2, T_EditUserName_2, T_EmptyStorage_2, G_Quota_2));
-			StorageUIList.Add(new StorageUI(Storage_3, L_StorageName_3, L_URL_3, P_Graph_3, L_SizeRate_3, L_Total_3, L_Used_3, L_Free_3, T_EditStorage_3, T_EditS3FileManagerURL_3, B_Edit_3, T_EditURL_3, T_EditAccessKey_3, T_EditAccessSecret_3, T_EditUserName_3, T_EmptyStorage_3, G_Quota_3));
-			StorageUIList.Add(new StorageUI(Storage_4, L_StorageName_4, L_URL_4, P_Graph_4, L_SizeRate_4, L_Total_4, L_Used_4, L_Free_4, T_EditStorage_4, T_EditS3FileManagerURL_4, B_Edit_4, T_EditURL_4, T_EditAccessKey_4, T_EditAccessSecret_4, T_EditUserName_4, T_EmptyStorage_4, G_Quota_4));
-			L_JobList.ItemsSource = JobDetailList;
+			_mainStorageUI = new StorageUI(Storage_1, L_StorageName_1, L_URL_1, P_Graph_1, L_SizeRate_1, L_Total_1, L_Used_1, L_Free_1, T_StorageName, T_S3FileManagerURL);
+			_storageUIList.Add(new StorageUI(Storage_2, L_StorageName_2, L_URL_2, P_Graph_2, L_SizeRate_2, L_Total_2, L_Used_2, L_Free_2, T_EditStorage_2, T_EditS3FileManagerURL_2, B_Edit_2, T_EditURL_2, T_EditAccessKey_2, T_EditAccessSecret_2, T_EditUserName_2, T_EmptyStorage_2, G_Quota_2));
+			_storageUIList.Add(new StorageUI(Storage_3, L_StorageName_3, L_URL_3, P_Graph_3, L_SizeRate_3, L_Total_3, L_Used_3, L_Free_3, T_EditStorage_3, T_EditS3FileManagerURL_3, B_Edit_3, T_EditURL_3, T_EditAccessKey_3, T_EditAccessSecret_3, T_EditUserName_3, T_EmptyStorage_3, G_Quota_3));
+			_storageUIList.Add(new StorageUI(Storage_4, L_StorageName_4, L_URL_4, P_Graph_4, L_SizeRate_4, L_Total_4, L_Used_4, L_Free_4, T_EditStorage_4, T_EditS3FileManagerURL_4, B_Edit_4, T_EditURL_4, T_EditAccessKey_4, T_EditAccessSecret_4, T_EditUserName_4, T_EmptyStorage_4, G_Quota_4));
+			L_JobList.ItemsSource = _jobDetailList;
 
 			TabInit();
 			StorageListUpdate();
 			JobListUpdate();
 
-			UpdateJobListTimer = new System.Timers.Timer { Interval = JOB_TIMER_DELAY };
-			UpdateJobListTimer.Elapsed += UpdateJobList;
-			UpdateJobListTimer.Start();
+			_updateJobListTimer = new System.Timers.Timer { Interval = JOB_TIMER_DELAY };
+			_updateJobListTimer.Elapsed += UpdateJobList;
+			_updateJobListTimer.Start();
 
-			UpdateStorageListTimer = new System.Timers.Timer { Interval = STORAGE_TIMER_DELAY };
-			UpdateStorageListTimer.Elapsed += UpdateStorageList;
-			UpdateStorageListTimer.Start();
+			_updateStorageListTimer = new System.Timers.Timer { Interval = STORAGE_TIMER_DELAY };
+			_updateStorageListTimer.Elapsed += UpdateStorageList;
+			_updateStorageListTimer.Start();
 
 			Title += " V" + MainData.GetVersion();
 		}
-		void DuplicateExecution(string MutexName)
+		void DuplicateExecution(string mutexName)
 		{
 			try
 			{
-				mutex = new Mutex(false, MutexName);
+				_mutex = new Mutex(false, mutexName);
 			}
 			catch (Exception)
 			{
 				Application.Current.Shutdown();
 			}
-			if (!mutex.WaitOne(0, false)) Application.Current.Shutdown();
+			if (!_mutex.WaitOne(0, false)) Application.Current.Shutdown();
 
 		}
 		void UpdateJobList(object sender, EventArgs e)
@@ -125,22 +127,22 @@ namespace IfsSync2UI
 			List<JobData> JobList;
 			try
 			{
-				JobList = JobSQL.GetJobs(Environment.UserName);
+				JobList = _jobSQL.GetJobs(Environment.UserName);
 			}
 			catch { return; }
 
 			if (JobList.Count == 0)
 			{
 				//Instant Backup
-				var Instant = new JobData()
+				var instant = new JobData()
 				{
 					JobName = MainData.INSTANT_BACKUP_NAME,
 					HostName = Environment.UserName,
-					StrPolicy = JobData.PolicyName.Now.ToString()
+					StrPolicy = JobData.PolicyType.Now.ToString()
 				};
-				JobSQL.PutJobData(Instant);
-				Instant.Id = JobSQL.GetJobDataId(Instant.HostName, Instant.JobName);
-				JobList.Add(Instant);
+				_jobSQL.PutJobData(instant);
+				instant.Id = _jobSQL.GetJobDataId(instant.HostName, instant.JobName);
+				JobList.Add(instant);
 			}
 			foreach (var Job in JobList)
 			{
@@ -150,17 +152,17 @@ namespace IfsSync2UI
 					{
 						var item = new TabItem();
 
-						var tabItemContent = new JobTab(item, Job, WatcherConfigs.RootPath);
+						var tabItemContent = new JobTab(item, Job);
 						item.Content = tabItemContent;
 
 						item.Header = Job.JobName;
 						MainTab.Items.Add(item);
 					});
-					log.Info($"Load JobData : {Job.JobName}");
+					_log.Info($"Load JobData : {Job.JobName}");
 				}
 				catch (Exception ex)
 				{
-					log.Error(ex);
+					_log.Error(ex);
 				}
 			}
 
@@ -169,7 +171,7 @@ namespace IfsSync2UI
 		void ToggleButtonAllClose(ToggleButton toggle)
 		{
 
-			if (toggle != SelectedBtn && SelectedBtn != null && SelectedBtn.IsChecked.Value) SelectedBtn.IsChecked = false;
+			if (toggle != _selectedBtn && _selectedBtn != null && _selectedBtn.IsChecked.Value) _selectedBtn.IsChecked = false;
 
 			if (toggle != B_RealTimeToggle && B_RealTimeToggle.IsChecked.Value) B_RealTimeToggle.IsChecked = false;
 			if (toggle != B_ScheduleToggle && B_ScheduleToggle.IsChecked.Value) B_ScheduleToggle.IsChecked = false;
@@ -185,7 +187,7 @@ namespace IfsSync2UI
 		}
 		void ToggleButtonAllClose()
 		{
-			if (SelectedBtn != null && SelectedBtn.IsChecked.Value) SelectedBtn.IsChecked = false;
+			if (_selectedBtn != null && _selectedBtn.IsChecked.Value) _selectedBtn.IsChecked = false;
 
 			if (B_RealTimeToggle.IsChecked.Value) B_RealTimeToggle.IsChecked = false;
 			if (B_ScheduleToggle.IsChecked.Value) B_ScheduleToggle.IsChecked = false;
@@ -200,35 +202,33 @@ namespace IfsSync2UI
 		}
 
 		#region Job Manager
-		static string GetJobType(JobData.PolicyName Policy)
+		static string GetJobType(JobData.PolicyType Policy)
 		{
 			return Policy switch
 			{
-				JobData.PolicyName.Now => MainData.INSTANT_BACKUP_NAME,
-				JobData.PolicyName.RealTime => "Real-Time",
-				JobData.PolicyName.Schedule => "Schedule",
+				JobData.PolicyType.Now => MainData.INSTANT_BACKUP_NAME,
+				JobData.PolicyType.RealTime => "Real-Time",
+				JobData.PolicyType.Schedule => "Schedule",
 				_ => "None",
 			};
 		}
 		void JobListUpdate()
 		{
-			List<JobData> NormalJobs = JobSQL.GetJobs(Environment.UserName);
-			List<JobData> GlobalJobs = JobSQL.GetJobs(true);
+			List<JobData> NormalJobs = _jobSQL.GetJobs(Environment.UserName);
+			List<JobData> GlobalJobs = _jobSQL.GetJobs();
 
-			List<JobData> JobList = new();
-			JobList.AddRange(GlobalJobs);
-			JobList.AddRange(NormalJobs);
+			List<JobData> JobList = [.. GlobalJobs, .. NormalJobs];
 
-			GlobalCount = GlobalJobs.Count;
+			_globalCount = GlobalJobs.Count;
 
 			//JobDetailData Check
-			foreach (JobDetailData DetailData in JobDetailList) DetailData.Delete = true;
+			foreach (JobDetailData DetailData in _jobDetailList) DetailData.Delete = true;
 
 			foreach (JobData Job in JobList)
 			{
 				bool IsNewJob = true;
 
-				foreach (JobDetailData DetailData in JobDetailList)
+				foreach (JobDetailData DetailData in _jobDetailList)
 				{
 					if (DetailData.JobName == Job.JobName)
 					{
@@ -236,16 +236,16 @@ namespace IfsSync2UI
 						DetailData.Delete = false;
 
 						DetailData.ExtensionList = Job.WhiteFileExt;
-						if (Job.UserID == -1) DetailData.StorageName = NULL_STORAGE_NAME;
+						if (Job.UserId == -1) DetailData.StorageName = NULL_STORAGE_NAME;
 						else
 						{
-							if (MainStorage != null && MainStorage.IsGlobalUser == Job.IsGlobalUser && MainStorage.ID == Job.UserID)
+							if (_mainStorage != null && _mainStorage.IsGlobalUser == Job.IsGlobalUser && _mainStorage.Id == Job.UserId)
 							{
-								DetailData.StorageName = MainStorage.StorageName;
+								DetailData.StorageName = _mainStorage.StorageName;
 								break;
 							}
-							foreach (var storage in StorageList)
-								if (storage.IsGlobalUser == Job.IsGlobalUser && storage.ID == Job.UserID)
+							foreach (var storage in _storageList)
+								if (storage.IsGlobalUser == Job.IsGlobalUser && storage.Id == Job.UserId)
 									DetailData.StorageName = storage.StorageName;
 
 						}
@@ -256,14 +256,14 @@ namespace IfsSync2UI
 				if (IsNewJob)
 				{
 					bool CreateSuccess = false;
-					foreach (var storage in StorageList)
+					foreach (var storage in _storageList)
 					{
-						if (storage.IsGlobalUser == Job.IsGlobalUser && storage.ID == Job.UserID)
+						if (storage.IsGlobalUser == Job.IsGlobalUser && storage.Id == Job.UserId)
 						{
 							Visibility BtnVisibility = Visibility.Hidden;
 							if (!Job.Global && Job.JobName != MainData.INSTANT_BACKUP_NAME) BtnVisibility = Visibility.Visible;
 
-							JobDetailList.Add(new JobDetailData(Job.HostName, Job.JobName, Job.Id)
+							_jobDetailList.Add(new JobDetailData(Job.HostName, Job.JobName, Job.Id)
 							{
 								JobType = GetJobType(Job.Policy),
 								ExtensionList = Job.WhiteFileExt,
@@ -279,16 +279,16 @@ namespace IfsSync2UI
 							break;
 						}
 					}
-					if (MainStorage != null && MainStorage.IsGlobalUser == Job.IsGlobalUser && MainStorage.ID == Job.UserID)
+					if (_mainStorage != null && _mainStorage.IsGlobalUser == Job.IsGlobalUser && _mainStorage.Id == Job.UserId)
 					{
 						Visibility BtnVisibility = Visibility.Hidden;
 						if (!Job.Global && Job.JobName != MainData.INSTANT_BACKUP_NAME) BtnVisibility = Visibility.Visible;
 
-						JobDetailList.Add(new JobDetailData(Job.HostName, Job.JobName, Job.Id)
+						_jobDetailList.Add(new JobDetailData(Job.HostName, Job.JobName, Job.Id)
 						{
 							JobType = GetJobType(Job.Policy),
 							ExtensionList = Job.WhiteFileExt,
-							StorageName = MainStorage.StorageName,
+							StorageName = _mainStorage.StorageName,
 							CircleBlue = Image_CircleBlue.Source,
 							CircleGray = Image_CircleGray.Source,
 							TriangleRed = Image_TriangleRed.Source,
@@ -300,7 +300,7 @@ namespace IfsSync2UI
 					}
 					if (!CreateSuccess && Job.JobName == MainData.INSTANT_BACKUP_NAME)
 					{
-						JobDetailList.Add(new JobDetailData(Job.HostName, Job.JobName, Job.Id)
+						_jobDetailList.Add(new JobDetailData(Job.HostName, Job.JobName, Job.Id)
 						{
 							JobType = GetJobType(Job.Policy),
 							ExtensionList = Job.WhiteFileExt,
@@ -316,8 +316,8 @@ namespace IfsSync2UI
 				}
 			}
 
-			for (int index = JobDetailList.Count - 1; index >= 0; index--)
-				if (JobDetailList[index].Delete) JobDetailList.RemoveAt(index);
+			for (int index = _jobDetailList.Count - 1; index >= 0; index--)
+				if (_jobDetailList[index].Delete) _jobDetailList.RemoveAt(index);
 
 			L_JobList.Items.Refresh();
 		}
@@ -334,12 +334,12 @@ namespace IfsSync2UI
 
 				if (Tab.Job.JobName == JobName) return true;
 			}
-			if (JobSQL.IsJobName(Environment.UserName, JobName)) return true;
+			if (_jobSQL.IsJobName(Environment.UserName, JobName)) return true;
 			return false;
 		}
-		bool CreateJob(string _JobName, JobData.PolicyName _Policy)
+		bool CreateJob(string _JobName, JobData.PolicyType _Policy)
 		{
-			if (Utility.FileNameSpecialCharactersErrorCheck(_JobName))
+			if (Utility.SpecialCharactersErrorCheck(_JobName))
 			{
 				Utility.ErrorMessageBox("Job 이름에 다음문자를 사용할 수 없습니다.\n[\\, /, :, *, ?, \", <, >, |]", Title);
 				return false;
@@ -362,19 +362,19 @@ namespace IfsSync2UI
 				{
 					TabItem item = new() { Header = Data.JobName };
 
-					JobTab tabItemContent = new(item, Data, WatcherConfigs.RootPath, true);
+					JobTab tabItemContent = new(item, Data, true);
 
 					item.Content = tabItemContent;
 					MainTab.Items.Add(item);
 					MainTab.SelectedIndex = MainTab.Items.Count - 1;
 				});
 
-				log.Info($"Create New Job : {Data.JobName}");
+				_log.Info($"Create New Job : {Data.JobName}");
 				return true;
 			}
 			catch (Exception ex)
 			{
-				log.Error(ex);
+				_log.Error(ex);
 				return false;
 			}
 		}
@@ -384,7 +384,7 @@ namespace IfsSync2UI
 			if (!string.IsNullOrWhiteSpace(T_RealTimeName.Text))
 			{
 				string JobName = T_RealTimeName.Text;
-				if (CreateJob(JobName, JobData.PolicyName.RealTime))
+				if (CreateJob(JobName, JobData.PolicyType.RealTime))
 				{
 					T_RealTimeName.Text = string.Empty;
 					B_RealTimeToggle.IsChecked = false;
@@ -401,7 +401,7 @@ namespace IfsSync2UI
 			if (e.Key == Key.Return && !string.IsNullOrWhiteSpace(T_RealTimeName.Text))
 			{
 				string JobName = T_RealTimeName.Text;
-				if (CreateJob(JobName, JobData.PolicyName.RealTime))
+				if (CreateJob(JobName, JobData.PolicyType.RealTime))
 				{
 					T_RealTimeName.Text = string.Empty;
 					B_RealTimeToggle.IsChecked = false;
@@ -414,7 +414,7 @@ namespace IfsSync2UI
 			if (!string.IsNullOrWhiteSpace(T_ScheduleName.Text))
 			{
 				string JobName = T_ScheduleName.Text;
-				if (CreateJob(JobName, JobData.PolicyName.Schedule))
+				if (CreateJob(JobName, JobData.PolicyType.Schedule))
 				{
 					T_ScheduleName.Text = string.Empty;
 					B_ScheduleToggle.IsChecked = false;
@@ -434,7 +434,7 @@ namespace IfsSync2UI
 			{
 				string JobName = T_ScheduleName.Text;
 				B_ScheduleToggle.IsChecked = false;
-				if (CreateJob(JobName, JobData.PolicyName.Schedule))
+				if (CreateJob(JobName, JobData.PolicyType.Schedule))
 				{
 					T_ScheduleName.Text = string.Empty;
 					B_ScheduleToggle.IsChecked = false;
@@ -470,26 +470,26 @@ namespace IfsSync2UI
 			}
 			catch (Exception ex)
 			{
-				log.Error(ex);
+				_log.Error(ex);
 			}
 			if (DeleteFlag)
 			{
-				SelectedBtn = null;
+				_selectedBtn = null;
 				JobListUpdate();
 			}
 			else Utility.ErrorMessageBox("Job 삭제 실패!", Title);
 		}
 		void Btn_DeleteJobListClose(object sender, RoutedEventArgs e)
 		{
-			if (SelectedBtn != null)
+			if (_selectedBtn != null)
 			{
-				SelectedBtn.IsChecked = false;
+				_selectedBtn.IsChecked = false;
 			}
 
 		}
 		void ToggleBtn_DeleteJob(object sender, RoutedEventArgs e)
 		{
-			SelectedBtn = (ToggleButton)sender;
+			_selectedBtn = (ToggleButton)sender;
 			ToggleButtonAllClose((ToggleButton)sender);
 		}
 
@@ -499,59 +499,53 @@ namespace IfsSync2UI
 
 		void MainStorageUpdate()
 		{
-			List<UserData> GlobalUsers = UserSQL.GetUsers(true);
+			List<UserData> globalUsers = _userSQL.GetUsers(true);
 
-			if (GlobalUsers.Count == 0)
+			if (globalUsers.Count == 0)
 			{
 				T_EmptyStorage.Visibility = Visibility.Visible;
 				DefaultGraph.Visibility = Visibility.Hidden;
 			}
 			else
 			{
-				UserData GlobalUser = GlobalUsers[0];
+				UserData globalUser = globalUsers[0];
 
-				Utility.GetVolumeSize(GlobalUser.URL, out long Total, out long Used);
-
-				if (MainStorage == null)
+				if (_mainStorage == null)
 				{
-					MainStorage = new StorageData(GlobalUser.Id, GlobalUser.HostName, GlobalUser.UserName)
+					_mainStorage = new StorageData(globalUser.Id, globalUser.HostName, globalUser.UserName)
 					{
-						StorageName = GlobalUser.StorageName,
-						URL = GlobalUser.URL,
-						AccessKey = GlobalUser.AccessKey,
-						AccessSecret = GlobalUser.SecretKey,
-						S3FileManagerURL = GlobalUser.S3FileManagerURL,
-						TotalSize = Total,
-						UsedSize = Used,
+						StorageName = globalUser.StorageName,
+						URL = globalUser.URL,
+						AccessKey = globalUser.AccessKey,
+						AccessSecret = globalUser.SecretKey,
+						S3FileManagerURL = globalUser.S3FileManagerURL,
 						Delete = false
 					};
 				}
 				else
 				{
-					MainStorage.StorageName = GlobalUser.StorageName;
-					MainStorage.S3FileManagerURL = GlobalUser.S3FileManagerURL;
-					MainStorage.Delete = false;
-					MainStorage.TotalSize = Total;
-					MainStorage.UsedSize = Used;
+					_mainStorage.StorageName = globalUser.StorageName;
+					_mainStorage.S3FileManagerURL = globalUser.S3FileManagerURL;
+					_mainStorage.Delete = false;
 				}
 				MainStorageUIUpdate();
 			}
 		}
 		void MainStorageUIUpdate()
 		{
-			if (MainStorage != null)
+			if (_mainStorage != null)
 			{
-				MainStorageUI.Main.Dispatcher.Invoke(delegate
+				_mainStorageUI.Main.Dispatcher.Invoke(delegate
 				{
-					MainStorageUI.Main.Visibility = Visibility.Visible;
-					MainStorageUI.StorageName.Text = MainStorage.StorageName;
-					MainStorageUI.URL.Text = MainStorage.URL;
+					_mainStorageUI.Main.Visibility = Visibility.Visible;
+					_mainStorageUI.StorageName.Text = _mainStorage.StorageName;
+					_mainStorageUI.URL.Text = _mainStorage.URL;
 
-					MainStorageUI.SizeRate.Content = MainStorage.StrRate;
-					MainStorageUI.Total.Content = MainStorage.StrTotalSize;
-					MainStorageUI.Used.Content = MainStorage.StrUsedSize;
-					MainStorageUI.Free.Content = MainStorage.StrFreeSize;
-					GraphDrawing(MainStorage.Rate, MainStorageUI.Graph);
+					_mainStorageUI.SizeRate.Content = _mainStorage.StrRate;
+					_mainStorageUI.Total.Content = _mainStorage.StrTotalSize;
+					_mainStorageUI.Used.Content = _mainStorage.StrUsedSize;
+					_mainStorageUI.Free.Content = _mainStorage.StrFreeSize;
+					GraphDrawing(_mainStorage.Rate, _mainStorageUI.Graph);
 				});
 
 
@@ -563,17 +557,16 @@ namespace IfsSync2UI
 		{
 			MainStorageUpdate();
 
-			List<UserData> NormalUsers = UserSQL.GetUsers(Environment.UserName);
+			List<UserData> NormalUsers = _userSQL.GetUsers(Environment.UserName);
 
-			foreach (var Storage in StorageList) Storage.Delete = true;
+			foreach (var Storage in _storageList) Storage.Delete = true;
 
 			//New Storage Check
 			foreach (var User in NormalUsers)
 			{
 				bool IsNewUser = true;
-				Utility.GetVolumeSize(User.URL, out long Total, out long Used);
 
-				foreach (var Storage in StorageList)
+				foreach (var Storage in _storageList)
 				{
 					if (Storage.UserName == User.UserName)
 					{
@@ -581,23 +574,19 @@ namespace IfsSync2UI
 						Storage.StorageName = User.StorageName;
 						Storage.S3FileManagerURL = User.S3FileManagerURL;
 						Storage.Delete = false;
-						Storage.TotalSize = Total;
-						Storage.UsedSize = Used;
 						break;
 					}
 				}
 
 				if (IsNewUser)
 				{
-					StorageList.Add(new StorageData(User.Id, User.HostName, User.UserName)
+					_storageList.Add(new StorageData(User.Id, User.HostName, User.UserName)
 					{
 						StorageName = User.StorageName,
 						URL = User.URL,
 						AccessKey = User.AccessKey,
 						AccessSecret = User.SecretKey,
 						S3FileManagerURL = User.S3FileManagerURL,
-						TotalSize = Total,
-						UsedSize = Used,
 						Delete = false
 					});
 				}
@@ -605,14 +594,24 @@ namespace IfsSync2UI
 			}
 
 			//Storage Delete Check
-			for (int i = StorageList.Count - 1; i >= 0; i--)
+			for (int i = _storageList.Count - 1; i >= 0; i--)
 			{
-				if (StorageList[i].Delete) { try { StorageList.RemoveAt(i); } catch { } }
+				if (_storageList[i].Delete)
+				{
+					try
+					{
+						_storageList.RemoveAt(i);
+					}
+					catch (Exception ex)
+					{
+						_log.Error(ex);
+					}
+				}
 			}
 
 			StorageUIUpdate();
 
-			if (StorageList.Count >= StorageUIList.Count)
+			if (_storageList.Count >= _storageUIList.Count)
 			{
 				B_StorageToggle.IsChecked = false;
 				B_StorageToggle.IsEnabled = false;
@@ -624,34 +623,34 @@ namespace IfsSync2UI
 		}
 		void StorageUIUpdate()
 		{
-			for (int i = 0; i < StorageUIList.Count; i++)
+			for (int i = 0; i < _storageUIList.Count; i++)
 			{
-				if (i < StorageList.Count)
+				if (i < _storageList.Count)
 				{
-					StorageUIList[i].Main.Dispatcher.Invoke(delegate
+					_storageUIList[i].Main.Dispatcher.Invoke(delegate
 					{
-						StorageUIList[i].Main.Visibility = Visibility.Visible;
-						StorageUIList[i].StorageName.Text = StorageList[i].StorageName;
-						StorageUIList[i].URL.Text = StorageList[i].URL;
-						if (StorageList[i].IsAWS)
+						_storageUIList[i].Main.Visibility = Visibility.Visible;
+						_storageUIList[i].StorageName.Text = _storageList[i].StorageName;
+						_storageUIList[i].URL.Text = _storageList[i].URL;
+						if (_storageList[i].IsAWS)
 						{
-							StorageUIList[i].Black_AWSMessage.Visibility = Visibility.Visible;
-							StorageUIList[i].Grid_Quota.Visibility = Visibility.Hidden;
+							_storageUIList[i].Black_AWSMessage.Visibility = Visibility.Visible;
+							_storageUIList[i].Grid_Quota.Visibility = Visibility.Hidden;
 						}
 						else
 						{
-							StorageUIList[i].Black_AWSMessage.Visibility = Visibility.Hidden;
-							StorageUIList[i].Grid_Quota.Visibility = Visibility.Visible;
+							_storageUIList[i].Black_AWSMessage.Visibility = Visibility.Hidden;
+							_storageUIList[i].Grid_Quota.Visibility = Visibility.Visible;
 
-							StorageUIList[i].SizeRate.Content = StorageList[i].StrRate;
-							StorageUIList[i].Total.Content = StorageList[i].StrTotalSize;
-							StorageUIList[i].Used.Content = StorageList[i].StrUsedSize;
-							StorageUIList[i].Free.Content = StorageList[i].StrFreeSize;
+							_storageUIList[i].SizeRate.Content = _storageList[i].StrRate;
+							_storageUIList[i].Total.Content = _storageList[i].StrTotalSize;
+							_storageUIList[i].Used.Content = _storageList[i].StrUsedSize;
+							_storageUIList[i].Free.Content = _storageList[i].StrFreeSize;
 						}
-						GraphDrawing(StorageList[i].Rate, StorageUIList[i].Graph);
+						GraphDrawing(_storageList[i].Rate, _storageUIList[i].Graph);
 					});
 				}
-				else StorageUIList[i].Main.Visibility = Visibility.Hidden;
+				else _storageUIList[i].Main.Visibility = Visibility.Hidden;
 			}
 		}
 		void Btn_StorageUpdate(object sender, RoutedEventArgs e)
@@ -669,8 +668,8 @@ namespace IfsSync2UI
 				Client.ListBuckets();
 				return true;
 			}
-			catch (AmazonS3Exception e) { log.Error(e); return false; }
-			catch (Exception e) { log.Error(e); return false; }
+			catch (AmazonS3Exception e) { _log.Error(e); return false; }
+			catch (Exception e) { _log.Error(e); return false; }
 		}
 
 		static bool RegionEndpointCheck(string SystemName)
@@ -687,18 +686,18 @@ namespace IfsSync2UI
 				var Client = new S3Client(User);
 				if (CheckConnect(Client))
 				{
-					log.Info($"Login Success : {User.UserName}");
+					_log.Info($"Login Success : {User.UserName}");
 					return true;
 				}
 				else
 				{
-					log.Info($"Login Fail : {User.UserName}");
+					_log.Info($"Login Fail : {User.UserName}");
 					return false;
 				}
 			}
 			catch (AmazonS3Exception e)
 			{
-				log.Fatal(e);
+				_log.Fatal(e);
 				return false;
 			}
 		}
@@ -713,36 +712,29 @@ namespace IfsSync2UI
 		}
 		void CreateCredential()
 		{
-
-			if (string.IsNullOrWhiteSpace(T_AddStorageName.Text)) { Utility.ErrorMessageBox("Storage Credential Name is Empty!", Title); T_AddStorageName.Focus(); return; }
-			if (string.IsNullOrWhiteSpace(T_AddStorageURL.Text)) { Utility.ErrorMessageBox("URL is Empty!", Title); T_AddStorageURL.Focus(); return; }
-			if (string.IsNullOrWhiteSpace(T_AddStorageAccessKey.Text)) { Utility.ErrorMessageBox("Access Key is Empty!", Title); T_AddStorageAccessKey.Focus(); return; }
-			if (string.IsNullOrWhiteSpace(T_AddStorageSecretKey.Text)) { Utility.ErrorMessageBox("Secret Key is Empty!", Title); T_AddStorageSecretKey.Focus(); return; }
-			if (string.IsNullOrWhiteSpace(T_AddStorageUserName.Text)) { Utility.ErrorMessageBox("User Name (Bucket) is Empty!", Title); T_AddStorageUserName.Focus(); return; }
-
-			string UserName = T_AddStorageUserName.Text;
-			if (BucketNameCheck(UserName))
+			string userName = T_AddStorageUserName.Text;
+			if (BucketNameCheck(userName))
 			{
 				Utility.ErrorMessageBox("User Name (Bucket) is not correct!\nBucket name should contain only \nlowercase letters, numbers, periods(.) and dashes(-)", Title);
 				return;
 			}
 
-			if (UserSQL.IsUserName(UserName, false))
+			if (_userSQL.IsUserName(userName, false))
 			{
 				Utility.ErrorMessageBox("User name (Bucket) already exists.", Title);
 				return;
 			}
-			string URL = T_AddStorageURL.Text.Trim();
-			if (!URL.StartsWith(MainData.HTTP, StringComparison.OrdinalIgnoreCase) && !RegionEndpointCheck(URL))
+			string url = T_AddStorageURL.Text.Trim();
+			if (!url.StartsWith(MainData.HTTP, StringComparison.OrdinalIgnoreCase) && !RegionEndpointCheck(url))
 			{
 				Utility.ErrorMessageBox("Region Endpoint Check fail!", Title);
 				T_AddStorageUserName.Focus();
 				return;
 			}
-			string S3FileManagerURL = "";
-			if (MainStorage != null) S3FileManagerURL = MainStorage.S3FileManagerURL;
+			string s3FileManagerURL = "";
+			if (_mainStorage != null) s3FileManagerURL = _mainStorage.S3FileManagerURL;
 
-			var User = new UserData
+			var user = new UserData
 			{
 				HostName = Environment.UserName,
 				URL = T_AddStorageURL.Text.Trim(),
@@ -750,14 +742,13 @@ namespace IfsSync2UI
 				SecretKey = T_AddStorageSecretKey.Text.Trim(),
 				StorageName = T_AddStorageName.Text.Trim(),
 				UserName = T_AddStorageUserName.Text.Trim(),
-				S3FileManagerURL = S3FileManagerURL
+				S3FileManagerURL = s3FileManagerURL
 			};
 
-
-			if (!LoginTest(User)) Utility.ErrorMessageBox("Login Test Failed!", Title);
+			if (!LoginTest(user)) Utility.ErrorMessageBox("Login Test Failed!", Title);
 			else
 			{
-				if (!UserSQL.InsertUser(User, false)) Utility.ErrorMessageBox("User Data is not Save!", Title);
+				if (!_userSQL.InsertUser(user, false)) Utility.ErrorMessageBox("User Data is not Save!", Title);
 				else
 				{
 					StorageListUpdate();
@@ -792,7 +783,7 @@ namespace IfsSync2UI
 			string StorageName = T_StorageName.Text;
 			string S3FileManagerURL = T_S3FileManagerURL.Text;
 
-			if (string.IsNullOrWhiteSpace(WatcherConfigs.IP))
+			if (string.IsNullOrWhiteSpace(_watcherConfigs.IP))
 			{
 				string Address = T_EditMainIP.Text;
 				string Port = T_PortNumber.Text;
@@ -801,32 +792,32 @@ namespace IfsSync2UI
 
 				try
 				{
-					UserData GlobalUser = Utility.GetGlobalUser(URL, WatcherConfigs.PcName);
+					UserData GlobalUser = Utility.GetGlobalUser(URL, _watcherConfigs.PcName);
 					GlobalUser.StorageName = StorageName;
 
 					if (string.IsNullOrWhiteSpace(S3FileManagerURL)) GlobalUser.S3FileManagerURL = MainData.CreateS3FileManagerURL(Address);
 					else GlobalUser.S3FileManagerURL = S3FileManagerURL;
 
-					if (!UserSQL.InsertUser(GlobalUser, true)) return;
+					if (!_userSQL.InsertUser(GlobalUser, true)) return;
 				}
 				catch (Exception ex)
 				{
-					log.Error(ex);
+					_log.Error(ex);
 					Utility.ErrorMessageBox($"Global User Get Error : {ex.Message}", Title);
 					return;
 				}
-				WatcherConfigs.IP = Address;
-				WatcherConfigs.Port = Port;
+				_watcherConfigs.IP = Address;
+				_watcherConfigs.Port = Port;
 			}
 			else
 			{
-				if (!MainStorage.StorageName.Equals(StorageName) && !UserSQL.UpdateUserStorageName(MainStorage.ID, StorageName, true))
+				if (!_mainStorage.StorageName.Equals(StorageName) && !_userSQL.UpdateUserStorageName(_mainStorage.Id, StorageName, true))
 				{
 					Utility.ErrorMessageBox("StorageName save failed!", Title);
 					return;
 
 				}
-				if (!MainStorage.S3FileManagerURL.Equals(S3FileManagerURL) && !UserSQL.UpdateUserS3FileManagerURL(MainStorage.ID, S3FileManagerURL, true))
+				if (!_mainStorage.S3FileManagerURL.Equals(S3FileManagerURL) && !_userSQL.UpdateUserS3FileManagerURL(_mainStorage.Id, S3FileManagerURL, true))
 				{
 					Utility.ErrorMessageBox("S3 File Manager URL save failed!", Title);
 					return;
@@ -834,8 +825,8 @@ namespace IfsSync2UI
 
 			}
 
-			WatcherConfigs.PcName = T_AditPCName.Text;
-			if (!string.IsNullOrWhiteSpace(T_AditEmail.Text)) WatcherConfigs.Email = T_AditEmail.Text;
+			_watcherConfigs.PcName = T_AditPCName.Text;
+			if (!string.IsNullOrWhiteSpace(T_AditEmail.Text)) _watcherConfigs.Email = T_AditEmail.Text;
 			B_Edit1.IsChecked = false;
 			StorageListUpdate();
 		}
@@ -861,41 +852,41 @@ namespace IfsSync2UI
 			try
 			{
 				T_StorageName.Focus();
-				string IP = WatcherConfigs.IP;
-				string Port = WatcherConfigs.Port;
+				string IP = _watcherConfigs.IP;
+				string Port = _watcherConfigs.Port;
 				T_StorageName.Text = L_StorageName_1.Text.ToString();
 				if (!string.IsNullOrWhiteSpace(IP)) { T_EditMainIP.Text = IP; T_EditMainIP.IsEnabled = false; }
 				if (!string.IsNullOrWhiteSpace(Port)) { T_PortNumber.Text = Port; T_PortNumber.IsEnabled = false; }
 
-				if (string.IsNullOrWhiteSpace(WatcherConfigs.PcName)) WatcherConfigs.PcName = Environment.MachineName;
-				T_AditPCName.Text = WatcherConfigs.PcName;
-				T_AditEmail.Text = WatcherConfigs.Email;
-				T_S3FileManagerURL.Text = MainStorage.S3FileManagerURL;
+				if (string.IsNullOrWhiteSpace(_watcherConfigs.PcName)) _watcherConfigs.PcName = Environment.MachineName;
+				T_AditPCName.Text = _watcherConfigs.PcName;
+				T_AditEmail.Text = _watcherConfigs.Email;
+				T_S3FileManagerURL.Text = _mainStorage.S3FileManagerURL;
 				T_StorageName.Focus();
 			}
 			catch (Exception ex)
 			{
-				log.Error(ex);
+				_log.Error(ex);
 			}
 		}
 
 		void SetStorageEditText(int index)
 		{
-			if (index >= StorageUIList.Count) return;
+			if (index >= _storageUIList.Count) return;
 
-			StorageUIList[index].Box_StorageName.Text = StorageList[index].StorageName;
-			StorageUIList[index].Box_URL.Text = StorageList[index].URL;
-			StorageUIList[index].Box_AccessKey.Text = StorageList[index].AccessKey;
-			StorageUIList[index].Box_AccessSecret.Text = StorageList[index].AccessSecret;
-			StorageUIList[index].Box_UserName.Text = StorageList[index].UserName;
-			StorageUIList[index].Box_S3FileManagerURL.Text = StorageList[index].S3FileManagerURL;
+			_storageUIList[index].Box_StorageName.Text = _storageList[index].StorageName;
+			_storageUIList[index].Box_URL.Text = _storageList[index].URL;
+			_storageUIList[index].Box_AccessKey.Text = _storageList[index].AccessKey;
+			_storageUIList[index].Box_AccessSecret.Text = _storageList[index].AccessSecret;
+			_storageUIList[index].Box_UserName.Text = _storageList[index].UserName;
+			_storageUIList[index].Box_S3FileManagerURL.Text = _storageList[index].S3FileManagerURL;
 
-			StorageUIList[index].Box_URL.IsEnabled = false;
-			StorageUIList[index].Box_AccessKey.IsEnabled = false;
-			StorageUIList[index].Box_AccessSecret.IsEnabled = false;
-			StorageUIList[index].Box_UserName.IsEnabled = false;
+			_storageUIList[index].Box_URL.IsEnabled = false;
+			_storageUIList[index].Box_AccessKey.IsEnabled = false;
+			_storageUIList[index].Box_AccessSecret.IsEnabled = false;
+			_storageUIList[index].Box_UserName.IsEnabled = false;
 
-			StorageUIList[index].Box_StorageName.Focus();
+			_storageUIList[index].Box_StorageName.Focus();
 		}
 		void Btn_Edit(object sender, RoutedEventArgs e)
 		{
@@ -910,23 +901,23 @@ namespace IfsSync2UI
 
 		void SaveStorage(int index)
 		{
-			if (index >= StorageUIList.Count) return;
+			if (index >= _storageUIList.Count) return;
 
 			//저장로직
-			string StorageName = StorageUIList[index].Box_StorageName.Text;
-			string S3FileManagerURL = StorageUIList[index].Box_S3FileManagerURL.Text;
+			string StorageName = _storageUIList[index].Box_StorageName.Text;
+			string S3FileManagerURL = _storageUIList[index].Box_S3FileManagerURL.Text;
 
-			if (!StorageList[index].StorageName.Equals(StorageName) && !UserSQL.UpdateUserStorageName(StorageList[index].ID, StorageName, false))
+			if (!_storageList[index].StorageName.Equals(StorageName) && !_userSQL.UpdateUserStorageName(_storageList[index].Id, StorageName, false))
 			{
 				Utility.ErrorMessageBox("StorageName save failed!", Title);
 				return;
 			}
-			if (!StorageList[index].S3FileManagerURL.Equals(S3FileManagerURL) && !UserSQL.UpdateUserS3FileManagerURL(StorageList[index].ID, S3FileManagerURL, false))
+			if (!_storageList[index].S3FileManagerURL.Equals(S3FileManagerURL) && !_userSQL.UpdateUserS3FileManagerURL(_storageList[index].Id, S3FileManagerURL, false))
 			{
 				Utility.ErrorMessageBox("S3 File Manager URL save failed!", Title);
 				return;
 			}
-			StorageUIList[index].PopupButton.IsChecked = false;
+			_storageUIList[index].PopupButton.IsChecked = false;
 			StorageListUpdate();
 		}
 
@@ -954,17 +945,17 @@ namespace IfsSync2UI
 		}
 		void DeleteStorage(int index)
 		{
-			if (index >= StorageUIList.Count) return;
+			if (index >= _storageUIList.Count) return;
 
-			int UserID = StorageList[index].ID;
-			string HostName = StorageList[index].HostName;
+			int UserID = _storageList[index].Id;
+			string HostName = _storageList[index].HostName;
 
 			//Check Instant
 			{
 				TabItem Item = MainTab.Items[1] as TabItem;
 				JobTab Tab = Item.Content as JobTab;
 
-				if (Tab.BackupStart && !Tab.Job.IsGlobalUser && Tab.Job.UserID == UserID)
+				if (Tab.BackupStart && !Tab.Job.IsGlobalUser && Tab.Job.UserId == UserID)
 				{
 					Utility.ErrorMessageBox("Instant가 백업을 진행중입니다. \n스토리지를 삭제하고 싶으시면 Instant 백업을 중단하십시오.", Title);
 					return;
@@ -978,7 +969,7 @@ namespace IfsSync2UI
 				{
 					TabItem Item = MainTab.Items[i] as TabItem;
 					JobTab Tab = Item.Content as JobTab;
-					if (Tab.Job.UserID == UserID && Tab.Job.HostName == HostName)
+					if (Tab.Job.UserId == UserID && Tab.Job.HostName == HostName)
 					{
 						Tab.Delete();
 						MainTab.Items.RemoveAt(i);
@@ -986,11 +977,11 @@ namespace IfsSync2UI
 				}
 				catch (Exception e)
 				{
-					log.Error(e);
+					_log.Error(e);
 				}
 			}
 			//User 삭제
-			UserSQL.DeleteUserToId(UserID, false);
+			_userSQL.DeleteUserToId(UserID, false);
 
 			StorageListUpdate();
 			JobListUpdate();
@@ -1007,22 +998,20 @@ namespace IfsSync2UI
 		}
 
 		#region Graph
-		void GraphDrawing(double Rate, StackPanel Graph)
+		void GraphDrawing(double rate, StackPanel graph)
 		{
-			Graph.Children.Clear();
-			double Angle = MaxAngle * Rate / 100;
+			graph.Children.Clear();
+			double angle = MAX_ANGLE * rate / 100;
 
-			if (Angle >= MaxAngle - 1) Angle = MaxAngle - 1;
-			if (Angle < 1) Angle = 1;
+			if (angle >= MAX_ANGLE - 1) angle = MAX_ANGLE - 1;
+			if (angle < 1) angle = 1;
 
-			var Center = new Point(Graph.ActualWidth / 2, Graph.ActualHeight / 2);
-			double RadiusX = Center.X;
-			//double RadiusY = Center.Y;
-			double angle = Angle;
+			var center = new Point(graph.ActualWidth / 2, graph.ActualHeight / 2);
+			double radiusX = center.X;
+			double angleValue = angle;
 
-			bool fullEllipse = angle >= MaxAngle;
-			if (fullEllipse) angle = MaxAngle / 2;
-
+			bool fullEllipse = angleValue >= MAX_ANGLE;
+			if (fullEllipse) angleValue = MAX_ANGLE / 2;
 
 			var arcPath = new Path
 			{
@@ -1032,18 +1021,18 @@ namespace IfsSync2UI
 					Figures = [
 						new PathFigure
 						{
-							StartPoint = Center,
+							StartPoint = center,
 							Segments = [
 								new LineSegment()
 								{
-									Point = new Point(Center.X + RadiusX, Center.Y),
+									Point = new Point(center.X + radiusX, center.Y),
 									IsStroked = false
 								},
 								new ArcSegment
 								{
-									Point = new Point(Center.X + RadiusX * MyCos(angle), Center.Y - RadiusX * MySin(angle)),
-									Size = new Size(Center.X, Center.Y),
-									IsLargeArc = angle > MaxAngle / 2,
+									Point = new Point(center.X + radiusX * MyCos(angleValue), center.Y - radiusX * MySin(angleValue)),
+									Size = new Size(center.X, center.Y),
+									IsLargeArc = angleValue > MAX_ANGLE / 2,
 									SweepDirection = SweepDirection.Counterclockwise
 								}]
 						}
@@ -1052,17 +1041,15 @@ namespace IfsSync2UI
 				Fill = new SolidColorBrush(Colors.CornflowerBlue)
 			};
 
-			Graph.Children.Add(arcPath);
-
-
+			graph.Children.Add(arcPath);
 		}
 		static double MySin(double degrees)
 		{
-			return Math.Sin(degrees * 2d * Math.PI / MaxAngle);
+			return Math.Sin(degrees * 2d * Math.PI / MAX_ANGLE);
 		} //sin
 		static double MyCos(double degrees)
 		{
-			return Math.Cos(degrees * 2d * Math.PI / MaxAngle);
+			return Math.Cos(degrees * 2d * Math.PI / MAX_ANGLE);
 		} //cos
 		#endregion Graph
 
@@ -1090,12 +1077,6 @@ namespace IfsSync2UI
 
 				string Name = JobTabItem.Job.JobName;
 				L_MainTitle.Text = JobTabItem.Job.StrPolicy + " Job : " + Name;
-				//L_MainTitle.Content =  Name;
-				//B_JobType.Visibility = Visibility.Visible;
-				//B_JobType.Content = JobTabItem.Job.StrPolicy + " Job";
-				//double Width = FontLength * Name.Length; //L_MainTitle.ActualWidth;
-				//B_JobType.Margin = new Thickness(Width + MarginLength, MarginLength, MarginLength, MarginLength);
-				//Grid_Delete.Margin = new Thickness(Width + B_JobType.Width + MarginLength*2, MarginLength, MarginLength, MarginLength);
 			}
 
 		}
@@ -1115,9 +1096,16 @@ namespace IfsSync2UI
 		{
 			if (L_JobList.SelectedIndex >= 0)
 			{
-				int index = L_JobList.SelectedIndex + 1 - GlobalCount;
+				int index = L_JobList.SelectedIndex + 1 - _globalCount;
 				MainTab.SelectedIndex = index;
 			}
+		}
+
+		void SettingsButtonClieck(object sender, RoutedEventArgs e)
+		{
+			ConfigWindow settingsWindow = new();
+			settingsWindow.WindowStartupLocation = WindowStartupLocation.CenterScreen;
+			settingsWindow.Show();
 		}
 	}
 }

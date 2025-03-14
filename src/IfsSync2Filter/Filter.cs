@@ -2,7 +2,7 @@
 * Copyright (c) 2021 PSPACE, inc. KSAN Development Team ksan@pspace.co.kr
 * KSAN is a suite of free software: you can redistribute it and/or modify it under the terms of
 * the GNU General Public License as published by the Free Software Foundation, either version 
-* 3 of the License.  See LICENSE for details
+* 3 of the License. See LICENSE for details
 *
 * 본 프로그램 및 관련 소스코드, 문서 등 모든 자료는 있는 그대로 제공이 됩니다.
 * KSAN 프로젝트의 개발자 및 개발사는 이 프로그램을 사용한 결과에 따른 어떠한 책임도 지지 않습니다.
@@ -16,19 +16,18 @@ using IfsSync2Data;
 
 namespace IfsSync2Filter
 {
-	public class Filter(bool global)
+	public class Filter()
 	{
 		const int FILTER_CHECK_DELAY = 5000;
 
 		readonly ILog _log = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
 		readonly List<FilterThread> _filters = [];
 		readonly JobDbManager _jobDb = new();
-		readonly bool _global = global;
 
 		public void CheckOnce()
 		{
 			FilterThreadAliveInit();
-			var jobs = _jobDb.GetJobs(_global);
+			var jobs = _jobDb.GetJobs();
 
 			foreach (var job in jobs)
 			{
@@ -48,7 +47,7 @@ namespace IfsSync2Filter
 						{
 							job.FilterUpdate = false;
 							Filter.JobDataUpdate(job);
-							_jobDb.UpdateFilterCheck(job, _global);
+							_jobDb.UpdateFilterCheck(job);
 						}
 						break;
 					}

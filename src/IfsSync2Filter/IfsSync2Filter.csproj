@@ -1,6 +1,6 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 	<PropertyGroup>
-		<OutputType>WinExe</OutputType>
+		<OutputType>Exe</OutputType>
 		<PublishUrl>게시\</PublishUrl>
 		<Install>true</Install>
 		<InstallFrom>Disk</InstallFrom>
@@ -71,7 +71,8 @@
 	</ItemGroup>
 	<ItemGroup>
 		<PackageReference Include="callback.CBFSFilter" Version="20.0.7656" />
-		<PackageReference Include="log4net" Version="2.0.17" />
+		<PackageReference Include="log4net" Version="3.0.4" />
+		<PackageReference Include="System.Data.SqlClient" Version="4.8.6" />
 		<PackageReference Include="System.Data.SQLite" Version="1.0.119" />
 		<PackageReference Include="System.Data.SQLite.Core" Version="1.0.119" />
 		<PackageReference Include="System.Data.SQLite.EF6" Version="1.0.119" />

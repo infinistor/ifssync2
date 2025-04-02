@@ -12,8 +12,10 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.IO;
+using System.Linq;
 using System.Reflection;
 using System.Text;
+using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Data;
@@ -30,20 +32,19 @@ namespace IfsSync2UI
 	{
 		private static readonly ILog log = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
 
-		public int LogIndex { get; private set; }
+		public int LogIndex { get; private set; } = int.MaxValue;
 		public LogTab()
 		{
 			InitializeComponent();
-			LogIndex = 0;
 		}
 
 		#region Log Event
 		/*******************************Log***********************************/
 		public void TaskLogUpdates(List<TaskData> Tasks)
 		{
-			LogIndex += Tasks.Count;
 			try
 			{
+				LogIndex = Tasks.Count > 0 ? (int)Tasks[^1].Index : int.MaxValue;
 				L_TaskView.Dispatcher.Invoke(delegate { foreach (var Task in Tasks) L_TaskView.Items.Add(Task); });
 			}
 			catch (Exception ex)

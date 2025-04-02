@@ -47,7 +47,7 @@ namespace IfsSync2Sender
 					}
 
 					senderConfigs.Alive = true;
-					senderManager.Once(senderConfigs.FetchCount, senderConfigs.SenderDelay, senderConfigs.ThreadCount, senderConfigs.MultipartUploadFileSize, senderConfigs.MultipartUploadPartSize);
+					senderManager.Once(senderConfigs.FetchCount, senderConfigs.SenderDelay, senderConfigs.ThreadCount, senderConfigs.MultipartUploadFileSize, senderConfigs.MultipartUploadPartSize, senderConfigs.LogRetention);
 
 					Thread.Sleep(senderConfigs.SenderCheckDelay);
 				}

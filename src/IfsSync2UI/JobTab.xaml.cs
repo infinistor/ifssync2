@@ -71,7 +71,6 @@ namespace IfsSync2UI
 		/*************************** Log Data ************************************/
 		LogViewWindow LogViewWindow = null;
 		private readonly System.Timers.Timer UpdateLogTimer;
-		private long StartPoint = 0;
 		/****************************** Init *************************************/
 		public JobTab(TabItem Tab, JobData job, bool _NewTab = false)
 		{
@@ -1293,19 +1292,24 @@ namespace IfsSync2UI
 
 		private void LogUpdate(object sender, ElapsedEventArgs e)
 		{
-			var LogList = _taskDb.GetLog(StartPoint);
+			// L_LogList에서 가장 마지막 인덱스를 찾아서 그 이후의 로그를 가져온다.
+			var lastIndex = int.MaxValue;
+			if (L_LogList.Items.Count > 0)
+				L_LogList.Dispatcher.Invoke(() =>
+				{
+					lastIndex = L_LogList.Items.Count;
+				});
+
+			var LogList = _taskDb.GetLog(lastIndex);
 
 			if (LogList?.Count > 0)
 			{
-				StartPoint += LogList.Count;
-
 				L_LogList.Dispatcher.Invoke(delegate
 				{
 					foreach (string Msg in LogList) L_LogList.Items.Add(Msg);
 					L_LogList.SelectedIndex = L_LogList.Items.Count - 1;
 				});
 			}
-
 		}
 		private void Btn_LogClear(object sender, RoutedEventArgs e)
 		{

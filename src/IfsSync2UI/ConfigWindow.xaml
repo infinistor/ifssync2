@@ -42,6 +42,33 @@
             </Grid>
         </GroupBox>
 
+        <GroupBox Header="Log Settings" Grid.Row="1" Margin="10">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+
+                <Label Grid.Column="0" Content="Delete Old Logs" 
+                       VerticalAlignment="Center" Margin="5"/>
+                <ComboBox Grid.Column="1" x:Name="CB_LogRetention" 
+                         VerticalAlignment="Center" Margin="5">
+                    <ComboBoxItem Content="Unlimited" IsSelected="True"/>
+                    <ComboBoxItem Content="1 Week"/>
+                    <ComboBoxItem Content="2 Weeks"/>
+                    <ComboBoxItem Content="3 Weeks"/>
+                    <ComboBoxItem Content="1 Month"/>
+                    <ComboBoxItem Content="2 Months"/>
+                    <ComboBoxItem Content="3 Months"/>
+                    <ComboBoxItem Content="6 Months"/>
+                    <ComboBoxItem Content="1 Year"/>
+                </ComboBox>
+            </Grid>
+        </GroupBox>
+
         <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right" Margin="10">
             <Button Click="Btn_Save" Content="Save" Width="45" Height="20" 
                     Style="{StaticResource JobTabButtonStyle}" Margin="0,0,5,0"/>

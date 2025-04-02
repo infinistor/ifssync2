@@ -18,6 +18,7 @@ namespace IfsSync2Data
 		const string MULTIPART_UPLOAD_FILE_SIZE = "MultipartUploadFileSize";
 		const string MULTIPART_UPLOAD_PART_SIZE = "MultipartUploadPartSize";
 		const string SENDER_THREAD_COUNT = "SenderThreadCount";
+		const string SENDER_LOG_RETENTION = "SenderLogRetention";
 		const string SENDER_FETCH_COUNT = "SenderFetchCount";
 		const string SENDER_DELAY = "SenderDelay";
 		const string SENDER_CHECK_DELAY = "SenderCheckDelay";
@@ -29,6 +30,7 @@ namespace IfsSync2Data
 		const int DEFAULT_SENDER_CHECK_DELAY = 5 * 1000; //5 sec
 		const long DEFAULT_MULTIPART_UPLOAD_FILE_SIZE = 100000000; //100MB
 		const long DEFAULT_MULTIPART_UPLOAD_PART_SIZE = 10000000; //10MB
+		const int DEFAULT_LOG_RETENTION = 0; // 무제한
 		#endregion
 
 		readonly RegistryKey SenderConfigKey = null;
@@ -49,6 +51,11 @@ namespace IfsSync2Data
 		{
 			get => int.TryParse(SenderConfigKey.GetValue(SENDER_THREAD_COUNT)?.ToString(), out int value) ? value : DEFAULT_THREAD_COUNT;
 			set => SenderConfigKey.SetValue(SENDER_THREAD_COUNT, value, RegistryValueKind.DWord);
+		}
+		public int LogRetention
+		{
+			get => int.TryParse(SenderConfigKey.GetValue(SENDER_LOG_RETENTION)?.ToString(), out int value) ? value : DEFAULT_LOG_RETENTION;
+			set => SenderConfigKey.SetValue(SENDER_LOG_RETENTION, value, RegistryValueKind.DWord);
 		}
 		public int FetchCount
 		{
@@ -96,13 +103,15 @@ namespace IfsSync2Data
 				SenderConfigKey.SetValue(ROOT_PATH, "", RegistryValueKind.String);
 				SenderConfigKey.SetValue(SENDER_STOP, MainData.MY_FALSE, RegistryValueKind.DWord);
 				SenderConfigKey.SetValue(MainData.ALIVE_CHECK, MainData.MY_FALSE, RegistryValueKind.DWord);
+				SenderConfigKey.SetValue(SENDER_LOG_RETENTION, DEFAULT_LOG_RETENTION, RegistryValueKind.DWord);
 			}
 		}
-		public void SetOptions(long multipartUploadFileSize, long multipartUploadPartSize, int threadCount)
+		public void SetOptions(long multipartUploadFileSize, long multipartUploadPartSize, int threadCount, int logRetention)
 		{
 			MultipartUploadFileSize = multipartUploadFileSize;
 			MultipartUploadPartSize = multipartUploadPartSize;
 			ThreadCount = threadCount;
+			LogRetention = logRetention;
 		}
 
 		public void Close() { SenderConfigKey?.Close(); }

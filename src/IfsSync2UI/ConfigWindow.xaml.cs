@@ -24,12 +24,47 @@ namespace IfsSync2UI
 			LoadConfig();
 		}
 
+		private static int String2LogRetention(string str)
+		{
+			return str switch
+			{
+				"Unlimited" => 0,
+				"1 Week" => 7,
+				"2 Weeks" => 14,
+				"3 Weeks" => 21,
+				"1 Month" => 30,
+				"2 Months" => 60,
+				"3 Months" => 90,
+				"6 Months" => 180,
+				"1 Year" => 365,
+				_ => 0,
+			};
+		}
+
+		private static string LogRetention2String(int logRetention)
+		{
+			return logRetention switch
+			{
+				0 => "Unlimited",
+				7 => "1 Week",
+				14 => "2 Weeks",
+				21 => "3 Weeks",
+				30 => "1 Month",
+				60 => "2 Months",
+				90 => "3 Months",
+				180 => "6 Months",
+				365 => "1 Year",
+				_ => "Unlimited",
+			};
+		}
+
 		private void LoadConfig()
 		{
 			SenderConfig senderConfig = new();
 			T_MultipartUploadSize.Text = MainData.SizeToString(senderConfig.MultipartUploadFileSize);
 			T_MultipartPartSize.Text = MainData.SizeToString(senderConfig.MultipartUploadPartSize);
 			T_ThreadCount.Text = senderConfig.ThreadCount.ToString();
+			CB_LogRetention.SelectedValue = LogRetention2String(senderConfig.LogRetention);
 		}
 
 		public void Btn_Save(object sender, RoutedEventArgs e)
@@ -37,6 +72,8 @@ namespace IfsSync2UI
 			var multipartUploadFileSize = MainData.StringToSize(T_MultipartUploadSize.Text);
 			var multipartUploadPartSize = MainData.StringToSize(T_MultipartPartSize.Text);
 			var threadCount = int.Parse(T_ThreadCount.Text);
+			var logRetention = String2LogRetention(CB_LogRetention.SelectedValue.ToString());
+
 			if (multipartUploadFileSize == 0)
 			{
 				MessageBox.Show("MultipartUploadFileSize에 숫자를 입력해주세요.");
@@ -60,7 +97,7 @@ namespace IfsSync2UI
 			}
 
 			SenderConfig senderConfig = new(true);
-			senderConfig.SetOptions(multipartUploadFileSize, multipartUploadPartSize, threadCount);
+			senderConfig.SetOptions(multipartUploadFileSize, multipartUploadPartSize, threadCount, logRetention);
 
 			MessageBox.Show("설정이 저장되었습니다.");
 		}

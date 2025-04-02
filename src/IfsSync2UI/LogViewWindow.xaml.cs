@@ -34,7 +34,7 @@ namespace IfsSync2UI
 
 		private readonly TaskDbManager TaskSQL;
 
-		public bool IsClose = false;
+		public bool IsClose { get; private set; } = false;
 
 		public LogViewWindow(JobData job)
 		{
@@ -48,14 +48,14 @@ namespace IfsSync2UI
 
 		private void UpdateLogList()
 		{
-			int SuccessIndex = SuccessTab.LogIndex;
-			int FailureIndex = FailureTab.LogIndex;
+			var successIndex = SuccessTab.LogIndex;
+			var failureIndex = FailureTab.LogIndex;
 
-			List<TaskData> Success = TaskSQL.GetSuccessList(SuccessIndex, 10000);
-			List<TaskData> Failure = TaskSQL.GetFailureList(FailureIndex, 10000);
+			var success = TaskSQL.GetSuccessList(successIndex, 10000);
+			var failure = TaskSQL.GetFailureList(failureIndex, 10000);
 
-			SuccessTab.TaskLogUpdates(Success);
-			FailureTab.TaskLogUpdates(Failure);
+			SuccessTab.TaskLogUpdates(success);
+			FailureTab.TaskLogUpdates(failure);
 		}
 
 		private void TabInit()
@@ -108,9 +108,9 @@ namespace IfsSync2UI
 			if (fileDialog.ShowDialog() == System.Windows.Forms.DialogResult.Cancel) return;
 
 			if (string.IsNullOrWhiteSpace(fileDialog.FileName)) return;
-			string FileName = fileDialog.FileName;
-			TabItem Item = MainTab.Items[index] as TabItem;
-			LogTab Tab = Item.Content as LogTab;
+			var FileName = fileDialog.FileName;
+			var Item = MainTab.Items[index] as TabItem;
+			var Tab = Item.Content as LogTab;
 
 			if (Tab.SaveCSV(FileName)) System.Windows.MessageBox.Show(FileName + "\n저장 성공!", Title);
 			else Utility.ErrorMessageBox(FileName + "\n저장 실패!", Title);

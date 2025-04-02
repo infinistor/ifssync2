@@ -257,7 +257,7 @@ namespace IfsSync2Data
 			finally { _sqliteMutex.ReleaseMutex(); }
 		}
 
-		public List<TaskData> GetSuccessList(int startIndex = 0, int limit = DEFAULT_LIMIT)
+		public List<TaskData> GetSuccessList(int startIndex = int.MaxValue, int limit = DEFAULT_LIMIT)
 		{
 			var tasks = new List<TaskData>();
 			try
@@ -267,7 +267,7 @@ namespace IfsSync2Data
 				_sqliteMutex.WaitOne();
 				conn.Open();
 
-				using var cmd = new SQLiteCommand(conn) { CommandText = $"SELECT * FROM '{STR_SUCCESS_TABLE_NAME}' Limit {limit} OFFSET {startIndex}" };
+				using var cmd = new SQLiteCommand(conn) { CommandText = $"SELECT * FROM '{STR_SUCCESS_TABLE_NAME}' WHERE {STR_INDEX_NAME} < {startIndex} ORDER BY {STR_INDEX_NAME} DESC LIMIT {limit}" };
 
 				using var rdr = cmd.ExecuteReader();
 				while (rdr.Read())
@@ -292,7 +292,7 @@ namespace IfsSync2Data
 			finally { _sqliteMutex.ReleaseMutex(); }
 			return tasks;
 		}
-		public List<TaskData> GetFailureList(int startIndex = 0, int limit = DEFAULT_LIMIT)
+		public List<TaskData> GetFailureList(int startIndex = int.MaxValue, int limit = DEFAULT_LIMIT)
 		{
 			var tasks = new List<TaskData>();
 			try
@@ -302,8 +302,7 @@ namespace IfsSync2Data
 				_sqliteMutex.WaitOne();
 				conn.Open();
 
-
-				using var cmd = new SQLiteCommand(conn) { CommandText = $"SELECT * FROM '{STR_FAILURE_TABLE_NAME}' Limit {limit} OFFSET {startIndex}" };
+				using var cmd = new SQLiteCommand(conn) { CommandText = $"SELECT * FROM '{STR_FAILURE_TABLE_NAME}' WHERE {STR_INDEX_NAME} < {startIndex} ORDER BY {STR_INDEX_NAME} DESC LIMIT {limit}" };
 
 				using var rdr = cmd.ExecuteReader();
 				while (rdr.Read())
@@ -436,7 +435,7 @@ namespace IfsSync2Data
 				_sqliteMutex.ReleaseMutex();
 			}
 		}
-		public List<string> GetLog(long startIndex = 0)
+		public List<string> GetLog(int startIndex = int.MaxValue)
 		{
 			try
 			{
@@ -445,8 +444,7 @@ namespace IfsSync2Data
 				_sqliteMutex.WaitOne();
 				conn.Open();
 
-
-				using var cmd = new SQLiteCommand(conn) { CommandText = $"SELECT * FROM {STR_LOG_TABLE_NAME} LIMIT 50000 OFFSET {startIndex};" };
+				using var cmd = new SQLiteCommand(conn) { CommandText = $"SELECT * FROM {STR_LOG_TABLE_NAME} WHERE {STR_INDEX_NAME} < {startIndex} ORDER BY {STR_INDEX_NAME} DESC LIMIT 50000;" };
 				using var rdr = cmd.ExecuteReader();
 
 				var items = new List<string>();
@@ -467,6 +465,22 @@ namespace IfsSync2Data
 			{
 				_sqliteMutex.ReleaseMutex();
 			}
+		}
+
+		public bool DeleteOldLogs(int days = MainData.DEFAULT_DELETE_DATE)
+		{
+			try
+			{
+				using var conn = new SQLiteConnection($"Data Source={_filePath};Version=3;");
+				conn.Open();
+
+				using var cmd = new SQLiteCommand(conn) { CommandText = $"DELETE FROM {STR_LOG_TABLE_NAME} WHERE {STR_LOG_NAME} < '{DateTime.Now.AddDays(-days):yyyy-MM-dd HH:mm:ss}';" };
+				int result = cmd.ExecuteNonQuery();
+				if (result > 0) { _log.Debug($"Success({result}) : {cmd.CommandText}"); return true; }
+				else { _log.Error($"Failed({result}) : {cmd.CommandText}"); return false; }
+			}
+			catch (Exception e) { _log.Error(e); return false; }
+			finally { _sqliteMutex.ReleaseMutex(); }
 		}
 	}
 }

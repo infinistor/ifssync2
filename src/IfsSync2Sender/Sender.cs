@@ -51,8 +51,9 @@ namespace IfsSync2Sender
 		protected int _threadCount;
 		protected long _multipartUploadFileSize;
 		protected long _partSize;
+		protected int _logRetention;
 
-		public Sender(JobData jobData, UserData userData, int fetchCount, int delayTime, int threadCount, long multipartUploadFileSize, long multipartUploadPartSize)
+		public Sender(JobData jobData, UserData userData, int fetchCount, int delayTime, int threadCount, long multipartUploadFileSize, long multipartUploadPartSize, int logRetention)
 		{
 			Pause = false;
 			Job = jobData;
@@ -64,6 +65,7 @@ namespace IfsSync2Sender
 			_threadCount = threadCount;
 			_multipartUploadFileSize = multipartUploadFileSize;
 			_partSize = multipartUploadPartSize;
+			_logRetention = logRetention;
 			_taskManager = new TaskDbManager(jobData.JobName);
 			_jobManager = new JobDbManager();
 			_status = new JobStatus(Job.HostName, Job.JobName, true);
@@ -106,13 +108,14 @@ namespace IfsSync2Sender
 			// 작업 재개
 			Pause = false;
 		}
-		public void Update(int fetchCount, int delayTime, int threadCount, long multipartUploadFileSize, long multipartUploadPartSize)
+		public void Update(int fetchCount, int delayTime, int threadCount, long multipartUploadFileSize, long multipartUploadPartSize, int logRetention)
 		{
 			_fetchCount = fetchCount;
 			Delay = delayTime;
 			_threadCount = threadCount;
 			_multipartUploadFileSize = multipartUploadFileSize;
 			_partSize = multipartUploadPartSize;
+			_logRetention = logRetention;
 		}
 
 		public void Close()
@@ -149,6 +152,7 @@ namespace IfsSync2Sender
 						while (!_status.Quit)
 						{
 							if (!Pause && Job.CheckToSchedules()) RunOnce();
+							if (_logRetention > 0) _taskManager.DeleteOldLogs(_logRetention);
 							Thread.Sleep(Delay);
 						}
 						break;
@@ -163,6 +167,7 @@ namespace IfsSync2Sender
 						while (!_status.Quit)
 						{
 							if (!Pause) RealTimeRunOnce();
+							if (_logRetention > 0) _taskManager.DeleteOldLogs(_logRetention);
 							Thread.Sleep(Delay);
 						}
 						break;
@@ -816,21 +821,19 @@ namespace IfsSync2Sender
 						// 중복 파일 처리
 						if (meta != null)
 						{
-							// TODO: checksum 이 있을 경우 비교
-							// if (meta.ChecksumAlgorithm != S3ChecksumAlgorithm.None)
-							// {
-							// 	var checksum = ChecksumCalculator.CalculateChecksum(task.FilePath, meta.ChecksumAlgorithm);
-							// 	if (checksum.Equals(meta.Checksum, StringComparison.OrdinalIgnoreCase))
-							// 	{
-							// 		_taskManager.Delete(task);
-							// 		log.Debug($"Duplicate file : {task.FilePath}");
-							// 		return true;
-							// 	}
-							// }
-							// // checksum 이 없을 경우 MD5Sum에 -가 없을 경우 비교
-							// else
-							// 멀티파트 업로드가 아닐 경우
-							if (!string.IsNullOrWhiteSpace(meta.MD5) && !meta.MD5.Contains('-'))
+							// checksum 이 있을 경우 비교
+							if (meta.ChecksumAlgorithm != S3ChecksumAlgorithm.None)
+							{
+								var checksum = ChecksumCalculator.CalculateChecksum(task.FilePath, meta.ChecksumAlgorithm);
+								if (checksum.Equals(meta.Checksum, StringComparison.OrdinalIgnoreCase))
+								{
+									_taskManager.Delete(task);
+									log.Debug($"Duplicate file : {task.FilePath}");
+									return true;
+								}
+							}
+							// checksum 이 없을 경우 MD5Sum에 -가 없을 경우 비교
+							else if (!string.IsNullOrWhiteSpace(meta.MD5) && !meta.MD5.Contains('-'))
 							{
 								var md5sum = MainData.CalculateMD5(task.FilePath);
 								if (meta.MD5.Equals(md5sum, StringComparison.OrdinalIgnoreCase))

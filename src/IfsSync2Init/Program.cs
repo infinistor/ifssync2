@@ -23,7 +23,7 @@ namespace IfsSync2Init
 	{
 		public enum MenuList
 		{
-			Help, Install, Uninstall
+			Help, Install, Uninstall, BeforeUpdate, AfterUpdate
 		}
 		static int Main(string[] args)
 		{
@@ -38,9 +38,11 @@ namespace IfsSync2Init
 
 			var Options = new OptionSet {
 				{ "h|?|help", v => Menu = MenuList.Help},
-				{ "i|install", v => Menu = MenuList.Install },
-				{ "u|uninstall", v => Menu = MenuList.Uninstall},
-				{ "p|path=", v => TargetPath = v},
+				{ "install", v => Menu = MenuList.Install },
+				{ "uninstall", v => Menu = MenuList.Uninstall },
+				{ "before-update", v => Menu = MenuList.BeforeUpdate },
+				{ "after-update", v => Menu = MenuList.AfterUpdate },
+				{ "p|path=", v => TargetPath = v },
 				{ "host=", v => Host = v },
 				{ "ip=", v => IP = v },
 				{ "port=", v => Port = v },
@@ -74,6 +76,16 @@ namespace IfsSync2Init
 					Console.WriteLine("Uninstall Start");
 					Delete();
 					Console.WriteLine("Uninstall End!");
+					return 0;
+				case MenuList.BeforeUpdate:
+					Console.WriteLine("Before Update Start");
+					BeforeUpdate();
+					Console.WriteLine("Before Update End!");
+					return 0;
+				case MenuList.AfterUpdate:
+					Console.WriteLine("After Update Start");
+					AfterUpdate();
+					Console.WriteLine("After Update End!");
 					return 0;
 				case MenuList.Help:
 					Options.WriteOptionDescriptions(Console.Out);
@@ -168,6 +180,51 @@ namespace IfsSync2Init
 			Console.WriteLine("CBFS Uninstall End.");
 		}
 
+		static void BeforeUpdate()
+		{
+			Console.WriteLine("Before Update Start");
+
+			// 1. 스케줄러 작업 중지 (관련 프로세스들도 함께 종료됨)
+			Console.WriteLine("Stopping scheduled tasks...");
+			StopTask(MainData.FILTER_NAME);
+			StopTask(MainData.SENDER_NAME);
+			StopTask(MainData.TRAY_ICON_NAME);
+
+			// 2. UI 프로세스 종료 (UI는 스케줄러로 실행되지 않음)
+			Console.WriteLine("Terminating UI process...");
+			ProcessKill(MainData.UI_NAME);
+
+			// 3. 서비스 중지
+			Console.WriteLine("Stopping WatcherService...");
+			ServiceManager.StopService(MainData.WATCHER_SERVICE_NAME);
+
+			Console.WriteLine("System is ready for update.");
+		}
+
+		static void AfterUpdate()
+		{
+			Console.WriteLine("After Update Start");
+
+			//1. 서비스 시작
+			Console.WriteLine("Starting WatcherService...");
+			ServiceManager.StartService(MainData.WATCHER_SERVICE_NAME);
+
+			//2. 스케줄러 작업 시작
+			Console.WriteLine("Starting scheduled tasks...");
+			StartTask(MainData.FILTER_NAME);
+			StartTask(MainData.SENDER_NAME);
+			StartTask(MainData.TRAY_ICON_NAME);
+
+			Console.WriteLine("System has been restored after update.");
+		}
+
+		#region Task
+		/// <summary>
+		/// 스케줄러 작업 등록
+		/// </summary>
+		/// <param name="ScheduleName">작업 이름</param>
+		/// <param name="RootPath">작업 경로</param>
+		/// <param name="AC">AC 전원 여부</param>
 		private static void SetTask(string ScheduleName, string RootPath, bool AC = true)
 		{
 			using var taskService = new TaskService();
@@ -218,6 +275,54 @@ namespace IfsSync2Init
 			// 등록
 			taskService.RootFolder.RegisterTaskDefinition(ScheduleName, taskDefinition);
 		}
+
+		/// <summary>
+		/// 스케줄러 작업 중지
+		/// </summary>
+		/// <param name="taskName">작업 이름</param>
+		private static void StopTask(string taskName)
+		{
+			using var taskService = new TaskService();
+			try
+			{
+				var task = taskService.GetTask(taskName);
+				if (task != null && task.State == TaskState.Running)
+				{
+					task.Stop();
+					Console.WriteLine($"Stopped task: {taskName}");
+				}
+			}
+			catch (Exception e)
+			{
+				Console.WriteLine($"Error stopping task {taskName}: {e.Message}");
+			}
+		}
+
+		/// <summary>
+		/// 스케줄러 작업 시작
+		/// </summary>
+		/// <param name="taskName">작업 이름</param>
+		private static void StartTask(string taskName)
+		{
+			using var taskService = new TaskService();
+			try
+			{
+				var task = taskService.GetTask(taskName);
+				if (task != null)
+				{
+					task.Run();
+					Console.WriteLine($"Started task: {taskName}");
+				}
+			}
+			catch (Exception e)
+			{
+				Console.WriteLine($"Error starting task {taskName}: {e.Message}");
+			}
+		}
+		/// <summary>
+		/// 스케줄러 작업 삭제
+		/// </summary>
+		/// <param name="ScheduleName">작업 이름</param>
 		private static void DelTask(string ScheduleName)
 		{
 			using var taskService = new TaskService();
@@ -231,6 +336,10 @@ namespace IfsSync2Init
 			}
 		}
 
+		/// <summary>
+		/// 프로세스 종료
+		/// </summary>
+		/// <param name="ProcessName">프로세스 이름</param>
 		private static void ProcessKill(string ProcessName)
 		{
 			var ProcessList = GetProcessesByName(ProcessName);
@@ -244,7 +353,7 @@ namespace IfsSync2Init
 				}
 			}
 		}
-
+		#endregion
 		#region CBFS
 		private static void CBFSInstall(string targetPath)
 		{

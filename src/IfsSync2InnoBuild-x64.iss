@@ -2,7 +2,7 @@
 #define MyAppName "IfsSync2"
 #define MyInitName "IfsSync2Init.exe"
 #define MyAppExeName "IfsSync2UI.exe"
-#define MyAppVersion "2.0.0.14"
+#define MyAppVersion "2.0.0.15"
 #define MyAppPublisher "PSPACE Technology"
 #define MyAppURL "http://www.pspace.com" 
 #define MyDateTimeString GetDateTimeString('yyyymmddhhnnss', '-', ':');
@@ -18,13 +18,14 @@ DefaultDirName={pf}\{#MyCompany}
 DefaultGroupName={#MyCompany}\{#MyAppName}
 AllowNoIcons=yes
 OutputDir={#SourcePath}\Setup
-OutputBaseFilename={#MyAppName}_{#MyAppVersion}_{#MyDateTimeString}_Setup_x64   
+OutputBaseFilename={#MyAppName}_{#MyAppVersion}_{#MyDateTimeString}_Setup_x64
 SetupIconFile={#SourcePath}\Ifssync2\file.ico
 Compression=lzma
 SolidCompression=yes
 DisableDirPage=true
 DisableProgramGroupPage=yes
 DisableWelcomePage=yes
+UsePreviousAppDir=yes
 AlwaysRestart=yes
 
 ; "ArchitecturesAllowed=x64" specifies that Setup cannot run on
@@ -38,11 +39,17 @@ ArchitecturesInstallIn64BitMode=x64
 
 [Files]
 Source: "{#SourcePath}\Ifssync2\*"; DestDir: "{app}\{#MyAppName}"; Flags: recursesubdirs createallsubdirs; Excludes: "*.xml,*.manifest,*.exp,*.a,*.lib,*.pdb,*.suo,*.config,dbghelp.dll,*.txt,*.yes,*.ilk"
-Source: "{#SourcePath}\Ifssync2\*Config.xml"; DestDir: "{app}\{#MyAppName}"; Flags: recursesubdirs createallsubdirs; 
+Source: "{#SourcePath}\Ifssync2\*Config.xml"; DestDir: "{app}\{#MyAppName}"; Flags: recursesubdirs createallsubdirs;
 
 [Run]
-Filename: "{app}\{#MyAppName}\IfsSync2Init.exe"; Parameters: "-install -p""{app}\{#MyAppName}"""; StatusMsg: "Installing..."; Flags: skipifsilent;
-Filename: "{app}\{#MyAppName}\{#MyAppExeName}"; Description: "{cm:LaunchProgram,{#StringChange(MyAppName, '&', '&&')}}"; Flags: nowait postinstall skipifsilent runascurrentuser
+; 신규 설치
+Filename: "{app}\{#MyAppName}\{#MyInitName}"; Parameters: "--install -p""{app}\{#MyAppName}"""; StatusMsg: "서비스 설치 중... (Windows 서비스 등록 및 시작)"; Flags: waituntilterminated; Check: not IsUpdateMode
+
+; 업데이트 후 작업
+Filename: "{app}\{#MyAppName}\{#MyInitName}"; Parameters: "--after-update"; StatusMsg: "서비스 복구 중... (서비스 및 프로세스 재시작)"; Flags: waituntilterminated; Check: IsUpdateMode
+
+; 프로그램 시작
+Filename: "{app}\{#MyAppName}\{#MyAppExeName}"; Description: "{cm:LaunchProgram,{#StringChange(MyAppName, '&', '&&')}}"; StatusMsg: "프로그램 시작 중..."; Flags: nowait postinstall skipifsilent runascurrentuser;
 
 [Icons]
 Name: "{group}\{cm:UninstallProgram, {#MyAppName}}"; Filename: "{uninstallexe}";
@@ -53,7 +60,7 @@ Name: "{userdesktop}\{#MyAppExeName}"; Filename: "{app}\{#MyAppName}\{#MyAppExeN
 Name: desktopicon; Description: {cm:CreateDesktopIcon}; GroupDescription: {cm:AdditionalIcons}; Flags: Unchecked;
 
 [UninstallRun]
-Filename: "{app}\{#MyAppName}\IfsSync2Init.exe"; Parameters: "--uninstall"; StatusMsg: "Uninstalling..."; Flags: skipifdoesntexist;
+Filename: "{app}\{#MyAppName}\{#MyInitName}"; Parameters: "--uninstall"; StatusMsg: "Uninstalling..."; Flags: skipifdoesntexist;
 
 [InstallDelete]
 Type: filesandordirs; Name: "{group}";
@@ -62,6 +69,9 @@ Type: filesandordirs; Name: "{group}";
 Type: filesandordirs; Name: "{app}\{#MyAppName}";
 
 [Code]
+var
+  gIsUpdateMode: Boolean;
+
 function IsDotNetDetected(): Boolean;
 var
   ResultCode: Integer;
@@ -110,19 +120,29 @@ begin
   Result := True;
 end;
 
-procedure CurPageChanged(CurPageID: Integer);
-var
-  FilePath: String;
-  ResultCode: Integer;
-  Results: bool;
+function IsUpdateMode: Boolean;
 begin
-  if CurPageID = wpReady then
+  Result := gIsUpdateMode;
+end;
+
+procedure CurStepChanged(CurStep: TSetupStep);
+var
+  ResultCode: Integer;
+begin
+  // 파일 복사 전
+  if CurStep = ssInstall then
   begin
-    FilePath:= 'C:\Program Files\PSPACE\IfsSync2\IfsSync2Init.exe';
-    Results:= FileExists(FilePath);
-    if Results then
+    // 파일 복사 전에 업데이트 모드인지 확인하여 전역 변수에 저장
+    gIsUpdateMode := FileExists(ExpandConstant('{app}\{#MyAppName}\{#MyInitName}'));
+    
+    if gIsUpdateMode then
     begin
-        Exec(ExpandConstant(FilePath), '--uninstall', '', SW_SHOW, ewWaitUntilTerminated, ResultCode)
+      Exec(ExpandConstant('{app}\{#MyAppName}\{#MyInitName}'),
+           '--before-update',
+           '',
+           SW_SHOW,
+           ewWaitUntilTerminated,
+           ResultCode);
     end;
   end;
 end;

@@ -674,9 +674,17 @@ namespace IfsSync2UI
 
 		static bool RegionEndpointCheck(string SystemName)
 		{
-			RegionEndpoint Endpoint = RegionEndpoint.GetBySystemName(SystemName);
-			if (Endpoint.DisplayName.Equals(MainData.UNKNOWN)) return false;
-			return true;
+			try
+			{
+				var Endpoint = RegionEndpoint.GetBySystemName(SystemName);
+				if (Endpoint.DisplayName.Equals(MainData.UNKNOWN)) return false;
+				return true;
+			}
+			catch (Exception e)
+			{
+				_log.Error(e);
+				return false;
+			}
 		}
 
 		static bool LoginTest(UserData User)
@@ -727,7 +735,7 @@ namespace IfsSync2UI
 			string url = T_AddStorageURL.Text.Trim();
 			if (!url.StartsWith(MainData.HTTP, StringComparison.OrdinalIgnoreCase) && !RegionEndpointCheck(url))
 			{
-				Utility.ErrorMessageBox("Region Endpoint Check fail!", Title);
+				Utility.ErrorMessageBox("Full URL or Region Check fail!", Title);
 				T_AddStorageUserName.Focus();
 				return;
 			}

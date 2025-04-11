@@ -632,7 +632,7 @@ namespace IfsSync2UI
 						_storageUIList[i].Main.Visibility = Visibility.Visible;
 						_storageUIList[i].StorageName.Text = _storageList[i].StorageName;
 						_storageUIList[i].URL.Text = _storageList[i].URL;
-						if (_storageList[i].IsAWS)
+						if (_storageList[i].IsS3)
 						{
 							_storageUIList[i].Black_AWSMessage.Visibility = Visibility.Visible;
 							_storageUIList[i].Grid_Quota.Visibility = Visibility.Hidden;
@@ -672,21 +672,6 @@ namespace IfsSync2UI
 			catch (Exception e) { _log.Error(e); return false; }
 		}
 
-		static bool RegionEndpointCheck(string SystemName)
-		{
-			try
-			{
-				var Endpoint = RegionEndpoint.GetBySystemName(SystemName);
-				if (Endpoint.DisplayName.Equals(MainData.UNKNOWN)) return false;
-				return true;
-			}
-			catch (Exception e)
-			{
-				_log.Error(e);
-				return false;
-			}
-		}
-
 		static bool LoginTest(UserData User)
 		{
 			try
@@ -720,43 +705,77 @@ namespace IfsSync2UI
 		}
 		void CreateCredential()
 		{
-			string userName = T_AddStorageUserName.Text;
-			if (BucketNameCheck(userName))
-			{
-				Utility.ErrorMessageBox("User Name (Bucket) is not correct!\nBucket name should contain only \nlowercase letters, numbers, periods(.) and dashes(-)", Title);
-				return;
-			}
+			var bucketName = T_AddStorageUserName.Text;
 
-			if (_userSQL.IsUserName(userName, false))
+			// 버킷 이름이 비어있는 경우 오류 메시지 표시
+			if (string.IsNullOrWhiteSpace(bucketName))
 			{
-				Utility.ErrorMessageBox("User name (Bucket) already exists.", Title);
-				return;
-			}
-			string url = T_AddStorageURL.Text.Trim();
-			if (!url.StartsWith(MainData.HTTP, StringComparison.OrdinalIgnoreCase) && !RegionEndpointCheck(url))
-			{
-				Utility.ErrorMessageBox("Full URL or Region Check fail!", Title);
+				Utility.ErrorMessageBox("버킷 이름이 비어있습니다", Title);
 				T_AddStorageUserName.Focus();
 				return;
 			}
+
+			// 사용자 이름이 올바른 형식인지 확인
+			if (BucketNameCheck(bucketName))
+			{
+				Utility.ErrorMessageBox("버킷 이름이 올바르지 않습니다!\n버킷 이름은 소문자, 숫자, 마침표(.), 대시(-)만 포함해야 합니다", Title);
+				T_AddStorageUserName.Focus();
+				return;
+			}
+
+			// 사용자 이름이 이미 존재하는지 확인
+			if (_userSQL.IsUserName(bucketName, false))
+			{
+				Utility.ErrorMessageBox("버킷 이름이 이미 존재합니다.", Title);
+				T_AddStorageUserName.Focus();
+				return;
+			}
+
+			// URL이 올바른 형식인지 확인
+			var url = T_AddStorageURL.Text.Trim();
+			if (!url.StartsWith(MainData.HTTP, StringComparison.OrdinalIgnoreCase) && !url.StartsWith(MainData.HTTPS, StringComparison.OrdinalIgnoreCase))
+			{
+				Utility.ErrorMessageBox("URL이 올바르지 않습니다!", Title);
+				T_AddStorageURL.Focus();
+				return;
+			}
+
+			// 접근키가 비어있는 경우 오류 메시지 표시
+			var accessKey = T_AddStorageAccessKey.Text.Trim();
+			if (string.IsNullOrWhiteSpace(accessKey))
+			{
+				Utility.ErrorMessageBox("Access Key가 비어있습니다!", Title);
+				T_AddStorageAccessKey.Focus();
+				return;
+			}
+
+			// 비밀키가 비어있는 경우 오류 메시지 표시
+			var secretKey = T_AddStorageSecretKey.Text.Trim();
+			if (string.IsNullOrWhiteSpace(secretKey))
+			{
+				Utility.ErrorMessageBox("Secret Key가 비어있습니다!", Title);
+				T_AddStorageSecretKey.Focus();
+				return;
+			}
+
 			string s3FileManagerURL = "";
 			if (_mainStorage != null) s3FileManagerURL = _mainStorage.S3FileManagerURL;
 
 			var user = new UserData
 			{
 				HostName = Environment.UserName,
-				URL = T_AddStorageURL.Text.Trim(),
-				AccessKey = T_AddStorageAccessKey.Text.Trim(),
-				SecretKey = T_AddStorageSecretKey.Text.Trim(),
+				URL = url,
+				AccessKey = accessKey,
+				SecretKey = secretKey,
 				StorageName = T_AddStorageName.Text.Trim(),
 				UserName = T_AddStorageUserName.Text.Trim(),
 				S3FileManagerURL = s3FileManagerURL
 			};
 
-			if (!LoginTest(user)) Utility.ErrorMessageBox("Login Test Failed!", Title);
+			if (!LoginTest(user)) Utility.ErrorMessageBox("로그인 테스트 실패!", Title);
 			else
 			{
-				if (!_userSQL.InsertUser(user, false)) Utility.ErrorMessageBox("User Data is not Save!", Title);
+				if (!_userSQL.InsertUser(user, false)) Utility.ErrorMessageBox("사용자 데이터가 저장되지 않았습니다!", Title);
 				else
 				{
 					StorageListUpdate();
@@ -821,13 +840,13 @@ namespace IfsSync2UI
 			{
 				if (!_mainStorage.StorageName.Equals(StorageName) && !_userSQL.UpdateUserStorageName(_mainStorage.Id, StorageName, true))
 				{
-					Utility.ErrorMessageBox("StorageName save failed!", Title);
+					Utility.ErrorMessageBox("스토리지 이름 저장에 실패했습니다!", Title);
 					return;
 
 				}
 				if (!_mainStorage.S3FileManagerURL.Equals(S3FileManagerURL) && !_userSQL.UpdateUserS3FileManagerURL(_mainStorage.Id, S3FileManagerURL, true))
 				{
-					Utility.ErrorMessageBox("S3 File Manager URL save failed!", Title);
+					Utility.ErrorMessageBox("S3 파일 매니저 URL 저장에 실패했습니다!", Title);
 					return;
 				}
 
@@ -1114,6 +1133,11 @@ namespace IfsSync2UI
 			ConfigWindow settingsWindow = new();
 			settingsWindow.WindowStartupLocation = WindowStartupLocation.CenterScreen;
 			settingsWindow.Show();
+		}
+
+		private void B_StorageToggle_Checked(object sender, RoutedEventArgs e)
+		{
+
 		}
 	}
 }

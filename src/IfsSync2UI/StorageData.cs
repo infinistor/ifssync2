@@ -8,6 +8,7 @@
 * KSAN 프로젝트의 개발자 및 개발사는 이 프로그램을 사용한 결과에 따른 어떠한 책임도 지지 않습니다.
 * KSAN 개발팀은 사전 공지, 허락, 동의 없이 KSAN 개발에 관련된 모든 결과물에 대한 LICENSE 방식을 변경 할 권리가 있습니다.
 */
+using System;
 using IfsSync2Data;
 
 namespace IfsSync2UI
@@ -29,7 +30,7 @@ namespace IfsSync2UI
 		public long TotalSize { get; set; }
 		public long UsedSize { get; set; }
 
-		public bool IsAWS => URL.StartsWith(MainData.HTTP);
+		public bool IsS3 => URL.StartsWith(MainData.HTTP, StringComparison.OrdinalIgnoreCase) || URL.StartsWith(MainData.HTTPS, StringComparison.OrdinalIgnoreCase);
 		public long FreeSize => TotalSize - UsedSize;
 		public double Rate => TotalSize == 0 ? 0 : UsedSize / (double)TotalSize * 100.0;
 

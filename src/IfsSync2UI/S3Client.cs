@@ -18,6 +18,7 @@ using Amazon.S3.Model;
 using Amazon.S3.Transfer;
 using Amazon.S3.Util;
 using IfsSync2Data;
+using System.Net.Http;
 
 namespace IfsSync2UI
 {
@@ -36,7 +37,7 @@ namespace IfsSync2UI
 		public S3Client(UserData User)
 		{
 			AWSCredentials Credentials;
-			AmazonS3Config S3Config = null;
+			AmazonS3Config s3Config = null;
 
 			if (User == null) Credentials = new AnonymousAWSCredentials();
 			else
@@ -44,29 +45,32 @@ namespace IfsSync2UI
 				Credentials = new BasicAWSCredentials(User.AccessKey, User.SecretKey);
 				if (User.URL == "")
 				{
-					S3Config = new AmazonS3Config()
+					s3Config = new AmazonS3Config()
 					{
 						RegionEndpoint = RegionEndpoint.APNortheast2,
 						Timeout = TimeSpan.FromSeconds(S3_TIMEOUT),
 						MaxErrorRetry = 2,
 						ForcePathStyle = true,
-						UseHttp = true,
 					};
 				}
 				else
 				{
-					S3Config = new AmazonS3Config
+					s3Config = new AmazonS3Config
 					{
 						ServiceURL = User.URL,
 						Timeout = TimeSpan.FromSeconds(S3_TIMEOUT),
 						MaxErrorRetry = 2,
 						ForcePathStyle = true,
-						UseHttp = true,
+						UseHttp = User.URL.StartsWith(MainData.HTTP, StringComparison.OrdinalIgnoreCase),
 					};
+
+					// HTTPS 연결 시 SSL 인증서 검증 회피
+					if (!s3Config.UseHttp)
+						s3Config.HttpClientFactory = new AmazonS3HttpClientFactory();
 				}
 			}
 
-			Client = new AmazonS3Client(Credentials, S3Config);
+			Client = new AmazonS3Client(Credentials, s3Config);
 		}
 
 		#region Bucket Function
@@ -1331,7 +1335,7 @@ namespace IfsSync2UI
 		#region TransferUtility Function
 		public void Upload(string BucketName, string Key, string FilePath, long PartSize = 10 * 1024 * 1024, int ThreadCount = 10,
 			Stream Body = null, byte[] ByteBody = null, string ContentType = null,
-			List<Tag> TagSet = null, 
+			List<Tag> TagSet = null,
 			List<KeyValuePair<string, string>> MetadataList = null, List<KeyValuePair<string, string>> HeaderList = null)
 		{
 			var TransferUtilityConfig = new TransferUtilityConfig()
@@ -1443,5 +1447,27 @@ namespace IfsSync2UI
 			return Client.GetPreSignedURL(Request);
 		}
 		#endregion
+	}
+	// HttpClientFactory 클래스 추가
+	public class AmazonS3HttpClientFactory : HttpClientFactory
+	{
+		private readonly HttpClientHandler _clientHandler;
+
+		public AmazonS3HttpClientFactory()
+		{
+			_clientHandler = new HttpClientHandler
+			{
+				// 자체 서명된 인증서나 신뢰할 수 없는 인증 기관의 인증서를 사용하는 서버와의 통신을 허용하기 위해
+				// SSL 인증서 검증을 의도적으로 무시합니다.
+				// 주의: 이는 개발 환경이나 특수한 경우에만 사용해야 하며, 보안 위험이 있습니다.
+				// #SuppressWarning: SSL 인증서 검증 경고는 의도적으로 무시됩니다.
+				ServerCertificateCustomValidationCallback = (sender, cert, chain, sslPolicyErrors) => true
+			};
+		}
+
+		public override HttpClient CreateHttpClient(IClientConfig clientConfig)
+		{
+			return new HttpClient(_clientHandler, false);
+		}
 	}
 }

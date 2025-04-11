@@ -2,7 +2,7 @@
 #define MyAppName "IfsSync2"
 #define MyInitName "IfsSync2Init.exe"
 #define MyAppExeName "IfsSync2UI.exe"
-#define MyAppVersion "2.0.0.16"
+#define MyAppVersion "2.0.0.17"
 #define MyAppPublisher "PSPACE Technology"
 #define MyAppURL "http://www.pspace.com" 
 #define MyDateTimeString GetDateTimeString('yyyymmddhhnnss', '-', ':');

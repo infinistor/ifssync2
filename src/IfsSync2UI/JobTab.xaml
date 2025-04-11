@@ -150,7 +150,7 @@
                 </Grid.ColumnDefinitions>
                 <Button Grid.Column="0" x:Name="B_Analysis" Content="Analysis" Click="Btn_Analysis" Style="{StaticResource JobTabButtonStyle}" />
                 <Button Grid.Column="1" x:Name="B_BackupStart" Content="Backup Start" Click="Btn_BackupStart" Style="{StaticResource JobTabBackupButtonStyle}"/>
-                <Button Grid.ColumnSpan="2" x:Name="B_InstantQuit" Content="Quit" Click="Btn_InstantQuit" Visibility="Hidden" Style="{StaticResource JobTabButtonStyle}" Background="#C55A11"/>
+                <Button Grid.ColumnSpan="2" x:Name="B_InstantQuit" Content="Stop" Click="Btn_InstantQuit" Visibility="Hidden" Style="{StaticResource JobTabButtonStyle}" Background="#C55A11"/>
             </Grid>
             <Button Grid.Row="99" Content="Register Config" x:Name="B_Save" Click="Btn_Save" Style="{StaticResource JobTabButtonStyle}"/>
         </Grid>

@@ -92,9 +92,9 @@ namespace IfsSync2Sender
 
 		void ExamineComponents()
 		{
-			IList<IVssExamineWriterMetadata> writer_mds = _backup.WriterMetadata;
+			var writer_mds = _backup.WriterMetadata;
 
-			foreach (IVssExamineWriterMetadata metadata in writer_mds)
+			foreach (var metadata in writer_mds)
 			{
 				Trace.TraceInformation("Examining metadata for " + metadata.WriterName);
 

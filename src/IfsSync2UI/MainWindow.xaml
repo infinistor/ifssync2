@@ -278,8 +278,8 @@
                         <Button x:Name="B_RefreshStorage"  Click="Btn_StorageUpdate" Margin="250, 0" Style="{StaticResource RefreshButtonStyle}">
                             <Image Source="/IfsSync2UI;component/Res/Refresh.png" Style="{StaticResource RefreshImageStyle}"/>
                         </Button>
-                        <Grid HorizontalAlignment="Right" Width="150" Margin="5, 0">
-                            <ToggleButton Content="+ Storage Credential" x:Name="B_StorageToggle" Click="Btn_StorageToggleClick" Style="{StaticResource MainToggleButtonStyle}" />
+                        <Grid HorizontalAlignment="Right" Width="120" Margin="5, 0">
+                            <ToggleButton Content="+ Add Storage" x:Name="B_StorageToggle" Click="Btn_StorageToggleClick" Style="{StaticResource MainToggleButtonStyle}" />
                             <Popup PlacementTarget="{Binding ElementName=B_StorageToggle}" Placement="Bottom" HorizontalOffset="-65" IsOpen="{Binding IsChecked,ElementName=B_StorageToggle}" AllowsTransparency="True">
                                 <Border Height="320" Width="240" Style="{StaticResource EditBorderStyle}">
                                     <Grid>

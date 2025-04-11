@@ -732,13 +732,18 @@ namespace IfsSync2UI
 			}
 
 			// URL이 올바른 형식인지 확인
-			var url = T_AddStorageURL.Text.Trim();
-			if (!url.StartsWith(MainData.HTTP, StringComparison.OrdinalIgnoreCase) && !url.StartsWith(MainData.HTTPS, StringComparison.OrdinalIgnoreCase))
+			var useHttps = CB_UseHttps.IsChecked ?? false;
+			var domin = T_AddStorageDomain.Text.Trim();
+			var port = T_AddStoragePort.Text.Trim();
+
+			// 포트가 숫자인지 확인
+			if (!int.TryParse(port, out int portNumber))
 			{
-				Utility.ErrorMessageBox("URL이 올바르지 않습니다!", Title);
-				T_AddStorageURL.Focus();
+				Utility.ErrorMessageBox("포트가 숫자가 아닙니다!", Title);
+				T_AddStoragePort.Focus();
 				return;
 			}
+			var url = useHttps ? $"https://{domin}:{portNumber}" : $"http://{domin}:{portNumber}";
 
 			// 접근키가 비어있는 경우 오류 메시지 표시
 			var accessKey = T_AddStorageAccessKey.Text.Trim();
@@ -780,7 +785,9 @@ namespace IfsSync2UI
 				{
 					StorageListUpdate();
 					T_AddStorageName.Text = string.Empty;
-					T_AddStorageURL.Text = string.Empty;
+					CB_UseHttps.IsChecked = false;
+					T_AddStorageDomain.Text = string.Empty;
+					T_AddStoragePort.Text = string.Empty;
 					T_AddStorageAccessKey.Text = string.Empty;
 					T_AddStorageSecretKey.Text = string.Empty;
 					T_AddStorageUserName.Text = string.Empty;
@@ -794,7 +801,9 @@ namespace IfsSync2UI
 		{
 			B_StorageToggle.IsChecked = false;
 			T_AddStorageName.Text = string.Empty;
-			T_AddStorageURL.Text = string.Empty;
+			CB_UseHttps.IsChecked = false;
+			T_AddStorageDomain.Text = string.Empty;
+			T_AddStoragePort.Text = string.Empty;
 			T_AddStorageAccessKey.Text = string.Empty;
 			T_AddStorageSecretKey.Text = string.Empty;
 			T_AddStorageUserName.Text = string.Empty;

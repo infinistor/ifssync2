@@ -298,8 +298,19 @@
                                         </Grid.RowDefinitions>
                                         <Label   Grid.Row="0" Content="Storage Credential Name" Style="{StaticResource EditTitleStyle}"/>
                                         <TextBox Grid.Row="1" x:Name="T_AddStorageName" KeyDown="CreateCredentialEvent" MouseUp="PopupTextBoxMouseUp" Style="{StaticResource EditTextBoxStyle}"/>
-                                        <Label   Grid.Row="2" Content="Full URL or Region Information(S3)" Style="{StaticResource EditTitleStyle}"/>
-                                        <TextBox Grid.Row="3" x:Name="T_AddStorageURL" KeyDown="CreateCredentialEvent" MouseUp="PopupTextBoxMouseUp" Style="{StaticResource EditTextBoxStyle}"/>
+                                        <Grid Grid.Row="2">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="Auto"/>
+                                                <ColumnDefinition Width="*"/>
+                                            </Grid.ColumnDefinitions>
+                                            <Label Grid.Column="0" Content="URL Information" Style="{StaticResource EditTitleStyle}"/>
+                                            <CheckBox Grid.Column="1" x:Name="CB_UseHttps" Content="HTTPS" VerticalAlignment="Center" Margin="10,0,0,0"/>
+                                        </Grid>
+                                        <StackPanel Grid.Row="3" Orientation="Horizontal" Margin="0,0,0,0">
+                                            <TextBox x:Name="T_AddStorageDomain" Width="140" KeyDown="CreateCredentialEvent" MouseUp="PopupTextBoxMouseUp" Style="{StaticResource EditTextBoxStyle}" VerticalAlignment="Center"/>
+                                            <TextBlock Text=":" VerticalAlignment="Center" Margin="5,0"/>
+                                            <TextBox x:Name="T_AddStoragePort" Width="45" KeyDown="CreateCredentialEvent" MouseUp="PopupTextBoxMouseUp" Style="{StaticResource EditTextBoxStyle}" VerticalAlignment="Center"/>
+                                        </StackPanel>
                                         <Label   Grid.Row="4" Content="Access Key" Style="{StaticResource EditTitleStyle}"/>
                                         <TextBox Grid.Row="5" x:Name="T_AddStorageAccessKey" KeyDown="CreateCredentialEvent" MouseUp="PopupTextBoxMouseUp" Style="{StaticResource EditTextBoxStyle}"/>
                                         <Label   Grid.Row="6" Content="Secret Key" Style="{StaticResource EditTitleStyle}"/>

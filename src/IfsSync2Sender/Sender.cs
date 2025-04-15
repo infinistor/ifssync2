@@ -824,12 +824,20 @@ namespace IfsSync2Sender
 							// checksum 이 있을 경우 비교
 							if (meta.ChecksumAlgorithm != S3ChecksumAlgorithm.None)
 							{
-								var checksum = ChecksumCalculator.CalculateChecksum(task.FilePath, meta.ChecksumAlgorithm);
-								if (checksum.Equals(meta.Checksum, StringComparison.OrdinalIgnoreCase))
+								try
 								{
-									_taskManager.Delete(task);
-									log.Debug($"Duplicate file : {task.FilePath}");
-									return true;
+									var checksum = ChecksumCalculator.CalculateChecksum(task.FilePath, meta.ChecksumAlgorithm);
+									if (checksum.Equals(meta.Checksum, StringComparison.OrdinalIgnoreCase))
+									{
+										_taskManager.Delete(task);
+										log.Debug($"Duplicate file : {task.FilePath}");
+										return true;
+									}
+								}
+								catch (Exception ex)
+								{
+									log.Error($"Checksum 계산 중 오류 발생: {task.FilePath}", ex);
+									return false;
 								}
 							}
 							// checksum 이 없을 경우 MD5Sum에 -가 없을 경우 비교

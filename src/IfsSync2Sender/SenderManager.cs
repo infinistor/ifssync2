@@ -105,6 +105,15 @@ namespace IfsSync2Sender
 					_senders.Add(sender);
 				}
 			}
+
+			// 작업목록은 존재하는데 DB에 존재하지 않는 경우 작업 종료후 삭제
+			_senders.RemoveAll(sender =>
+			{
+				if (jobs.Any(job => job.Id == sender.Job.Id)) return false;
+				sender.Close();
+				log.Info($"JobName({sender.Job.JobName}) Delete");
+				return true;
+			});
 		}
 
 		public void AllStop()
@@ -144,7 +153,7 @@ namespace IfsSync2Sender
 				if (sender.Quit)
 				{
 					sender.Close();
-					log.Debug($"JobName({sender.Job.JobName}) Delete");
+					log.Info($"JobName({sender.Job.JobName}) Delete");
 					return true;
 				}
 				return false;

@@ -400,7 +400,7 @@ namespace IfsSync2Data
 				_log.Debug($"List Count : {TaskList.Count}");
 				return true;
 			}
-			catch (Exception e) { _log.Error(e); return false; }
+			catch (Exception e) { _log.Error($"GetList({_filePath}, {limit})", e); return false; }
 			finally { _sqliteMutex.ReleaseMutex(); }
 		}
 

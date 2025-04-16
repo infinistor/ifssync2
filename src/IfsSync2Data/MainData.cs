@@ -192,10 +192,20 @@ namespace IfsSync2Data
 
 		public static string GetVersion()
 		{
-			Assembly assembly = Assembly.GetExecutingAssembly();
-			Version v = assembly.GetName().Version; // 현재 실행되는 어셈블리..dll의 버전 가져오기
+			try
+			{
+				Assembly assembly = Assembly.GetExecutingAssembly();
+				Version v = assembly.GetName().Version;
 
-			return $"{v.Major}.{v.Minor}.{v.Build}.{v.Revision}";
+				if (v != null)
+					return $"v{v.Major}.{v.Minor}.{v.Build}.{v.Revision}";
+				else
+					return "";
+			}
+			catch
+			{
+				return "";
+			}
 		}
 
 		public static string GetFileName(string FilePath)

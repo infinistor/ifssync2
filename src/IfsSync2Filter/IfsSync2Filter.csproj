@@ -1,6 +1,6 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 	<PropertyGroup>
-		<OutputType>Exe</OutputType>
+		<OutputType>WinExe</OutputType>
 		<PublishUrl>게시\</PublishUrl>
 		<Install>true</Install>
 		<InstallFrom>Disk</InstallFrom>

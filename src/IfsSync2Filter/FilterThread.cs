@@ -130,10 +130,10 @@ namespace IfsSync2Filter
 						log.Debug($"NUC Folder Filter : {filter}");
 					}
 					//Drive Check
-					else if (!new DriveInfo(Path.GetPathRoot(filter)).IsReady)
+					else if (!MainData.IsDriveAccessible(filter, out string error))
 					{
 						failCheck = true;
-						log.Debug($"Filter Update Fail : {filter}");
+						log.Debug($"Drive Check Fail : {filter}, Error: {error}");
 					}
 					else
 					{

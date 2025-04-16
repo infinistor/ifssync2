@@ -220,6 +220,35 @@ namespace IfsSync2Data
 		{
 			return RootPath.StartsWith(@"\\");
 		}
+		public static bool IsDriveAccessible(string path, out string error)
+		{
+			try
+			{
+				path = path.TrimEnd('*');
+				var root = Path.GetPathRoot(path);
+				
+				if (!string.IsNullOrEmpty(root) && root.Length >= 2 && root[1] == ':')
+				{
+					var driveType = new DriveInfo(root).DriveType;
+					// 로컬 고정 디스크인 경우만 체크
+					if (driveType == DriveType.Fixed)
+					{
+						bool exists = Directory.Exists(path);
+						error = exists ? null : $"Path not accessible: {path}";
+						return exists;
+					}
+				}
+				
+				// 네트워크 드라이브나 다른 타입은 체크하지 않고 true 반환
+				error = null;
+				return true;
+			}
+			catch
+			{
+				error = "Failed to check path accessibility";
+				return false;
+			}
+		}
 
 		public static string CalculateMD5(string FileName)
 		{

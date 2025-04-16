@@ -107,19 +107,19 @@ namespace IfsSync2Init
 			var WatcherConfigs = new WatcherConfig(true);
 			var FilterConfigs = new FilterConfig(true);
 			var SenderConfigs = new SenderConfig(true);
-			var TrayIconConfigs = new TrayIconConfig(true);
+			// var TrayIconConfigs = new TrayIconConfig(true);
 
 			WatcherConfigs.IP = ip;
 			WatcherConfigs.Port = port;
 			WatcherConfigs.RootPath = targetPath;
 			FilterConfigs.RootPath = targetPath;
 			SenderConfigs.RootPath = targetPath;
-			TrayIconConfigs.RootPath = targetPath;
-			TrayIconConfigs.IconPath = MainData.CreateIconFilePath(targetPath, MainData.ICON_FILE_NAME);
+			// TrayIconConfigs.RootPath = targetPath;
+			// TrayIconConfigs.IconPath = MainData.CreateIconFilePath(targetPath, MainData.ICON_FILE_NAME);
 			WatcherConfigs.Close();
 			FilterConfigs.Close();
 			SenderConfigs.Close();
-			TrayIconConfigs.Close();
+			// TrayIconConfigs.Close();
 
 			if (System.Runtime.InteropServices.RuntimeInformation.IsOSPlatform(System.Runtime.InteropServices.OSPlatform.Windows))
 			{
@@ -132,7 +132,7 @@ namespace IfsSync2Init
 			Console.WriteLine("Task Schedule Add.");
 			SetTask(MainData.FILTER_NAME, targetPath, false);
 			SetTask(MainData.SENDER_NAME, targetPath);
-			SetTask(MainData.TRAY_ICON_NAME, targetPath, false);
+			// SetTask(MainData.TRAY_ICON_NAME, targetPath, false);
 			Console.WriteLine("Task Schedule Add End!");
 
 			Console.WriteLine("Service Create.");
@@ -147,14 +147,14 @@ namespace IfsSync2Init
 			Console.WriteLine("Task Schedule Delete.");
 			DelTask(MainData.FILTER_NAME);
 			DelTask(MainData.SENDER_NAME);
-			DelTask(MainData.TRAY_ICON_NAME);
+			// DelTask(MainData.TRAY_ICON_NAME);
 			Console.WriteLine("Task Schedule Delete End!");
 
 			Console.WriteLine("ProcessKill.");
 			ProcessKill(MainData.UI_NAME);
 			ProcessKill(MainData.FILTER_NAME);
 			ProcessKill(MainData.SENDER_NAME);
-			ProcessKill(MainData.TRAY_ICON_NAME);
+			// ProcessKill(MainData.TRAY_ICON_NAME);
 			Console.WriteLine("ProcessKill End!");
 
 			Console.WriteLine("Registry Delete.");
@@ -188,7 +188,7 @@ namespace IfsSync2Init
 			Console.WriteLine("Stopping scheduled tasks...");
 			StopTask(MainData.FILTER_NAME);
 			StopTask(MainData.SENDER_NAME);
-			StopTask(MainData.TRAY_ICON_NAME);
+			// StopTask(MainData.TRAY_ICON_NAME);
 
 			// 2. UI 프로세스 종료 (UI는 스케줄러로 실행되지 않음)
 			Console.WriteLine("Terminating UI process...");
@@ -213,7 +213,7 @@ namespace IfsSync2Init
 			Console.WriteLine("Starting scheduled tasks...");
 			StartTask(MainData.FILTER_NAME);
 			StartTask(MainData.SENDER_NAME);
-			StartTask(MainData.TRAY_ICON_NAME);
+			// StartTask(MainData.TRAY_ICON_NAME);
 
 			Console.WriteLine("System has been restored after update.");
 		}

@@ -319,9 +319,25 @@ namespace IfsSync2Sender
 				log.Debug($"HeadObject({BucketName}) {ObjectName} / {MD5Hash}");
 				return new S3Metadata(ObjectName, response);
 			}
-			catch (AggregateException e) { log.Error($"HeadObject failed. S3://{BucketName}/{FilePath}. StatusCode : {GetStatus(e)}, ErrorCode : {GetErrorCode(e)}"); return null; }
-			catch (AmazonS3Exception e) { log.Error($"HeadObject failed. S3://{BucketName}/{FilePath}. StatusCode : {e.StatusCode}, ErrorCode : {e.ErrorCode}"); return null; }
-			catch (Exception e) { log.Error(e); return null; }
+			catch (AggregateException e)
+			{
+				var statusCode = GetStatus(e);
+				var errorCode = GetErrorCode(e);
+				if (statusCode == HttpStatusCode.NotFound) return null;
+				log.Error($"HeadObject failed. S3://{BucketName}/{FilePath}. StatusCode : {statusCode}, ErrorCode : {errorCode}");
+				return null;
+			}
+			catch (AmazonS3Exception e)
+			{
+				if (e.StatusCode == HttpStatusCode.NotFound) return null;
+				log.Error($"HeadObject failed. S3://{BucketName}/{FilePath}. StatusCode : {e.StatusCode}, ErrorCode : {e.ErrorCode}");
+				return null;
+			}
+			catch (Exception e)
+			{
+				log.Error(e);
+				return null;
+			}
 		}
 
 		static string FileNameChangeToS3ObjectName(string DirectoryName) => DirectoryName.Replace("\\", "/").Replace(":", "");
@@ -813,7 +829,17 @@ namespace IfsSync2Sender
 			{
 				case TaskData.TaskTypeList.Upload:
 					{
-						if (string.IsNullOrWhiteSpace(task.SnapshotPath)) task.SnapshotPath = task.FilePath;
+						string uploadPath = string.IsNullOrWhiteSpace(task.SnapshotPath) ? task.FilePath : task.SnapshotPath;
+
+						// 업로드할 파일이 존재하지 않는 경우 처리
+						if (!File.Exists(uploadPath))
+						{
+							task.UploadFlag = false;
+							task.Result = "File not found";
+							_taskManager.Update(task);
+							log.Debug($"File not found : {uploadPath}");
+							return true;
+						}
 
 						//File Check
 						var meta = HeadObject(_client, _bucketName, task.FilePath);
@@ -826,38 +852,37 @@ namespace IfsSync2Sender
 							{
 								try
 								{
-									var checksum = ChecksumCalculator.CalculateChecksum(task.FilePath, meta.ChecksumAlgorithm);
+									var checksum = ChecksumCalculator.CalculateChecksum(uploadPath, meta.ChecksumAlgorithm);
 									if (checksum.Equals(meta.Checksum, StringComparison.OrdinalIgnoreCase))
 									{
+										log.Debug($"Duplicate file : {uploadPath}");
 										_taskManager.Delete(task);
-										log.Debug($"Duplicate file : {task.FilePath}");
 										return true;
 									}
 								}
 								catch (Exception ex)
 								{
-									log.Error($"Checksum 계산 중 오류 발생: {task.FilePath}", ex);
-									return false;
+									log.Error($"Checksum 계산 중 오류 발생: {uploadPath}", ex);
 								}
 							}
 							// checksum 이 없을 경우 MD5Sum에 -가 없을 경우 비교
 							else if (!string.IsNullOrWhiteSpace(meta.MD5) && !meta.MD5.Contains('-'))
 							{
-								var md5sum = MainData.CalculateMD5(task.FilePath);
+								var md5sum = MainData.CalculateMD5(uploadPath);
 								if (meta.MD5.Equals(md5sum, StringComparison.OrdinalIgnoreCase))
 								{
+									log.Debug($"Duplicate file : {uploadPath}");
 									_taskManager.Delete(task);
-									log.Debug($"Duplicate file : {task.FilePath}");
 									return true;
 								}
 								else
 								{
-									log.Debug($"{task.FilePath} mismatch : {meta.MD5} != {md5sum}");
+									log.Debug($"{uploadPath} mismatch : {meta.MD5} != {md5sum}");
 								}
 							}
 						}
 
-						if (Upload(task.FilePath, task.SnapshotPath, out string ErrorMsg)) task.UploadFlag = true;
+						if (Upload(task.FilePath, uploadPath, out string ErrorMsg)) task.UploadFlag = true;
 						else
 						{
 							if (_status.Error) return false;

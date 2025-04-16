@@ -24,7 +24,6 @@ using Amazon.S3;
 using System.Windows.Input;
 using System.Windows.Controls.Primitives;
 using System.Threading;
-using Amazon;
 using System.Runtime.Versioning;
 
 [assembly: XmlConfigurator(ConfigFile = "IfsSync2UILogConfig.xml", Watch = true)]
@@ -68,7 +67,7 @@ namespace IfsSync2UI
 			DuplicateExecution(MainData.MUTEX_NAME_UI);
 
 			MainUtility.DeleteOldLogs(MainData.GetLogFolder("IfsSync2UI"));
-			_log.Info("Main Start");
+			_log.Error("Main Start");
 			_watcherConfigs = new WatcherConfig(true);
 			_jobSQL = new JobDbManager();
 			_userSQL = new UserDbManager();
@@ -92,7 +91,7 @@ namespace IfsSync2UI
 			_updateStorageListTimer.Elapsed += UpdateStorageList;
 			_updateStorageListTimer.Start();
 
-			Title += " V" + MainData.GetVersion();
+			Title += " " + MainData.GetVersion();
 		}
 		void DuplicateExecution(string mutexName)
 		{

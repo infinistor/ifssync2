@@ -31,7 +31,7 @@ namespace IfsSync2Filter
 				log.Error("Prevent duplicate execution");
 				return;
 			}
-			log.Info("Main Start");
+			log.Error("Main Start");
 
 			MainUtility.DeleteOldLogs(MainData.GetLogFolder("Filter"));
 

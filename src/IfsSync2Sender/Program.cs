@@ -30,7 +30,7 @@ namespace IfsSync2Sender
 				log.Error("Prevent duplicate execution");
 				return;
 			}
-			log.Info("Main Start");
+			log.Error("Main Start");
 			MainUtility.DeleteOldLogs(MainData.GetLogFolder("Sender"));
 
 			var senderConfigs = new SenderConfig(true);

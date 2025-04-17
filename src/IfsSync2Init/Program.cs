@@ -246,10 +246,10 @@ namespace IfsSync2Init
 			// 일반
 			taskDefinition.RegistrationInfo.Description = "Scheduler";
 
-			// 관리자 권한으로 실행
-			taskDefinition.Principal.UserId = "SYSTEM";
-			taskDefinition.Principal.LogonType = TaskLogonType.ServiceAccount;
-			taskDefinition.Principal.RunLevel = TaskRunLevel.Highest;
+			// SYSTEM 계정 대신 현재 로그인한 사용자 계정으로 실행
+			taskDefinition.Principal.UserId = $@"{Environment.UserDomainName}\{Environment.UserName}"; // 현재 사용자 계정
+			taskDefinition.Principal.LogonType = TaskLogonType.InteractiveToken; // 사용자가 로그온할 때 실행
+			taskDefinition.Principal.RunLevel = TaskRunLevel.Highest; // 관리자 권한 유지
 
 			taskDefinition.Triggers.Add(new RegistrationTrigger() { Repetition = DefaultRepetition, Delay = TimeSpan.FromMinutes(1) });
 			taskDefinition.Triggers.Add(new BootTrigger() { Repetition = DefaultRepetition, Delay = TimeSpan.FromMinutes(1) });

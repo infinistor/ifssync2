@@ -411,31 +411,6 @@ namespace IfsSync2UI
 				FileIcon = image_ComputerIcon.Source
 			};
 
-			//UNC Type Add
-			string NetworkDirName = Environment.GetFolderPath(Environment.SpecialFolder.NetworkShortcuts);
-			DirectoryInfo[] NetworkDirList = new DirectoryInfo(NetworkDirName).GetDirectories();
-
-			foreach (DirectoryInfo NetworkDir in NetworkDirList)
-			{
-				string DirName = NetworkDir.FullName + "\\target.lnk";
-				if (File.Exists(DirName))
-				{
-					// TODO : UNC Type Add
-					// WshShellClass shell = new WshShellClass();
-					// WshShell shell = new WshShell(); //Create a new WshShell Interface
-					// IWshShortcut link = (IWshShortcut)shell.CreateShortcut(DirName); //Link the interface to our shortcut
-
-					// TreeNode item = new TreeNode()
-					// {
-					// 	Name = NetworkDir.Name,
-					// 	FullPath = link.TargetPath,
-					// 	FileIcon = Utility.GetIconImageSource(link.TargetPath),//FileIcon = fileIcon,
-					// };
-					// GetPCSubDirectories(item);
-					// root.Children.Add(item);
-				}
-			}
-
 			//driver Add
 			DriveInfo[] allDrives = DriveInfo.GetDrives();
 			foreach (var drive in allDrives)
@@ -446,7 +421,7 @@ namespace IfsSync2UI
 					{
 						Name = drive.VolumeLabel + " (" + drive.Name.TrimEnd('\\') + ")",
 						FullPath = drive.Name,
-						FileIcon = Utility.GetIconImageSource(drive.Name),//FileIcon = fileIcon,
+						FileIcon = Utility.GetIconImageSource(drive.Name),
 					};
 					GetPCSubDirectories(item);
 					root.Children.Add(item);
@@ -481,6 +456,7 @@ namespace IfsSync2UI
 			TreeList.Add(myUserItem);
 			TreeList.Add(root);
 		}
+
 		private static void GetPCSubDirectories(TreeNode node)
 		{
 			if (node == null) return;

@@ -14,12 +14,11 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.IO;
-using System.Reflection;
 using System.Threading;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
-using IfsSync2Data;
+using IfsSync2Common;
 using System.Timers;
 using System.Runtime.Versioning;
 
@@ -29,7 +28,7 @@ namespace IfsSync2UI
 	public partial class JobTab : UserControl
 	{
 		private readonly static string CLASS_NAME = "JobTab";
-		private static readonly ILog log = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
+		private static readonly ILog log = LogManager.GetLogger(typeof(JobTab));
 
 		public bool IsChanged { get; set; }
 		private TabItem ThisTab { get; set; }
@@ -104,10 +103,10 @@ namespace IfsSync2UI
 				DisableExtensionControls();
 			}
 
-			StatusCheckTimer = new System.Timers.Timer() { Interval = MainData.DEFAULT_STATUS_CHECK_DELAY };
+			StatusCheckTimer = new System.Timers.Timer() { Interval = IfsSync2Constants.DEFAULT_STATUS_CHECK_DELAY };
 			StatusCheckTimer.Elapsed += new ElapsedEventHandler(StatusCheck);
 
-			UpdateLogTimer = new System.Timers.Timer { Interval = MainData.DEFAULT_STATUS_CHECK_DELAY };
+			UpdateLogTimer = new System.Timers.Timer { Interval = IfsSync2Constants.DEFAULT_STATUS_CHECK_DELAY };
 			UpdateLogTimer.Elapsed += new ElapsedEventHandler(LogUpdate);
 
 			if (!NewTab) StateInit();
@@ -235,7 +234,7 @@ namespace IfsSync2UI
 			{
 				string StorageName = string.Empty;
 
-				if (Job.IsGlobalUser) StorageName = MainData.MAIN_STORAGE_NAME;
+				if (Job.IsGlobalUser) StorageName = IfsSync2Constants.MAIN_STORAGE_NAME;
 				else
 					foreach (UserData User in NormalUserList)
 						if (User.Id == Job.UserId) StorageName = User.StorageName;
@@ -325,17 +324,17 @@ namespace IfsSync2UI
 			//Get for Hours
 			if (string.IsNullOrWhiteSpace(T_ForHours.Text))
 			{
-				Utility.ErrorMessageBox("Error : For Hours is Empty", Title);
+				Utility.ErrorMessageBox("오류 : 실행 시간이 비어 있습니다", Title);
 				return;
 			}
 			if (!int.TryParse(T_ForHours.Text, out int ForHours))
 			{
-				Utility.ErrorMessageBox("Error : For Hours is not Value", Title);
+				Utility.ErrorMessageBox("오류 : 실행 시간이 유효한 값이 아닙니다", Title);
 				return;
 			}
 			Schedules.ForHours = ForHours;
 
-			if (string.IsNullOrWhiteSpace(Schedules.StrWeek)) Utility.ErrorMessageBox("Error : Week not Selected!", Title);
+			if (string.IsNullOrWhiteSpace(Schedules.StrWeek)) Utility.ErrorMessageBox("오류 : 주간 일정이 선택되지 않았습니다!", Title);
 			else
 			{
 				Job.ScheduleList.Add(Schedules);
@@ -354,29 +353,29 @@ namespace IfsSync2UI
 			//empty Check
 			if (Job.Path.Count == 0)
 			{
-				Utility.ErrorMessageBox("Error : Directory List is Empty", "Save");
+				Utility.ErrorMessageBox("오류 : 디렉토리 목록이 비어 있습니다", "저장");
 				return;
 			}
 			if (Job.WhiteFileExt.Count == 0)
 			{
-				Utility.ErrorMessageBox("Error : Extension List is Empty", "Save");
+				Utility.ErrorMessageBox("오류 : 확장자 목록이 비어 있습니다", "저장");
 				return;
 			}
 			if (Job.Policy == JobData.PolicyType.Schedule && Job.ScheduleList.Count == 0)
 			{
-				Utility.ErrorMessageBox("Error : Schedule List is Empty", "Save");
+				Utility.ErrorMessageBox("오류 : 일정 목록이 비어 있습니다", "저장");
 				return;
 			}
 
 			if (!_jobDb.PutJobData(Job))
 			{
-				Utility.ErrorMessageBox("Error : Failed to save job", "Save");
+				Utility.ErrorMessageBox("오류 : 작업 저장에 실패했습니다", "저장");
 				return;
 			}
 			if (Job.Id < 0) Job.Id = _jobDb.GetJobDataId(Job.HostName, Job.JobName);
 			if (NewTab)
 			{
-				Job.StrBlackPath = MainData.DEFAULT_BLACK_PATH_LIST;
+				Job.StrBlackPath = IfsSync2Constants.DEFAULT_BLACK_PATH_LIST;
 				StateInit();
 				NewTab = false;
 			}
@@ -669,7 +668,8 @@ namespace IfsSync2UI
 		{
 			foreach (var Node in TreeList)
 			{
-				if (Node.Children.Count > 0) if (IsCheckedSubNode(Node, MainPath)) return true;
+				if (Node.Children.Count > 0) 
+					if (IsCheckedSubNode(Node, MainPath)) return true;
 					else return true;
 			}
 			return false;
@@ -768,7 +768,7 @@ namespace IfsSync2UI
 
 			if (ExtList == null || ExtList.Count == 0)
 			{
-				Utility.ErrorMessageBox("Extension List is Empty", "ExtensionListUpdate");
+				Utility.ErrorMessageBox("확장자 목록이 비어 있습니다", "확장자 목록 업데이트");
 				return;
 			}
 
@@ -811,7 +811,7 @@ namespace IfsSync2UI
 		{
 			if (string.IsNullOrWhiteSpace(T_ExtensionName.Text))
 			{
-				Utility.ErrorMessageBox("Extension is empty", "Btn_AddExtension");
+				Utility.ErrorMessageBox("확장자가 비어 있습니다", "확장자 추가");
 				return;
 			}
 
@@ -979,7 +979,7 @@ namespace IfsSync2UI
 
 			log.Info($"End. Time : {sw.ElapsedMilliseconds}ms");
 			_taskDb.InsertLog($"Analysis End. Time : {sw.ElapsedMilliseconds}ms");
-			_taskDb.InsertLog($"Upload File Count : {Analysis.UploadFileCount}\tUpload File Size : {MainData.SizeToString(Analysis.UploadFileSize)}");
+			_taskDb.InsertLog($"Upload File Count : {Analysis.UploadFileCount}\tUpload File Size : {CapacityUnit.Format(Analysis.UploadFileSize)}");
 		}
 
 		private void SubDirectory(string ParentDirectory, List<string> ExtensionList)
@@ -1079,10 +1079,10 @@ namespace IfsSync2UI
 
 		private void Btn_BackupStart(object sender, RoutedEventArgs e)
 		{
-			if (Analysis.IsRunning) { Utility.ErrorMessageBox("Analysis is Running!", CLASS_NAME); return; }
-			if (Job.WhiteFileExt.Count == 0) { Utility.ErrorMessageBox("Extension List is empty!", CLASS_NAME); return; }
-			if (Job.Path.Count == 0) { Utility.ErrorMessageBox("Directory List is empty!", CLASS_NAME); return; }
-			if (PathCheck(out string ErrorPath)) { Utility.ErrorMessageBox(string.Format("[{0}] is not exists!", ErrorPath), CLASS_NAME); return; }
+			if (Analysis.IsRunning) { Utility.ErrorMessageBox("분석이 실행 중입니다!", CLASS_NAME); return; }
+			if (Job.WhiteFileExt.Count == 0) { Utility.ErrorMessageBox("확장자 목록이 비어 있습니다!", CLASS_NAME); return; }
+			if (Job.Path.Count == 0) { Utility.ErrorMessageBox("디렉토리 목록이 비어 있습니다!", CLASS_NAME); return; }
+			if (PathCheck(out string ErrorPath)) { Utility.ErrorMessageBox(string.Format("[{0}] 경로가 존재하지 않습니다!", ErrorPath), CLASS_NAME); return; }
 			if (C_UserList.SelectedIndex < GlobalUserList.Count)
 			{
 				Job.UserId = GlobalUserList[C_UserList.SelectedIndex].Id;
@@ -1099,7 +1099,7 @@ namespace IfsSync2UI
 
 			if (!_jobDb.PutJobData(Job))
 			{
-				Utility.ErrorMessageBox("Error : Failed to save job", "Save");
+				Utility.ErrorMessageBox("오류 : 작업 저장에 실패했습니다", "저장");
 				return;
 			}
 
@@ -1110,10 +1110,10 @@ namespace IfsSync2UI
 
 		private void Btn_Analysis(object sender, RoutedEventArgs e)
 		{
-			if (Analysis.IsRunning) { Utility.ErrorMessageBox("Analysis is Running!", CLASS_NAME); return; }
-			if (Job.WhiteFileExt.Count == 0) { Utility.ErrorMessageBox("Extension List is empty!", CLASS_NAME); return; }
-			if (Job.Path.Count == 0) { Utility.ErrorMessageBox("Directory List is empty!", CLASS_NAME); return; }
-			if (PathCheck(out string ErrorPath)) { Utility.ErrorMessageBox(string.Format("[{0}] is not exists!", ErrorPath), CLASS_NAME); return; }
+			if (Analysis.IsRunning) { Utility.ErrorMessageBox("분석이 실행 중입니다!", CLASS_NAME); return; }
+			if (Job.WhiteFileExt.Count == 0) { Utility.ErrorMessageBox("확장자 목록이 비어 있습니다!", CLASS_NAME); return; }
+			if (Job.Path.Count == 0) { Utility.ErrorMessageBox("디렉토리 목록이 비어 있습니다!", CLASS_NAME); return; }
+			if (PathCheck(out string ErrorPath)) { Utility.ErrorMessageBox(string.Format("[{0}] 경로가 존재하지 않습니다!", ErrorPath), CLASS_NAME); return; }
 
 			if (AnalysisThread != null) AnalysisThread = null;
 			AnalysisThread = new Thread(() => AnalysisRun());

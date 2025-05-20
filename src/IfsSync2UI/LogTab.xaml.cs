@@ -12,15 +12,12 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.IO;
-using System.Linq;
-using System.Reflection;
 using System.Text;
-using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Data;
 using System.Windows.Input;
-using IfsSync2Data;
+using IfsSync2Common;
 using log4net;
 
 namespace IfsSync2UI
@@ -30,7 +27,7 @@ namespace IfsSync2UI
 	/// </summary>
 	public partial class LogTab : UserControl
 	{
-		private static readonly ILog log = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
+		private static readonly ILog log = LogManager.GetLogger(typeof(LogTab));
 
 		public int LogIndex { get; private set; } = int.MaxValue;
 		public LogTab()
@@ -71,21 +68,21 @@ namespace IfsSync2UI
 			L_TaskView.Items.Clear();
 		}
 		/****************************Log Sort********************************/
-		GridViewColumnHeader LastHeaderClicked = null;
-		ListSortDirection LastDirection = ListSortDirection.Ascending;
+		GridViewColumnHeader lastHeaderClicked = null;
+		ListSortDirection lastDirection = ListSortDirection.Ascending;
 		private void LogViewClicked(object sender, RoutedEventArgs e)
 		{
 			ListSortDirection direction;
 
 			if (e.OriginalSource is GridViewColumnHeader headerClicked && headerClicked.Role != GridViewColumnHeaderRole.Padding)
 			{
-				if (headerClicked != LastHeaderClicked)
+				if (headerClicked != lastHeaderClicked)
 				{
 					direction = ListSortDirection.Ascending;
 				}
 				else
 				{
-					if (LastDirection == ListSortDirection.Ascending)
+					if (lastDirection == ListSortDirection.Ascending)
 						direction = ListSortDirection.Descending;
 					else
 						direction = ListSortDirection.Ascending;
@@ -102,11 +99,11 @@ namespace IfsSync2UI
 					headerClicked.Column.HeaderTemplate = Resources["HeaderTemplateArrowDown"] as DataTemplate;
 
 				// Remove arrow from previously sorted header
-				if (LastHeaderClicked != null && LastHeaderClicked != headerClicked)
-					LastHeaderClicked.Column.HeaderTemplate = null;
+				if (lastHeaderClicked != null && lastHeaderClicked != headerClicked)
+					lastHeaderClicked.Column.HeaderTemplate = null;
 
-				LastHeaderClicked = headerClicked;
-				LastDirection = direction;
+				lastHeaderClicked = headerClicked;
+				lastDirection = direction;
 			}
 		}
 		private void Sort(string sortBy, ListSortDirection direction)
@@ -127,37 +124,39 @@ namespace IfsSync2UI
 				if (L_TaskView.SelectedIndex < 0) return;
 
 				// 키 입력을 처리한다.
-				StringBuilder Msg = new();
+				StringBuilder msg = new();
 
 				foreach (var item in L_TaskView.SelectedItems)
 				{
-					var Data = item as TaskData;
-					Msg.Append($"{Data.Index}\t{Data.StrTaskType}\t{Data.FilePath}\t{Data.NewFilePath}\t{Data.EventTime}\t{Data.UploadTime}\t{Data.Result}\n");
+					var data = item as TaskData;
+					msg.Append($"{data.Index}\t{data.StrTaskType}\t{data.FilePath}\t{data.NewFilePath}\t{data.EventTime}\t{data.UploadTime}\t{data.Result}\n");
 				}
-				Clipboard.SetText(Msg.ToString());
+				Clipboard.SetText(msg.ToString());
 
 				MessageBox.Show("클립보드로 복사되었습니다.", "LogView");
 			}
 		}
-		public bool SaveCSV(string FileName)
+		public bool SaveCSV(string fileName)
 		{
-			if (L_TaskView.SelectedIndex < 0) return false;
+			// L_TaskView가 비어있는 경우 저장할 필요가 없으므로 제외
+			if (L_TaskView.Items.Count == 0) return false;
 
 			try
 			{
-				if (File.Exists(FileName)) File.Delete(FileName);
-				StreamWriter sw = new(FileName, false, System.Text.Encoding.Unicode);
+				if (File.Exists(fileName)) File.Delete(fileName);
+				StreamWriter sw = new(fileName, false, Encoding.UTF8);
 
 				//Header
 				string columnheader = string.Format("{0}\t{1}\t{2}\t{3}\t{4}\t{5}\t{6}",
 				"Index", "TaskName", "FilePath", "NewFilePath", "EventTime", "UploadTime", "Result");
 				sw.WriteLine(columnheader);
 
-				foreach (var item in L_TaskView.SelectedItems)
+				// 선택된 항목이 아닌 모든 항목을 저장
+				foreach (var item in L_TaskView.Items)
 				{
-					TaskData Data = item as TaskData;
+					TaskData data = item as TaskData;
 					sw.WriteLine("{0}\t{1}\t{2}\t{3}\t{4}\t{5}\t{6}",
-						Data.Index, Data.StrTaskType, Data.FilePath, Data.NewFilePath, Data.EventTime, Data.UploadTime, Data.Result);
+						data.Index, data.StrTaskType, data.FilePath, data.NewFilePath, data.EventTime, data.UploadTime, data.Result);
 				}
 				sw.Close();
 				return true;
@@ -166,9 +165,6 @@ namespace IfsSync2UI
 			{
 				return false;
 			}
-
-
-
 		}
 	}
 }

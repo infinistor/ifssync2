@@ -71,7 +71,7 @@
 	</ItemGroup>
 	<ItemGroup>
 		<PackageReference Include="callback.CBFSFilter" Version="20.0.7656" />
-		<PackageReference Include="log4net" Version="3.0.4" />
+		<PackageReference Include="log4net" Version="3.1.0" />
 		<PackageReference Include="System.Data.SqlClient" Version="4.8.6" />
 		<PackageReference Include="System.Data.SQLite" Version="1.0.119" />
 		<PackageReference Include="System.Data.SQLite.Core" Version="1.0.119" />
@@ -82,5 +82,7 @@
 		<PackageReference Include="System.Management" Version="8.0.0" />
 		<PackageReference Include="System.Configuration.ConfigurationManager" Version="8.0.0" />
 	</ItemGroup>
-	<Import Project="..\IfsSync2Data\IfsSync2Data.projitems" Label="Shared" />
+	<ItemGroup>
+		<ProjectReference Include="..\IfsSync2Common\IfsSync2Common.csproj" />
+	</ItemGroup>
 </Project>

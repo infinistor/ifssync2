@@ -48,10 +48,10 @@
 	</ItemGroup>
 	<ItemGroup>
 		<PackageReference Include="AlphaVSS" Version="2.0.3" />
-		<PackageReference Include="AWSSDK.Core" Version="3.7.402.17" />
-		<PackageReference Include="AWSSDK.Extensions.CrtIntegration" Version="3.7.400" />
-		<PackageReference Include="AWSSDK.S3" Version="3.7.415.16" />
-		<PackageReference Include="log4net" Version="3.0.4" />
+		<PackageReference Include="AWSSDK.Core" Version="4.0.0.3" />
+		<PackageReference Include="AWSSDK.Extensions.CrtIntegration" Version="4.0.0.0" />
+		<PackageReference Include="AWSSDK.S3" Version="4.0.0.3" />
+		<PackageReference Include="log4net" Version="3.1.0" />
 		<PackageReference Include="Microsoft.CSharp" Version="4.7.0" />
 		<PackageReference Include="System.ComponentModel.Annotations" Version="5.0.0" />
 		<PackageReference Include="System.Data.DataSetExtensions" Version="4.5.0" />
@@ -66,5 +66,7 @@
 		<PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
 		<PackageReference Include="System.Configuration.ConfigurationManager" Version="8.0.0" />
 	</ItemGroup>
-	<Import Project="..\IfsSync2Data\IfsSync2Data.projitems" Label="Shared" />
+	<ItemGroup>
+		<ProjectReference Include="..\IfsSync2Common\IfsSync2Common.csproj" />
+	</ItemGroup>
 </Project>

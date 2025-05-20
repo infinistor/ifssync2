@@ -10,7 +10,7 @@
 */
 using Microsoft.Win32.TaskScheduler;
 using System;
-using IfsSync2Data;
+using IfsSync2Common;
 using System.Diagnostics;
 using Microsoft.Win32;
 using callback.CBFSFilter;
@@ -29,47 +29,47 @@ namespace IfsSync2Init
 		{
 			Console.WriteLine("Main Start");
 
-			var IP = string.Empty;
-			var Port = string.Empty;
-			var Host = string.Empty;
-			var TargetPath = string.Empty;
+			var ip = string.Empty;
+			var port = string.Empty;
+			var host = string.Empty;
+			var targetPath = string.Empty;
 
-			var Menu = MenuList.Help;
+			var menu = MenuList.Help;
 
-			var Options = new OptionSet {
-				{ "h|?|help", v => Menu = MenuList.Help},
-				{ "install", v => Menu = MenuList.Install },
-				{ "uninstall", v => Menu = MenuList.Uninstall },
-				{ "before-update", v => Menu = MenuList.BeforeUpdate },
-				{ "after-update", v => Menu = MenuList.AfterUpdate },
-				{ "p|path=", v => TargetPath = v },
-				{ "host=", v => Host = v },
-				{ "ip=", v => IP = v },
-				{ "port=", v => Port = v },
+			var options = new OptionSet {
+				{ "h|?|help", v => menu = MenuList.Help},
+				{ "install", v => menu = MenuList.Install },
+				{ "uninstall", v => menu = MenuList.Uninstall },
+				{ "before-update", v => menu = MenuList.BeforeUpdate },
+				{ "after-update", v => menu = MenuList.AfterUpdate },
+				{ "p|path=", v => targetPath = v },
+				{ "host=", v => host = v },
+				{ "ip=", v => ip = v },
+				{ "port=", v => port = v },
 			};
 
 			try
 			{
-				List<string> Extra = Options.Parse(args);
+				List<string> extra = options.Parse(args);
 
-				foreach (var Option in Extra) Console.WriteLine($"{Option} : invalid. {Options[Option].Description}");
+				foreach (var option in extra) Console.WriteLine($"{option} : invalid. {options[option].Description}");
 
-				if (Extra.Count > 0) return -1;
+				if (extra.Count > 0) return -1;
 			}
 			catch (OptionException e)
 			{
 				// output some error message
 				Console.WriteLine(e.Message);
-				Console.WriteLine($"{e.OptionName} : {Options[e.OptionName.Replace("--", "")].Description}");
+				Console.WriteLine($"{e.OptionName} : {options[e.OptionName.Replace("--", "")].Description}");
 				return -127;
 			}
-			if (!TargetPath.EndsWith(System.IO.Path.DirectorySeparatorChar)) TargetPath += System.IO.Path.DirectorySeparatorChar;
+			if (!targetPath.EndsWith(System.IO.Path.DirectorySeparatorChar)) targetPath += System.IO.Path.DirectorySeparatorChar;
 
-			switch (Menu)
+			switch (menu)
 			{
 				case MenuList.Install:
 					Console.WriteLine("Install Start");
-					Create(IP, Port, TargetPath);
+					Create(ip, port, targetPath);
 					Console.WriteLine("Install End!");
 					return 0;
 				case MenuList.Uninstall:
@@ -88,10 +88,10 @@ namespace IfsSync2Init
 					Console.WriteLine("After Update End!");
 					return 0;
 				case MenuList.Help:
-					Options.WriteOptionDescriptions(Console.Out);
+					options.WriteOptionDescriptions(Console.Out);
 					return 0;
 				default:
-					Options.WriteOptionDescriptions(Console.Out);
+					options.WriteOptionDescriptions(Console.Out);
 					return -1;
 			}
 		}
@@ -104,64 +104,64 @@ namespace IfsSync2Init
 
 			//Create RegistryKey
 			Console.WriteLine("Registry Setting.");
-			var WatcherConfigs = new WatcherConfig(true);
-			var FilterConfigs = new FilterConfig(true);
-			var SenderConfigs = new SenderConfig(true);
-			// var TrayIconConfigs = new TrayIconConfig(true);
+			var watcherConfigs = new WatcherConfig(true);
+			var filterConfigs = new FilterConfig(true);
+			var senderConfigs = new SenderConfig(true);
+			// var trayIconConfigs = new TrayIconConfig(true);
 
-			WatcherConfigs.IP = ip;
-			WatcherConfigs.Port = port;
-			WatcherConfigs.RootPath = targetPath;
-			FilterConfigs.RootPath = targetPath;
-			SenderConfigs.RootPath = targetPath;
-			// TrayIconConfigs.RootPath = targetPath;
-			// TrayIconConfigs.IconPath = MainData.CreateIconFilePath(targetPath, MainData.ICON_FILE_NAME);
-			WatcherConfigs.Close();
-			FilterConfigs.Close();
-			SenderConfigs.Close();
-			// TrayIconConfigs.Close();
+			watcherConfigs.IP = ip;
+			watcherConfigs.Port = port;
+			watcherConfigs.RootPath = targetPath;
+			filterConfigs.RootPath = targetPath;
+			senderConfigs.RootPath = targetPath;
+			// trayIconConfigs.RootPath = targetPath;
+			// trayIconConfigs.IconPath = IfsSync2Utilities.CreateIconFilePath(targetPath, IfsSync2Constants.ICON_FILE_NAME);
+			watcherConfigs.Close();
+			filterConfigs.Close();
+			senderConfigs.Close();
+			// trayIconConfigs.Close();
 
 			if (System.Runtime.InteropServices.RuntimeInformation.IsOSPlatform(System.Runtime.InteropServices.OSPlatform.Windows))
 			{
 				var baseKey = RegistryKey.OpenBaseKey(RegistryHive.LocalMachine, RegistryView.Registry32);
-				using var netDriverSetting = baseKey.OpenSubKey(MainData.NET_DRIVER_REGISTRY_PATH, true);
-				netDriverSetting.SetValue(MainData.NET_DRIVER_ENABLE_LINKED_CONNECTIONS, 1, RegistryValueKind.DWord);
+				using var netDriverSetting = baseKey.OpenSubKey(IfsSync2Constants.NET_DRIVER_REGISTRY_PATH, true);
+				netDriverSetting.SetValue(IfsSync2Constants.NET_DRIVER_ENABLE_LINKED_CONNECTIONS, 1, RegistryValueKind.DWord);
 				Console.WriteLine("Registry Setting End!");
 			}
 
 			Console.WriteLine("Task Schedule Add.");
-			SetTask(MainData.FILTER_NAME, targetPath, false);
-			SetTask(MainData.SENDER_NAME, targetPath);
-			// SetTask(MainData.TRAY_ICON_NAME, targetPath, false);
+			SetTask(IfsSync2Constants.FILTER_NAME, targetPath, false);
+			SetTask(IfsSync2Constants.SENDER_NAME, targetPath);
+			// SetTask(IfsSync2Constants.TRAY_ICON_NAME, targetPath, false);
 			Console.WriteLine("Task Schedule Add End!");
 
 			Console.WriteLine("Service Create.");
-			ServiceManager.RegisterService(MainData.WATCHER_SERVICE_NAME, MainData.CreateExeFilePath(targetPath, MainData.WATCHER_SERVICE_NAME));
+			ServiceManager.RegisterService(IfsSync2Constants.WATCHER_SERVICE_NAME, IfsSync2Utilities.CreateExeFilePath(targetPath, IfsSync2Constants.WATCHER_SERVICE_NAME));
 			Console.WriteLine("Service Start.");
-			ServiceManager.StartService(MainData.WATCHER_SERVICE_NAME);
+			ServiceManager.StartService(IfsSync2Constants.WATCHER_SERVICE_NAME);
 			Console.WriteLine("Service Setting End!");
 
 		}
 		static void Delete()
 		{
 			Console.WriteLine("Task Schedule Delete.");
-			DelTask(MainData.FILTER_NAME);
-			DelTask(MainData.SENDER_NAME);
-			// DelTask(MainData.TRAY_ICON_NAME);
+			DelTask(IfsSync2Constants.FILTER_NAME);
+			DelTask(IfsSync2Constants.SENDER_NAME);
+			// DelTask(IfsSync2Constants.TRAY_ICON_NAME);
 			Console.WriteLine("Task Schedule Delete End!");
 
 			Console.WriteLine("ProcessKill.");
-			ProcessKill(MainData.UI_NAME);
-			ProcessKill(MainData.FILTER_NAME);
-			ProcessKill(MainData.SENDER_NAME);
-			// ProcessKill(MainData.TRAY_ICON_NAME);
+			ProcessKill(IfsSync2Constants.UI_NAME);
+			ProcessKill(IfsSync2Constants.FILTER_NAME);
+			ProcessKill(IfsSync2Constants.SENDER_NAME);
+			// ProcessKill(IfsSync2Constants.TRAY_ICON_NAME);
 			Console.WriteLine("ProcessKill End!");
 
 			Console.WriteLine("Registry Delete.");
 			if (System.Runtime.InteropServices.RuntimeInformation.IsOSPlatform(System.Runtime.InteropServices.OSPlatform.Windows))
 				try
 				{
-					Registry.LocalMachine.DeleteSubKeyTree(MainData.REGISTRY_ROOT);
+					Registry.LocalMachine.DeleteSubKeyTree(IfsSync2Constants.REGISTRY_ROOT);
 				}
 				catch (Exception e)
 				{
@@ -170,9 +170,9 @@ namespace IfsSync2Init
 			Console.WriteLine("Registry Delete End!");
 
 			Console.WriteLine("Service Stop.");
-			ServiceManager.StopService(MainData.WATCHER_SERVICE_NAME);
+			ServiceManager.StopService(IfsSync2Constants.WATCHER_SERVICE_NAME);
 			Console.WriteLine("Service Delete.");
-			ServiceManager.UnregisterService(MainData.WATCHER_SERVICE_NAME);
+			ServiceManager.UnregisterService(IfsSync2Constants.WATCHER_SERVICE_NAME);
 			Console.WriteLine("Service Delete End!");
 
 			Console.WriteLine("CBFS Uninstall Start.");
@@ -186,17 +186,17 @@ namespace IfsSync2Init
 
 			// 1. 스케줄러 작업 중지 (관련 프로세스들도 함께 종료됨)
 			Console.WriteLine("Stopping scheduled tasks...");
-			StopTask(MainData.FILTER_NAME);
-			StopTask(MainData.SENDER_NAME);
-			// StopTask(MainData.TRAY_ICON_NAME);
+			StopTask(IfsSync2Constants.FILTER_NAME);
+			StopTask(IfsSync2Constants.SENDER_NAME);
+			// StopTask(IfsSync2Constants.TRAY_ICON_NAME);
 
 			// 2. UI 프로세스 종료 (UI는 스케줄러로 실행되지 않음)
 			Console.WriteLine("Terminating UI process...");
-			ProcessKill(MainData.UI_NAME);
+			ProcessKill(IfsSync2Constants.UI_NAME);
 
 			// 3. 서비스 중지
 			Console.WriteLine("Stopping WatcherService...");
-			ServiceManager.StopService(MainData.WATCHER_SERVICE_NAME);
+			ServiceManager.StopService(IfsSync2Constants.WATCHER_SERVICE_NAME);
 
 			Console.WriteLine("System is ready for update.");
 		}
@@ -207,13 +207,13 @@ namespace IfsSync2Init
 
 			//1. 서비스 시작
 			Console.WriteLine("Starting WatcherService...");
-			ServiceManager.StartService(MainData.WATCHER_SERVICE_NAME);
+			ServiceManager.StartService(IfsSync2Constants.WATCHER_SERVICE_NAME);
 
 			//2. 스케줄러 작업 시작
 			Console.WriteLine("Starting scheduled tasks...");
-			StartTask(MainData.FILTER_NAME);
-			StartTask(MainData.SENDER_NAME);
-			// StartTask(MainData.TRAY_ICON_NAME);
+			StartTask(IfsSync2Constants.FILTER_NAME);
+			StartTask(IfsSync2Constants.SENDER_NAME);
+			// StartTask(IfsSync2Constants.TRAY_ICON_NAME);
 
 			Console.WriteLine("System has been restored after update.");
 		}
@@ -222,17 +222,17 @@ namespace IfsSync2Init
 		/// <summary>
 		/// 스케줄러 작업 등록
 		/// </summary>
-		/// <param name="ScheduleName">작업 이름</param>
-		/// <param name="RootPath">작업 경로</param>
-		/// <param name="AC">AC 전원 여부</param>
-		private static void SetTask(string ScheduleName, string RootPath, bool AC = true)
+		/// <param name="scheduleName">작업 이름</param>
+		/// <param name="rootPath">작업 경로</param>
+		/// <param name="ac">AC 전원 여부</param>
+		private static void SetTask(string scheduleName, string rootPath, bool ac = true)
 		{
 			using var taskService = new TaskService();
 			try
 			{
-				Task task = taskService.GetTask(ScheduleName);
+				Task task = taskService.GetTask(scheduleName);
 				if (task.Enabled) return;
-				else taskService.RootFolder.DeleteTask(ScheduleName);
+				else taskService.RootFolder.DeleteTask(scheduleName);
 			}
 			catch (Exception e)
 			{
@@ -257,7 +257,7 @@ namespace IfsSync2Init
 
 			// 조건 > 전원
 			// 컴퓨터의 AC 전원이 켜져 있는 경우에만 작업 시작
-			taskDefinition.Settings.DisallowStartIfOnBatteries = AC;
+			taskDefinition.Settings.DisallowStartIfOnBatteries = ac;
 
 			// 조건 > 네트워크
 			// 다음 네트워크 연결을 사용할 수 있는 경우에만 시작
@@ -269,11 +269,11 @@ namespace IfsSync2Init
 			taskDefinition.Settings.ExecutionTimeLimit = TimeSpan.FromDays(0);
 
 			// 실행
-			var FilePath = MainData.CreateExeFilePath(RootPath, ScheduleName);
-			taskDefinition.Actions.Add(new ExecAction(FilePath, RootPath, null));
+			var FilePath = IfsSync2Utilities.CreateExeFilePath(rootPath, scheduleName);
+			taskDefinition.Actions.Add(new ExecAction(FilePath, rootPath, null));
 
 			// 등록
-			taskService.RootFolder.RegisterTaskDefinition(ScheduleName, taskDefinition);
+			taskService.RootFolder.RegisterTaskDefinition(scheduleName, taskDefinition);
 		}
 
 		/// <summary>
@@ -322,13 +322,13 @@ namespace IfsSync2Init
 		/// <summary>
 		/// 스케줄러 작업 삭제
 		/// </summary>
-		/// <param name="ScheduleName">작업 이름</param>
-		private static void DelTask(string ScheduleName)
+		/// <param name="scheduleName">작업 이름</param>
+		private static void DelTask(string scheduleName)
 		{
 			using var taskService = new TaskService();
 			try
 			{
-				taskService.RootFolder.DeleteTask(ScheduleName);
+				taskService.RootFolder.DeleteTask(scheduleName);
 			}
 			catch (Exception e)
 			{
@@ -339,10 +339,10 @@ namespace IfsSync2Init
 		/// <summary>
 		/// 프로세스 종료
 		/// </summary>
-		/// <param name="ProcessName">프로세스 이름</param>
-		private static void ProcessKill(string ProcessName)
+		/// <param name="processName">프로세스 이름</param>
+		private static void ProcessKill(string processName)
 		{
-			var ProcessList = GetProcessesByName(ProcessName);
+			var ProcessList = GetProcessesByName(processName);
 
 			if (ProcessList.Length > 0)
 			{
@@ -357,15 +357,15 @@ namespace IfsSync2Init
 		#region CBFS
 		private static void CBFSInstall(string targetPath)
 		{
-			var path = targetPath + MainData.FILTER_DRIVE_PATH;
+			var path = targetPath + IfsSync2Constants.FILTER_DRIVE_PATH;
 			Console.WriteLine(path);
 
-			var mFilter = new Cbfilter(MainData.RUNTIME_LICENSE_KEY);
+			var mFilter = new Cbfilter(IfsSync2Constants.RUNTIME_LICENSE_KEY);
 			if (!CBFSInstallCheck(mFilter))
 			{
 				try
 				{
-					bool Reboot = mFilter.Install(path, MainData.mGuid, null, Constants.FS_FILTER_MODE_MINIFILTER, MainData.ALTITUDE_FAKE_VALUE_FOR_DEBUG, 0);
+					bool Reboot = mFilter.Install(path, IfsSync2Constants.mGuid, null, Constants.FS_FILTER_MODE_MINIFILTER, IfsSync2Constants.ALTITUDE_FAKE_VALUE_FOR_DEBUG, 0);
 
 					if (Reboot)
 						Console.WriteLine("Reboot the computer for the changes to take affect");
@@ -380,13 +380,13 @@ namespace IfsSync2Init
 		}
 		private static void CBFSUninstall()
 		{
-			var mFilter = new Cbfilter(MainData.RUNTIME_LICENSE_KEY);
+			var mFilter = new Cbfilter(IfsSync2Constants.RUNTIME_LICENSE_KEY);
 
 			if (CBFSInstallCheck(mFilter))
 			{
 				try
 				{
-					bool Reboot = mFilter.Uninstall(MainData.FILTER_DRIVE_PATH, MainData.mGuid, null, 0);
+					bool Reboot = mFilter.Uninstall(IfsSync2Constants.FILTER_DRIVE_PATH, IfsSync2Constants.mGuid, null, 0);
 
 					if (Reboot)
 						Console.WriteLine("Reboot the computer for the changes to take affect");
@@ -401,9 +401,9 @@ namespace IfsSync2Init
 		}
 		public static bool CBFSInstallCheck(Cbfilter mFilter)
 		{
-			int moduleStatus = mFilter.GetDriverStatus(MainData.mGuid);
+			int moduleStatus = mFilter.GetDriverStatus(IfsSync2Constants.mGuid);
 
-			ulong moduleVersion = (ulong)mFilter.GetDriverVersion(MainData.mGuid);
+			ulong moduleVersion = (ulong)mFilter.GetDriverVersion(IfsSync2Constants.mGuid);
 
 			uint versionHigh = (uint)(moduleVersion >> 32);
 			uint versionLow = (uint)(moduleVersion & 0xFFFFFFFF);

@@ -11,40 +11,67 @@
 using Alphaleonis.Win32.Vss;
 using log4net;
 using System;
-using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
-using System.Reflection;
 
 namespace IfsSync2Sender
 {
 	public class ShadowCopy : IDisposable
 	{
-		static readonly ILog _log = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
+		static readonly ILog _log = LogManager.GetLogger(typeof(ShadowCopy));
 
 		readonly bool ComponentMode = false;
-
 		IVssBackupComponents _backup;
-
 		Snapshot _snap;
 
-		public string VolumeName { get; set; }
+		public string VolumeName { get; private set; }
 
-		public ShadowCopy()
+		public ShadowCopy(string volumeName)
 		{
-		}
+			if (string.IsNullOrEmpty(volumeName))
+				throw new ArgumentNullException(nameof(volumeName), "볼륨 이름이 필요합니다");
 
-		public void Setup(string volumeName)
-		{
 			VolumeName = volumeName;
-			Discovery(volumeName);
-			PreBackup();
+			string volumeRoot = Path.GetPathRoot(volumeName);
+
+			try
+			{
+				InitializeBackup();
+				PrepareVolume(volumeRoot);
+				CreateSnapshot();
+			}
+			catch (Exception e)
+			{
+				_log.Error($"볼륨 {volumeName}의 스냅샷 생성 실패", e);
+				Dispose();
+				throw;
+			}
 		}
 
-		public void Init()
+		private void InitializeBackup()
 		{
-			if (_backup != null) Dispose();
-			InitializeBackup();
+			IVssFactory vss = VssFactoryProvider.Default.GetVssFactory();
+			_backup = vss.CreateVssBackupComponents();
+			_backup.InitializeForBackup(null);
+			_backup.GatherWriterMetadata();
+
+			if (ComponentMode)
+				ExamineComponents();
+			else
+				_backup.FreeWriterMetadata();
+		}
+
+		private void PrepareVolume(string volumeRoot)
+		{
+			_snap = new Snapshot(_backup);
+			_snap.AddVolume(volumeRoot);
+		}
+
+		private void CreateSnapshot()
+		{
+			_backup.SetBackupState(ComponentMode, true, VssBackupType.Full, false);
+			_backup.PrepareForBackup();
+			_snap.Copy();
 		}
 
 		public void Dispose()
@@ -70,26 +97,6 @@ namespace IfsSync2Sender
 			}
 		}
 
-		void InitializeBackup()
-		{
-			IVssFactory vss = VssFactoryProvider.Default.GetVssFactory();
-
-			_backup = vss.CreateVssBackupComponents();
-			_backup.InitializeForBackup(null);
-			_backup.GatherWriterMetadata();
-		}
-
-		void Discovery(string fullPath)
-		{
-			if (ComponentMode)
-				ExamineComponents();
-			else
-				_backup.FreeWriterMetadata();
-
-			_snap = new Snapshot(_backup);
-			_snap.AddVolume(Path.GetPathRoot(fullPath));
-		}
-
 		void ExamineComponents()
 		{
 			var writer_mds = _backup.WriterMetadata;
@@ -112,17 +119,52 @@ namespace IfsSync2Sender
 			}
 		}
 
-		void PreBackup()
+		void Complete(bool succeeded)
 		{
-			Debug.Assert(_snap != null);
+			if (_backup == null) return;
 
-			_backup.SetBackupState(ComponentMode, true, VssBackupType.Full, false);
-			_backup.PrepareForBackup();
-			_snap.Copy();
+			if (ComponentMode)
+			{
+				try
+				{
+					var writers = _backup.WriterMetadata;
+					foreach (var metadata in writers)
+					{
+						foreach (var component in metadata.Components)
+						{
+							_backup.SetBackupSucceeded(
+								  metadata.InstanceId, metadata.WriterId,
+								  component.Type, component.LogicalPath,
+								  component.ComponentName, succeeded);
+						}
+					}
+					_backup.FreeWriterMetadata();
+				}
+				catch (Exception e)
+				{
+					_log.Error("WriterMetadata 처리 중 오류", e);
+					// 정리 작업 시도
+					try { _backup.FreeWriterMetadata(); } catch { /* 무시 */ }
+				}
+			}
+
+			try
+			{
+				_backup.BackupComplete();
+			}
+			catch (Exception e)
+			{
+				_log.Error("BackupComplete", e);
+			}
 		}
 
 		public string GetSnapshotPath(string localPath)
 		{
+			if (_snap == null)
+				throw new InvalidOperationException("스냅샷이 생성되지 않았거나 이미 해제되었습니다");
+			if (string.IsNullOrEmpty(localPath))
+				throw new ArgumentNullException(nameof(localPath), "경로가 필요합니다");
+
 			Trace.TraceInformation("New volume: " + _snap.Root);
 
 			if (Path.IsPathRooted(localPath))
@@ -139,45 +181,11 @@ namespace IfsSync2Sender
 
 			return localPath;
 		}
-
-		public Stream GetStream(string localPath)
-		{
-			return File.OpenRead(GetSnapshotPath(localPath));
-		}
-
-		void Complete(bool succeeded)
-		{
-			if (ComponentMode)
-			{
-				var writers = _backup.WriterMetadata;
-				foreach (var metadata in writers)
-				{
-					foreach (var component in metadata.Components)
-					{
-						_backup.SetBackupSucceeded(
-							  metadata.InstanceId, metadata.WriterId,
-							  component.Type, component.LogicalPath,
-							  component.ComponentName, succeeded);
-					}
-				}
-				_backup.FreeWriterMetadata();
-			}
-
-			try
-			{
-				_backup.BackupComplete();
-			}
-			catch (VssBadStateException e)
-			{
-				_log.Error("BackupComplete", e);
-			}
-		}
 	}
-
 
 	public class Snapshot(IVssBackupComponents backup) : IDisposable
 	{
-		readonly ILog _log = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
+		readonly ILog _log = LogManager.GetLogger(typeof(Snapshot));
 		readonly IVssBackupComponents _backup = backup;
 		readonly Guid _set_id = backup.StartSnapshotSet();
 
@@ -210,13 +218,15 @@ namespace IfsSync2Sender
 
 		public void Delete()
 		{
+			if (_backup == null) return;
+
 			try
 			{
 				_backup.DeleteSnapshotSet(_set_id, true);
 			}
 			catch (Exception e)
 			{
-				_log.Error("DeleteSnapshotSet", e);
+				_log.Error($"스냅샷 삭제 실패 (ID: {_set_id})", e);
 			}
 		}
 
@@ -224,8 +234,19 @@ namespace IfsSync2Sender
 		{
 			get
 			{
-				_props ??= _backup.GetSnapshotProperties(_snap_id);
-				return _props.SnapshotDeviceObject;
+				if (_backup == null)
+					throw new ObjectDisposedException(nameof(Snapshot), "스냅샷이 이미 해제되었습니다");
+					
+				try
+				{
+					_props ??= _backup.GetSnapshotProperties(_snap_id);
+					return _props.SnapshotDeviceObject;
+				}
+				catch (Exception ex)
+				{
+					_log.Error($"스냅샷 속성 접근 실패 (ID: {_snap_id})", ex);
+					throw new InvalidOperationException("스냅샷 루트 경로를 가져올 수 없습니다", ex);
+				}
 			}
 		}
 	}

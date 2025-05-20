@@ -1,4 +1,4 @@
-﻿/*
+/*
 * Copyright (c) 2021 PSPACE, inc. KSAN Development Team ksan@pspace.co.kr
 * KSAN is a suite of free software: you can redistribute it and/or modify it under the terms of
 * the GNU General Public License as published by the Free Software Foundation, either version 
@@ -10,7 +10,7 @@
 */
 using Microsoft.Win32;
 
-namespace IfsSync2Data
+namespace IfsSync2Common
 {
 	public class FilterConfig
 	{
@@ -20,41 +20,44 @@ namespace IfsSync2Data
 		static readonly int DEFAULT_FILTER_CHECK_DELAY = 5000;
 		#endregion
 
-		readonly RegistryKey _filterConfigKey = null;
+		readonly RegistryKey _filterConfigKey;
 
 #pragma warning disable CA1416
 		public int FilterCheckDelay
 		{
-			get => int.TryParse(_filterConfigKey.GetValue(FILTER_CHECK_DELAY).ToString(), out int value) ? value : DEFAULT_FILTER_CHECK_DELAY;
+			get => RegistryUtility.GetIntValue(_filterConfigKey, FILTER_CHECK_DELAY);
 			set => _filterConfigKey.SetValue(FILTER_CHECK_DELAY, value, RegistryValueKind.DWord);
 		}
 
 		public string RootPath
 		{
-			get => _filterConfigKey.GetValue(ROOT_PATH).ToString();
+			get => RegistryUtility.GetStringValue(_filterConfigKey, ROOT_PATH);
 			set => _filterConfigKey.SetValue(ROOT_PATH, value, RegistryValueKind.String);
 		}
 		public bool Alive
 		{
-			get => int.TryParse(_filterConfigKey.GetValue(MainData.ALIVE_CHECK).ToString(), out int value) && value == MainData.MY_TRUE;
-			set => _filterConfigKey.SetValue(MainData.ALIVE_CHECK, value ? MainData.MY_TRUE : MainData.MY_FALSE, RegistryValueKind.DWord);
+			get => RegistryUtility.GetBoolValue(_filterConfigKey, IfsSync2Constants.ALIVE_CHECK);
+			set => _filterConfigKey.SetValue(IfsSync2Constants.ALIVE_CHECK, value ? IfsSync2Constants.MY_TRUE : IfsSync2Constants.MY_FALSE, RegistryValueKind.DWord);
 		}
 		public FilterConfig(bool Write = false)
 		{
-			_filterConfigKey = Registry.LocalMachine.OpenSubKey(MainData.FILTER_CONFIG_PATH, Write);
-			if (_filterConfigKey == null)
+			var temp = Registry.LocalMachine.OpenSubKey(IfsSync2Constants.FILTER_CONFIG_PATH, Write);
+			if (temp == null)
 			{
-				_filterConfigKey = Registry.LocalMachine.CreateSubKey(MainData.FILTER_CONFIG_PATH);
-				_filterConfigKey.SetValue(FILTER_CHECK_DELAY, DEFAULT_FILTER_CHECK_DELAY, RegistryValueKind.DWord);
-				_filterConfigKey.SetValue(ROOT_PATH, "", RegistryValueKind.String);
-				_filterConfigKey.SetValue(MainData.ALIVE_CHECK, MainData.MY_FALSE, RegistryValueKind.DWord);
+				temp = Registry.LocalMachine.CreateSubKey(IfsSync2Constants.FILTER_CONFIG_PATH);
+				temp.SetValue(FILTER_CHECK_DELAY, DEFAULT_FILTER_CHECK_DELAY, RegistryValueKind.DWord);
+				temp.SetValue(ROOT_PATH, "", RegistryValueKind.String);
+				temp.SetValue(IfsSync2Constants.ALIVE_CHECK, IfsSync2Constants.MY_FALSE, RegistryValueKind.DWord);
 			}
+
+			_filterConfigKey = temp;
 		}
+
 		public void Close() { _filterConfigKey?.Close(); }
 		public void Delete()
 		{
-			_filterConfigKey.DeleteSubKeyTree(MainData.FILTER_CONFIG_PATH);
+			_filterConfigKey.DeleteSubKeyTree(IfsSync2Constants.FILTER_CONFIG_PATH);
 		}
-	}
 #pragma warning restore CA1416
+	}
 }

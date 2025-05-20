@@ -9,7 +9,7 @@
 * KSAN 개발팀은 사전 공지, 허락, 동의 없이 KSAN 개발에 관련된 모든 결과물에 대한 LICENSE 방식을 변경 할 권리가 있습니다.
 */
 using System.Windows;
-using IfsSync2Data;
+using IfsSync2Common;
 
 namespace IfsSync2UI
 {
@@ -61,16 +61,16 @@ namespace IfsSync2UI
 		private void LoadConfig()
 		{
 			SenderConfig senderConfig = new();
-			T_MultipartUploadSize.Text = MainData.SizeToString(senderConfig.MultipartUploadFileSize);
-			T_MultipartPartSize.Text = MainData.SizeToString(senderConfig.MultipartUploadPartSize);
+			T_MultipartUploadSize.Text = CapacityUnit.Format(senderConfig.MultipartUploadFileSize);
+			T_MultipartPartSize.Text = CapacityUnit.Format(senderConfig.MultipartUploadPartSize);
 			T_ThreadCount.Text = senderConfig.ThreadCount.ToString();
 			CB_LogRetention.SelectedValue = LogRetention2String(senderConfig.LogRetention);
 		}
 
 		public void Btn_Save(object sender, RoutedEventArgs e)
 		{
-			var multipartUploadFileSize = MainData.StringToSize(T_MultipartUploadSize.Text);
-			var multipartUploadPartSize = MainData.StringToSize(T_MultipartPartSize.Text);
+			var multipartUploadFileSize = CapacityUnit.Parse(T_MultipartUploadSize.Text);
+			var multipartUploadPartSize = CapacityUnit.Parse(T_MultipartPartSize.Text);
 			var threadCount = int.Parse(T_ThreadCount.Text);
 			var logRetention = String2LogRetention(CB_LogRetention.SelectedValue.ToString());
 

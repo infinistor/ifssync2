@@ -8,11 +8,9 @@
 * KSAN 프로젝트의 개발자 및 개발사는 이 프로그램을 사용한 결과에 따른 어떠한 책임도 지지 않습니다.
 * KSAN 개발팀은 사전 공지, 허락, 동의 없이 KSAN 개발에 관련된 모든 결과물에 대한 LICENSE 방식을 변경 할 권리가 있습니다.
 */
-using System;
 using System.Collections.ObjectModel;
-using System.Linq;
 
-namespace IfsSync2Data
+namespace IfsSync2Common
 {
 	/// <summary> 작업 데이터 클래스 </summary>
 	public sealed class JobData : IEquatable<JobData>
@@ -56,15 +54,10 @@ namespace IfsSync2Data
 
 		public JobData()
 		{
-			Init();
-		}
-
-		public void Init()
-		{
 			Id = -1;
 			Global = false;
-			HostName = MainData.DEFAULT_HOSTNAME_NAME;
-			JobName = MainData.DEFAULT_JOB_NAME;
+			HostName = IfsSync2Constants.DEFAULT_HOSTNAME_NAME;
+			JobName = IfsSync2Constants.DEFAULT_JOB_NAME;
 			IsGlobalUser = true;
 			UserId = -1;
 			Path = [];
@@ -266,7 +259,7 @@ namespace IfsSync2Data
 			return false;
 		}
 
-		public bool Equals(JobData item)
+		public bool Equals(JobData? item)
 		{
 			if (item == null) return false;
 
@@ -288,7 +281,7 @@ namespace IfsSync2Data
 
 			return true;
 		}
-		public override bool Equals(object obj)
+		public override bool Equals(object? obj)
 		{
 			if (obj == null) return false;
 			var item = obj as JobData;

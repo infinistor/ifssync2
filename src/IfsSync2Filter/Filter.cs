@@ -12,65 +12,69 @@ using log4net;
 using System.Collections.Generic;
 using System.Reflection;
 using System.Threading;
-using IfsSync2Data;
+using IfsSync2Common;
+using System.Linq;
 
 namespace IfsSync2Filter
 {
 	public class Filter()
 	{
-		const int FILTER_CHECK_DELAY = 5000;
-
 		readonly ILog _log = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
 		readonly List<FilterThread> _filters = [];
 		readonly JobDbManager _jobDb = new();
 
 		public void CheckOnce()
 		{
-			FilterThreadAliveInit();
+			// DB에서 현재 jobs 가져오기
 			var jobs = _jobDb.GetJobs();
+			var activeJobIds = jobs.Where(j => !j.JobName.Equals(IfsSync2Constants.INSTANT_BACKUP_NAME))
+									.Select(j => j.Id)
+									.ToHashSet();
 
+			// 제거해야 할 필터 찾기
+			var filtersToRemove = _filters.Where(f => !activeJobIds.Contains(f.Job.Id)).ToList();
+
+			// 제거할 필터는 Close 후 제거
+			foreach (var filter in filtersToRemove)
+			{
+				filter.Close();
+				_filters.Remove(filter);
+			}
+
+			// 존재하는 필터 업데이트 및 없는 필터 추가
 			foreach (var job in jobs)
 			{
-				if (job.JobName.Equals(MainData.INSTANT_BACKUP_NAME)) continue;
-				bool isNewFilter = true;
-				//if new or change
-				foreach (var Filter in _filters)
-				{
-					if (Filter.IsAlive) continue;
-
-					if (job.Id == Filter.Job.Id)
-					{
-						isNewFilter = false;
-						Filter.IsAlive = true;
-						//JobData is Changed.
-						if (job.FilterUpdate)
-						{
-							job.FilterUpdate = false;
-							Filter.JobDataUpdate(job);
-							_jobDb.UpdateFilterCheck(job);
-						}
-						break;
-					}
-				}
-
-				//JobThread is not existed. Create JobThread
-				if (isNewFilter) _filters.Add(new FilterThread(job));
-			}
-
-			for (int i = _filters.Count - 1; i >= 0; i--)
-			{
-				if (!_filters[i].IsAlive)
-				{
-					_filters[i].Close();
-					_filters.RemoveAt(i);
+				if (job.JobName.Equals(IfsSync2Constants.INSTANT_BACKUP_NAME))
 					continue;
-				}
-				else _filters[i].FilterStateOn();
 
-				if (!_filters[i].IsFilterUpdate) _filters[i].FilterUpdate();
+				var existingFilter = _filters.FirstOrDefault(f => f.Job.Id == job.Id);
+
+				if (existingFilter != null)
+				{
+					// 기존 필터 업데이트 필요시
+					if (job.FilterUpdate)
+					{
+						job.FilterUpdate = false;
+						existingFilter.JobDataUpdate(job);
+						_jobDb.UpdateFilterCheck(job);
+					}
+
+					// 필터 상태 갱신
+					existingFilter.FilterStateOn();
+
+					// 필터 업데이트 필요하면 수행
+					if (!existingFilter.IsFilterUpdate)
+						existingFilter.FilterUpdate();
+				}
+				else
+				{
+					// 새 필터 생성
+					var newFilter = new FilterThread(job);
+					_filters.Add(newFilter);
+				}
 			}
 
-			Thread.Sleep(FILTER_CHECK_DELAY);
+			Thread.Sleep(IfsSync2Constants.DEFAULT_FILTER_CHECK_DELAY);
 		}
 
 		public void Stop()
@@ -79,10 +83,6 @@ namespace IfsSync2Filter
 			_log.Info("Stop");
 		}
 
-		void FilterThreadAliveInit()
-		{
-			foreach (var Job in _filters) Job.IsAlive = false;
-		}
 		void FilterThreadAllDelete()
 		{
 			foreach (var Job in _filters) Job.Close();

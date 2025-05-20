@@ -9,7 +9,7 @@
 * KSAN 개발팀은 사전 공지, 허락, 동의 없이 KSAN 개발에 관련된 모든 결과물에 대한 LICENSE 방식을 변경 할 권리가 있습니다.
 */
 using System;
-using IfsSync2Data;
+using IfsSync2Common;
 
 namespace IfsSync2UI
 {
@@ -30,13 +30,13 @@ namespace IfsSync2UI
 		public long TotalSize { get; set; }
 		public long UsedSize { get; set; }
 
-		public bool IsS3 => URL.StartsWith(MainData.HTTP, StringComparison.OrdinalIgnoreCase) || URL.StartsWith(MainData.HTTPS, StringComparison.OrdinalIgnoreCase);
+		public bool IsS3 => URL.StartsWith(IfsSync2Constants.HTTP, StringComparison.OrdinalIgnoreCase) || URL.StartsWith(IfsSync2Constants.HTTPS, StringComparison.OrdinalIgnoreCase);
 		public long FreeSize => TotalSize - UsedSize;
 		public double Rate => TotalSize == 0 ? 0 : UsedSize / (double)TotalSize * 100.0;
 
-		public string StrTotalSize => MainData.SizeToString(TotalSize);
-		public string StrUsedSize => MainData.SizeToString(UsedSize);
-		public string StrFreeSize => MainData.SizeToString(FreeSize);
+		public string StrTotalSize => CapacityUnit.Format(TotalSize);
+		public string StrUsedSize => CapacityUnit.Format(UsedSize);
+		public string StrFreeSize => CapacityUnit.Format(FreeSize);
 		public string StrRate => TotalSize == 0 ? "No Data" : string.Format("{0:0.0} %", Rate);
 
 		public StorageData(int id, string hostName, string userName)

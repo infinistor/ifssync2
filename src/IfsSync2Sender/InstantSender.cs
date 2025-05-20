@@ -10,8 +10,7 @@
 */
 using log4net;
 using System;
-using System.Reflection;
-using IfsSync2Data;
+using IfsSync2Common;
 using System.Collections.Generic;
 
 namespace IfsSync2Sender
@@ -31,7 +30,7 @@ namespace IfsSync2Sender
 		const string INSTANT_BACKUP_STOP = "Backup Stop!";
 		const string INSTANT_BACKUP_FINISH = "Backup Finish!";
 
-		private static readonly ILog _log = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
+		private static readonly ILog _log = LogManager.GetLogger(typeof(InstantSender));
 		private readonly InstantData _instant = new();
 
 		/// <summary>

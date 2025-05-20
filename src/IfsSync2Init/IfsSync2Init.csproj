@@ -67,7 +67,7 @@
 	</ItemGroup>
 	<ItemGroup>
 		<PackageReference Include="callback.CBFSFilter" Version="20.0.7656" />
-		<PackageReference Include="log4net" Version="3.0.4" />
+		<PackageReference Include="log4net" Version="3.1.0" />
 		<PackageReference Include="Microsoft.CSharp" Version="4.7.0" />
 		<PackageReference Include="Mono.Options" Version="6.12.0.148" />
 		<PackageReference Include="System.ComponentModel.Annotations" Version="5.0.0" />
@@ -81,5 +81,7 @@
 		<PackageReference Include="EntityFramework" Version="6.5.1" />
 		<PackageReference Include="System.Configuration.ConfigurationManager" Version="8.0.0" />
 	</ItemGroup>
-	<Import Project="..\IfsSync2Data\IfsSync2Data.projitems" Label="Shared" />
+	<ItemGroup>
+		<ProjectReference Include="..\IfsSync2Common\IfsSync2Common.csproj" />
+	</ItemGroup>
 </Project>

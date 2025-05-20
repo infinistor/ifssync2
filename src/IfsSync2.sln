@@ -4,8 +4,6 @@ VisualStudioVersion = 17.8.34309.116
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IfsSync2UI", "IfsSync2UI\IfsSync2UI.csproj", "{57BFA1B3-9A71-4109-BC4F-9B43B7BDA2A1}"
 EndProject
-Project("{D954291E-2A0B-460D-934E-DC6B0785DB48}") = "IfsSync2Data", "IfsSync2Data\IfsSync2Data.shproj", "{13D330F6-1E4F-4009-9385-B0E292698A1A}"
-EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IfsSync2Filter", "IfsSync2Filter\IfsSync2Filter.csproj", "{B6DE4BB2-E583-4994-AB87-51FBF0B0F281}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IfsSync2Init", "IfsSync2Init\IfsSync2Init.csproj", "{BD54207F-7B6B-40A3-913D-C5D421A917A9}"
@@ -21,6 +19,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 		..\README.md = ..\README.md
 		..\Update Log.md = ..\Update Log.md
 	EndProjectSection
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IfsSync2Common", "IfsSync2Common\IfsSync2Common.csproj", "{8025F6BB-CE7C-4862-B19B-91A83052D7BA}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -78,20 +78,19 @@ Global
 		{1BBD062A-1FCD-48CD-B874-D65BDD7B8A9D}.Release|Any CPU.Build.0 = Release|Any CPU
 		{1BBD062A-1FCD-48CD-B874-D65BDD7B8A9D}.Release|x64.ActiveCfg = Release|x64
 		{1BBD062A-1FCD-48CD-B874-D65BDD7B8A9D}.Release|x64.Build.0 = Release|x64
+		{8025F6BB-CE7C-4862-B19B-91A83052D7BA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8025F6BB-CE7C-4862-B19B-91A83052D7BA}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8025F6BB-CE7C-4862-B19B-91A83052D7BA}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{8025F6BB-CE7C-4862-B19B-91A83052D7BA}.Debug|x64.Build.0 = Debug|Any CPU
+		{8025F6BB-CE7C-4862-B19B-91A83052D7BA}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8025F6BB-CE7C-4862-B19B-91A83052D7BA}.Release|Any CPU.Build.0 = Release|Any CPU
+		{8025F6BB-CE7C-4862-B19B-91A83052D7BA}.Release|x64.ActiveCfg = Release|Any CPU
+		{8025F6BB-CE7C-4862-B19B-91A83052D7BA}.Release|x64.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {4D6363FC-00E0-47AB-A192-4C98091BDB25}
-	EndGlobalSection
-	GlobalSection(SharedMSBuildProjectFiles) = preSolution
-		IfsSync2Data\IfsSync2Data.projitems*{13d330f6-1e4f-4009-9385-b0e292698a1a}*SharedItemsImports = 13
-		IfsSync2Data\IfsSync2Data.projitems*{1bbd062a-1fcd-48cd-b874-d65bdd7b8a9d}*SharedItemsImports = 5
-		IfsSync2Data\IfsSync2Data.projitems*{57bfa1b3-9a71-4109-bc4f-9b43b7bda2a1}*SharedItemsImports = 5
-		IfsSync2Data\IfsSync2Data.projitems*{91d6384f-a92a-4a7f-b17c-c14be5e5f00c}*SharedItemsImports = 5
-		IfsSync2Data\IfsSync2Data.projitems*{a6bab51b-e4d1-4dcf-8d57-9f4e5b19c981}*SharedItemsImports = 5
-		IfsSync2Data\IfsSync2Data.projitems*{b6de4bb2-e583-4994-ab87-51fbf0b0f281}*SharedItemsImports = 5
-		IfsSync2Data\IfsSync2Data.projitems*{bd54207f-7b6b-40a3-913d-c5d421a917a9}*SharedItemsImports = 5
 	EndGlobalSection
 EndGlobal

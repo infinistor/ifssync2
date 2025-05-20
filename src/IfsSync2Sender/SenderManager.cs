@@ -9,8 +9,7 @@
 * KSAN 개발팀은 사전 공지, 허락, 동의 없이 KSAN 개발에 관련된 모든 결과물에 대한 LICENSE 방식을 변경 할 권리가 있습니다.
 */
 using System.Collections.Generic;
-using System.Reflection;
-using IfsSync2Data;
+using IfsSync2Common;
 using log4net;
 using System.Linq;
 
@@ -18,7 +17,7 @@ namespace IfsSync2Sender
 {
 	class SenderManager()
 	{
-		static readonly ILog log = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
+		static readonly ILog log = LogManager.GetLogger(typeof(SenderManager));
 
 		//SQL
 		readonly JobDbManager _jobManager = new();
@@ -39,7 +38,7 @@ namespace IfsSync2Sender
 			var jobs = _jobManager.GetJobs();
 
 			// instent 작업만 별도로 처리.단 한개만 존재함.
-			var instantJob = jobs.FirstOrDefault(job => job.JobName == MainData.INSTANT_BACKUP_NAME);
+			var instantJob = jobs.FirstOrDefault(job => job.JobName == IfsSync2Constants.INSTANT_BACKUP_NAME);
 
 			// 인스턴트 백업 작업이 존재하고 작업을 시작할 경우 처리
 			if (instantJob != null)
@@ -64,7 +63,7 @@ namespace IfsSync2Sender
 				}
 
 				// 인스턴트 작업은 일반 작업 목록에서 제외
-				jobs = jobs.Where(job => job.JobName != MainData.INSTANT_BACKUP_NAME).ToList();
+				jobs = jobs.Where(job => job.JobName != IfsSync2Constants.INSTANT_BACKUP_NAME).ToList();
 			}
 			else if (_instantSender != null)
 			{

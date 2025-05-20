@@ -1,4 +1,4 @@
-﻿/*
+/*
 * Copyright (c) 2021 PSPACE, inc. KSAN Development Team ksan@pspace.co.kr
 * KSAN is a suite of free software: you can redistribute it and/or modify it under the terms of
 * the GNU General Public License as published by the Free Software Foundation, either version 
@@ -8,30 +8,33 @@
 * KSAN 프로젝트의 개발자 및 개발사는 이 프로그램을 사용한 결과에 따른 어떠한 책임도 지지 않습니다.
 * KSAN 개발팀은 사전 공지, 허락, 동의 없이 KSAN 개발에 관련된 모든 결과물에 대한 LICENSE 방식을 변경 할 권리가 있습니다.
 */
-using System.Collections.Generic;
+using Newtonsoft.Json;
 
-namespace IfsSync2Data
+namespace IfsSync2WatcherService.Models
 {
-	public class GlobalConfigData
+	/// <summary>
+	/// API 응답 모델
+	/// </summary>
+	public class ApiResponse
 	{
-		public int FetchCount { get; set; }
-		public int DeleteCount { get; set; }
-		public int SenderDelay { get; set; }
-
-		public bool SenderPause { get; set; }
-		public string S3Proxy { get; set; }
-
-		public List<JobData> JobList { get; set; }
-
-		public GlobalConfigData()
-		{
-			FetchCount = 1000;
-			DeleteCount = 100;
-			SenderDelay = 5000;
-
-			SenderPause = false;
-
-			JobList = [];
-		}
+		/// <summary>반환 코드</summary>
+		[JsonProperty("ret")]
+		public int ReturnCode { get; set; }
+		
+		/// <summary>오류 메시지</summary>
+		[JsonProperty("err_msg")]
+		public string ErrorMessage { get; set; }
+		
+		/// <summary>성공 여부</summary>
+		[JsonProperty("success")]
+		public bool Success { get; set; }
+		
+		/// <summary>메시지</summary>
+		[JsonProperty("message")]
+		public string Message { get; set; }
+		
+		/// <summary>데이터</summary>
+		[JsonProperty("data")]
+		public object Data { get; set; }
 	}
-}
+} 

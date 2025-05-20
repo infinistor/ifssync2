@@ -11,9 +11,8 @@
 using log4net;
 using System;
 using System.IO;
-using System.Reflection;
 using System.Threading;
-using IfsSync2Data;
+using IfsSync2Common;
 using System.Collections.Generic;
 using System.Diagnostics;
 using Amazon.S3;
@@ -25,9 +24,9 @@ namespace IfsSync2Sender
 {
 	public class Sender
 	{
-		protected static readonly ILog log = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
+		protected static readonly ILog log = LogManager.GetLogger(typeof(Sender));
 		const string CONNECT_FAILURE = "ConnectFailure";
-		const string DEFAULT_ERROR_MESSAGE = "The network connection has been lost.";
+		const string DEFAULT_ERROR_MESSAGE = "네트워크 연결이 끊어졌습니다.";
 
 		internal readonly TaskDbManager _taskManager;
 		protected readonly JobDbManager _jobManager;
@@ -209,7 +208,7 @@ namespace IfsSync2Sender
 			{
 				string Message;
 				if (e.Message.Contains(CONNECT_FAILURE)) Message = DEFAULT_ERROR_MESSAGE;
-				else Message = "S3 Login Fail!";
+				else Message = "S3 로그인 실패!";
 
 				log.Fatal(Message, e);
 				if (!_status.Error) _taskManager.InsertLog(Message);
@@ -262,30 +261,37 @@ namespace IfsSync2Sender
 			catch (Exception e) { log.Error(e); return false; }
 		}
 
-		static bool ExistObject(S3Client Client, string BucketName, string ObjectName)
+		static bool ExistObject(S3Client Client, string bucketName, string objectName)
 		{
 			try
 			{
-				Client.GetObjectMetadata(BucketName, ObjectName);
-				log.Debug($"ExistObject({BucketName}, {ObjectName}) : True");
+				Client.GetObjectMetadata(bucketName, objectName);
+				log.Debug($"ExistObject({bucketName}, {objectName}) : True");
 				return true;
 			}
 			catch (AggregateException e)
 			{
-				log.Error($"ExistObject({BucketName}, {ObjectName}) Failed. StatusCode : {GetStatus(e)}, ErrorCode : {GetErrorCode(e)}");
+				log.Error($"ExistObject({bucketName}, {objectName}) Failed. StatusCode : {GetStatus(e)}, ErrorCode : {GetErrorCode(e)}");
 				return false;
 			}
+			catch (AmazonS3Exception e)
+			{
+				if (e.StatusCode == HttpStatusCode.NotFound) return false;
+				log.Error($"ExistObject({bucketName}, {objectName}) Failed. StatusCode : {e.StatusCode}, ErrorCode : {e.ErrorCode}");
+				return false;
+			}
+			catch (Exception e) { log.Error(e); return false; }
 
 		}
 
-		static bool PutBucket(S3Client Client, string bucketName)
+		static bool PutBucket(S3Client client, string bucketName)
 		{
 			try
 			{
-				if (Client.DoesS3BucketExist(bucketName)) return false;
-				var Response = Client.PutBucket(bucketName);
+				if (client.DoesS3BucketExist(bucketName)) return false;
+				var response = client.PutBucket(bucketName);
 
-				if (Response.HttpStatusCode == System.Net.HttpStatusCode.OK)
+				if (response.HttpStatusCode == HttpStatusCode.OK)
 				{
 					log.Info($"PutBucket({bucketName}) : Create!!");
 					return true;
@@ -306,31 +312,31 @@ namespace IfsSync2Sender
 			return false;
 		}
 
-		static S3Metadata HeadObject(S3Client client, string BucketName, string FilePath)
+		static S3Metadata HeadObject(S3Client client, string bucketName, string filePath)
 		{
 			try
 			{
-				string ObjectName = FileNameChangeToS3ObjectName(FilePath);
+				string objectName = FileNameChangeToS3ObjectName(filePath);
 
-				var response = client.GetObjectMetadata(BucketName, ObjectName); //Get Bucket request
+				var response = client.GetObjectMetadata(bucketName, objectName); //Get Bucket request
 
 				string MD5Hash = response.ETag.Replace("\"", string.Empty);
 
-				log.Debug($"HeadObject({BucketName}) {ObjectName} / {MD5Hash}");
-				return new S3Metadata(ObjectName, response);
+				log.Debug($"HeadObject({bucketName}) {objectName} / {MD5Hash}");
+				return new S3Metadata(objectName, response);
 			}
 			catch (AggregateException e)
 			{
 				var statusCode = GetStatus(e);
 				var errorCode = GetErrorCode(e);
 				if (statusCode == HttpStatusCode.NotFound) return null;
-				log.Error($"HeadObject failed. S3://{BucketName}/{FilePath}. StatusCode : {statusCode}, ErrorCode : {errorCode}");
+				log.Error($"HeadObject failed. S3://{bucketName}/{filePath}. StatusCode : {statusCode}, ErrorCode : {errorCode}");
 				return null;
 			}
 			catch (AmazonS3Exception e)
 			{
 				if (e.StatusCode == HttpStatusCode.NotFound) return null;
-				log.Error($"HeadObject failed. S3://{BucketName}/{FilePath}. StatusCode : {e.StatusCode}, ErrorCode : {e.ErrorCode}");
+				log.Error($"HeadObject failed. S3://{bucketName}/{filePath}. StatusCode : {e.StatusCode}, ErrorCode : {e.ErrorCode}");
 				return null;
 			}
 			catch (Exception e)
@@ -340,7 +346,7 @@ namespace IfsSync2Sender
 			}
 		}
 
-		static string FileNameChangeToS3ObjectName(string DirectoryName) => DirectoryName.Replace("\\", "/").Replace(":", "");
+		static string FileNameChangeToS3ObjectName(string directoryName) => directoryName.Replace("\\", "/").Replace(":", "");
 		public static HttpStatusCode GetStatus(AggregateException e) => (e.InnerException is AmazonS3Exception e2) ? e2.StatusCode : HttpStatusCode.OK;
 		public static string GetErrorCode(AggregateException e) => (e.InnerException is AmazonS3Exception e2) ? e2.ErrorCode : null;
 
@@ -349,18 +355,31 @@ namespace IfsSync2Sender
 			errorMsg = string.Empty;
 			try
 			{
-				if (string.IsNullOrEmpty(snapshotPath)) snapshotPath = filePath;
-				if (!File.Exists(snapshotPath))
+				if (string.IsNullOrWhiteSpace(snapshotPath)) snapshotPath = filePath;
+				string objectName = FileNameChangeToS3ObjectName(filePath);
+
+				// 경로가 폴더일경우 빈 파일 업로드
+				if (Directory.Exists(snapshotPath.TrimEnd('\\', '/')))
 				{
-					errorMsg = $"File is not exists : {snapshotPath}";
-					log.Error(errorMsg);
+					if (!PutObjectZeroSize(objectName, out errorMsg)) return false;
+					log.Debug($"{Job.JobName} Empty file upload: {snapshotPath}");
+					return true;
+				}
+				// 경로가 파일일경우 파일 업로드
+				if (File.Exists(snapshotPath))
+				{
+					_client.Upload(_bucketName, objectName, snapshotPath, threadCount: _threadCount, minSizeBeforePartUpload: _multipartUploadFileSize, partSize: _partSize);
+					log.Debug($"BucketName : {_bucketName} ObjectName : {objectName}");
+					return true;
+				}
+				else
+				{
+					errorMsg = $"Path not found: {snapshotPath}";
+					log.Debug($"{Job.JobName} Path not found: {snapshotPath}");
 					return false;
 				}
 
-				string ObjectName = FileNameChangeToS3ObjectName(filePath);
-				_client.Upload(_bucketName, ObjectName, snapshotPath, threadCount: _threadCount, minSizeBeforePartUpload: _multipartUploadFileSize, partSize: _partSize);
-				log.Debug($"BucketName : {_bucketName} ObjectName : {ObjectName}");
-				return true;
+
 			}
 			catch (AggregateException e)
 			{
@@ -388,26 +407,61 @@ namespace IfsSync2Sender
 			}
 		}
 
+		bool PutObjectZeroSize(string objectName, out string errorMsg)
+		{
+			errorMsg = string.Empty;
+			try
+			{
+				_client.PutObject(_bucketName, objectName);
+				log.Debug($"BucketName : {_bucketName} ObjectName : {objectName}");
+				return true;
+			}
+			catch (AggregateException e)
+			{
+				errorMsg = $"PutObject Failed. S3://{_bucketName}/{objectName}. StatusCode : {GetStatus(e)}, ErrorCode : {GetErrorCode(e)}";
+				log.Error(errorMsg);
+				return false;
+			}
+			catch (AmazonS3Exception e)
+			{
+				errorMsg = $"PutObject Failed. S3://{_bucketName}/{objectName}. StatusCode : {e.StatusCode}, ErrorCode : {e.ErrorCode}";
+				log.Error(e);
+				return false;
+			}
+			catch (Exception e)
+			{
+				errorMsg = e.Message;
+				log.Error(e);
+				if (e.Message.Contains(CONNECT_FAILURE))
+				{
+					log.Error(DEFAULT_ERROR_MESSAGE);
+					if (!_status.Error) _taskManager.InsertLog(DEFAULT_ERROR_MESSAGE);
+					_status.Error = true;
+				}
+				return false;
+			}
+		}
+
 		bool RenameObject(string filePath, string newFilePath, out string errorMsg)
 		{
 			try
 			{
-				string ObjectName = FileNameChangeToS3ObjectName(filePath);
-				string NewObjectName = FileNameChangeToS3ObjectName(newFilePath);
+				string objectName = FileNameChangeToS3ObjectName(filePath);
+				string newObjectName = FileNameChangeToS3ObjectName(newFilePath);
 
 				// 원본 파일이 존재하는지 확인
-				if (!ExistObject(_client, _bucketName, ObjectName))
+				if (!ExistObject(_client, _bucketName, objectName))
 				{
 					//원본 파일이 존재 하지 않는다면 원본 파일을 변경할 파일명으로 업로드
-					log.Debug($"RenameObject({filePath}, {newFilePath}) : {ObjectName} is not exists. change to {newFilePath}");
+					log.Debug($"RenameObject({filePath}, {newFilePath}) : {objectName} is not exists. change to {newFilePath}");
 					return Upload(newFilePath, "", out errorMsg);
 				}
 				// 원본 파일이 존재하는 경우 복사 후 삭제
 				else
 				{
-					_client.CopyObject(_bucketName, ObjectName, _bucketName, NewObjectName);
-					_client.DeleteObject(_bucketName, ObjectName);
-					log.Debug($"BucketName : {_bucketName} ObjectName : {ObjectName} : {NewObjectName}");
+					_client.CopyObject(_bucketName, objectName, _bucketName, newObjectName);
+					_client.DeleteObject(_bucketName, objectName);
+					log.Debug($"BucketName : {_bucketName} ObjectName : {objectName} : {newObjectName}");
 				}
 				errorMsg = string.Empty;
 				return true;
@@ -443,14 +497,15 @@ namespace IfsSync2Sender
 			try
 			{
 				// s3 모든 파일 삭제
+				var prefix = FileNameChangeToS3ObjectName(folderPath);
 				var nextMarker = string.Empty;
 				while (true)
 				{
-					var response = _client.ListObjects(_bucketName, prefix: folderPath, marker: nextMarker);
+					var response = _client.ListObjects(_bucketName, prefix: prefix, marker: nextMarker);
 					var deleteList = response.S3Objects.Select(x => new KeyVersion() { Key = x.Key }).ToList();
 					_client.DeleteObjects(new DeleteObjectsRequest() { BucketName = _bucketName, Objects = deleteList });
 
-					if (response.IsTruncated) nextMarker = response.NextMarker;
+					if (response.IsTruncated ?? false) nextMarker = response.NextMarker;
 					else break;
 				}
 
@@ -486,9 +541,9 @@ namespace IfsSync2Sender
 		{
 			try
 			{
-				string ObjectName = FileNameChangeToS3ObjectName(filePath);
-				_client.DeleteObject(_bucketName, ObjectName);
-				log.Debug($"BucketName : {_bucketName} ObjectName : {ObjectName}");
+				string objectName = FileNameChangeToS3ObjectName(filePath);
+				_client.DeleteObject(_bucketName, objectName);
+				log.Debug($"BucketName : {_bucketName} ObjectName : {objectName}");
 				errorMsg = string.Empty;
 				return true;
 			}
@@ -556,7 +611,22 @@ namespace IfsSync2Sender
 
 					try
 					{
-						FileCount += SubDirectory(directory, extensionList);
+						// 각 디렉토리에서 TaskData 객체 목록 가져오기
+						var taskList = MainUtility.GetFilesWithTaskData(
+							directory,
+							extensionList,
+							TaskData.TaskTypeList.Upload);
+
+						log.Debug($"Directory {directory}: {taskList.Count} files found");
+
+						// 모든 TaskData를 작업 관리자에 추가
+						foreach (var task in taskList)
+						{
+							if (_status.Quit) break;
+							_taskManager.Insert(task);
+						}
+
+						FileCount += taskList.Count;
 					}
 					catch (UnauthorizedAccessException ex)
 					{
@@ -583,164 +653,6 @@ namespace IfsSync2Sender
 				return 0;
 			}
 		}
-
-		int SubDirectory(string ParentDirectory, List<string> ExtensionList)
-		{
-			if (string.IsNullOrWhiteSpace(ParentDirectory))
-			{
-				log.Error("상위 디렉토리 경로가 null 또는 비어있습니다.");
-				return 0;
-			}
-
-			try
-			{
-				DirectoryInfo dInfoParent = new(ParentDirectory);
-
-				if (!dInfoParent.Exists)
-				{
-					log.Warn($"디렉토리가 존재하지 않습니다: {ParentDirectory}");
-					return 0;
-				}
-
-				int FileCount = 0;
-				//add Folder List
-				try
-				{
-					foreach (DirectoryInfo dInfo in dInfoParent.GetDirectories())
-					{
-						if (_status.Quit) break;
-						if ((dInfo.Attributes & FileAttributes.Hidden) == FileAttributes.Hidden)
-						{
-							log.Debug($"숨김 디렉토리 건너뜀: {dInfo.FullName}");
-							continue;
-						}
-						FileCount += SubDirectory(dInfo.FullName, ExtensionList);
-					}
-				}
-				catch (UnauthorizedAccessException ex)
-				{
-					log.Error($"하위 디렉토리 접근 권한이 없습니다: {ParentDirectory}", ex);
-				}
-				catch (Exception ex)
-				{
-					log.Error($"하위 디렉토리 처리 중 오류 발생: {ParentDirectory}", ex);
-				}
-
-				FileCount += AddBackupFile(ParentDirectory, ExtensionList);
-
-				return FileCount;
-			}
-			catch (Exception ex)
-			{
-				log.Error($"디렉토리 처리 중 예기치 않은 오류 발생: {ParentDirectory}", ex);
-				return 0;
-			}
-		}
-
-		int AddBackupFile(string ParentDirectory, List<string> ExtensionList)
-		{
-			if (string.IsNullOrWhiteSpace(ParentDirectory))
-			{
-				log.Error("디렉토리 경로가 null 또는 비어있습니다.");
-				return 0;
-			}
-
-			if (ExtensionList == null)
-			{
-				log.Error("확장자 리스트가 null입니다.");
-				return 0;
-			}
-
-			try
-			{
-				//add File List
-				string[] files;
-				try
-				{
-					files = Directory.GetFiles(ParentDirectory);
-				}
-				catch (UnauthorizedAccessException ex)
-				{
-					log.Error($"파일 목록 접근 권한이 없습니다: {ParentDirectory}", ex);
-					return 0;
-				}
-				catch (DirectoryNotFoundException ex)
-				{
-					log.Error($"디렉토리를 찾을 수 없습니다: {ParentDirectory}", ex);
-					return 0;
-				}
-				catch (Exception ex)
-				{
-					log.Error($"파일 목록 조회 중 오류 발생: {ParentDirectory}", ex);
-					return 0;
-				}
-
-				TaskData.TaskTypeList taskName = TaskData.TaskTypeList.Upload;
-				bool isAllExtensions = ExtensionList.Contains("ALL");
-				int FileCount = 0;
-
-				foreach (string file in files)
-				{
-					if (_status.Quit) break;
-
-					try
-					{
-						var info = new FileInfo(file);
-						if (!info.Exists)
-						{
-							log.Warn($"파일이 존재하지 않습니다: {file}");
-							continue;
-						}
-
-						if ((info.Attributes & FileAttributes.System) == FileAttributes.System)
-						{
-							log.Debug($"시스템 파일 건너뜀: {file}");
-							continue;
-						}
-
-						if ((info.Attributes & FileAttributes.Hidden) == FileAttributes.Hidden)
-						{
-							log.Debug($"숨김 파일 건너뜀: {file}");
-							continue;
-						}
-
-						// ALL 옵션이거나 확장자가 리스트에 포함된 경우 처리
-						if ((isAllExtensions || ExtensionList.Contains(info.Extension.Replace(".", "").ToLower()))
-								&& info.FullName.IndexOf('$') < 0)
-						{
-							try
-							{
-								var item = new TaskData(taskName, info.FullName, MainData.GetCurrentTime(), info.Length);
-								_taskManager.Insert(item);
-								FileCount++;
-							}
-							catch (Exception ex)
-							{
-								log.Error($"작업 데이터 추가 중 오류 발생: {file}", ex);
-							}
-						}
-					}
-					catch (IOException ex)
-					{
-						log.Error($"파일 정보 읽기 실패: {file}", ex);
-					}
-					catch (UnauthorizedAccessException ex)
-					{
-						log.Error($"파일 접근 권한이 없습니다: {file}", ex);
-					}
-					catch (Exception ex)
-					{
-						log.Error($"파일 처리 중 오류 발생: {file}", ex);
-					}
-				}
-				return FileCount;
-			}
-			catch (Exception ex)
-			{
-				log.Error($"파일 처리 중 예기치 않은 오류 발생: {ParentDirectory}", ex);
-				return 0;
-			}
-		}
 		#endregion Analysis
 
 		/// <summary>
@@ -750,11 +662,14 @@ namespace IfsSync2Sender
 		/// <param name="processTask">작업 처리 후 실행할 콜백</param>
 		protected void ExecuteBackup(List<ShadowCopy> shadowCopyList, Action<TaskData> processTask = null)
 		{
+			log.Debug($"{Job.JobName} ExecuteBackup");
 			_status.Sender = true;
 
 			while (!_status.Quit)
 			{
 				_taskManager.GetList(_fetchCount);
+				log.Debug($"{Job.JobName} TaskCount: {_taskManager.TaskCount}");
+
 				if (_taskManager.TaskCount == 0) break;
 				_status.RenameUpdate(_taskManager.TaskCount, _taskManager.TaskSize);
 
@@ -764,6 +679,7 @@ namespace IfsSync2Sender
 				{
 					shadowCopyList ??= _shadowCopyManager.CreateShadowCopies(Job.Path);
 					if (shadowCopyList.Count > 0) _status.VSS = true;
+					log.Debug($"{Job.JobName} VSS: {_status.VSS}");
 				}
 
 				foreach (TaskData item in _taskManager.TaskList)
@@ -774,6 +690,7 @@ namespace IfsSync2Sender
 					if (_status.VSS)
 					{
 						_shadowCopyManager.ApplySnapshotPathToTask(item, shadowCopyList);
+						log.Debug($"{Job.JobName} ApplySnapshotPathToTask: {item.FilePath}");
 					}
 
 					if (!Backup(item))
@@ -808,13 +725,14 @@ namespace IfsSync2Sender
 
 		protected bool Backup(TaskData task)
 		{
+			log.Debug($"{Job.JobName} Backup {task.FilePath}");
 			if (!ExistBucket(_client, _bucketName))
 			{
-				log.Info($"Not exists Bucket : {_bucketName}");
+				log.Info($"{Job.JobName} Not exists Bucket : {_bucketName}");
 				if (PutBucket(_client, _bucketName)) log.Info($"Create Bucket : {_bucketName}");
 				else
 				{
-					log.Error($"Create Fail Bucket {_bucketName}");
+					log.Error($"{Job.JobName} Create Fail Bucket {_bucketName}");
 					if (!_status.Error)
 					{
 						log.Error($"{DEFAULT_ERROR_MESSAGE} {_bucketName}");
@@ -831,16 +749,6 @@ namespace IfsSync2Sender
 					{
 						string uploadPath = string.IsNullOrWhiteSpace(task.SnapshotPath) ? task.FilePath : task.SnapshotPath;
 
-						// 업로드할 파일이 존재하지 않는 경우 처리
-						if (!File.Exists(uploadPath))
-						{
-							task.UploadFlag = false;
-							task.Result = "File not found";
-							_taskManager.Update(task);
-							log.Debug($"File not found : {uploadPath}");
-							return true;
-						}
-
 						//File Check
 						var meta = HeadObject(_client, _bucketName, task.FilePath);
 
@@ -855,29 +763,29 @@ namespace IfsSync2Sender
 									var checksum = ChecksumCalculator.CalculateChecksum(uploadPath, meta.ChecksumAlgorithm);
 									if (checksum.Equals(meta.Checksum, StringComparison.OrdinalIgnoreCase))
 									{
-										log.Debug($"Duplicate file : {uploadPath}");
+										log.Debug($"{Job.JobName} Duplicate file : {uploadPath}");
 										_taskManager.Delete(task);
 										return true;
 									}
 								}
 								catch (Exception ex)
 								{
-									log.Error($"Checksum 계산 중 오류 발생: {uploadPath}", ex);
+									log.Error($"{Job.JobName} Checksum 계산 중 오류 발생: {uploadPath}", ex);
 								}
 							}
 							// checksum 이 없을 경우 MD5Sum에 -가 없을 경우 비교
 							else if (!string.IsNullOrWhiteSpace(meta.MD5) && !meta.MD5.Contains('-'))
 							{
-								var md5sum = MainData.CalculateMD5(uploadPath);
+								var md5sum = IfsSync2Utilities.CalculateMD5(uploadPath);
 								if (meta.MD5.Equals(md5sum, StringComparison.OrdinalIgnoreCase))
 								{
-									log.Debug($"Duplicate file : {uploadPath}");
+									log.Debug($"{Job.JobName} Duplicate file : {uploadPath}");
 									_taskManager.Delete(task);
 									return true;
 								}
 								else
 								{
-									log.Debug($"{uploadPath} mismatch : {meta.MD5} != {md5sum}");
+									log.Debug($"{Job.JobName} {uploadPath} mismatch : {meta.MD5} != {md5sum}");
 								}
 							}
 						}
@@ -889,7 +797,7 @@ namespace IfsSync2Sender
 							task.UploadFlag = false;
 							task.Result = ErrorMsg;
 						}
-						task.UploadTime = MainData.GetCurrentTime();
+						task.UploadTime = IfsSync2Utilities.GetCurrentTime();
 						_taskManager.Update(task);
 						break;
 					}
@@ -902,7 +810,7 @@ namespace IfsSync2Sender
 							task.UploadFlag = false;
 							task.Result = ErrorMsg;
 						}
-						task.UploadTime = MainData.GetCurrentTime();
+						task.UploadTime = IfsSync2Utilities.GetCurrentTime();
 						_taskManager.Update(task);
 						break;
 					}
@@ -911,6 +819,7 @@ namespace IfsSync2Sender
 						// 폴더일 경우 폴더 내 모든 파일 삭제
 						if (task.FilePath.EndsWith('\\'))
 						{
+							log.Debug($"{Job.JobName} Delete Folder: {task.FilePath}");
 							if (DeleteObjects(task.FilePath, out string ErrorMsg)) task.UploadFlag = true;
 							else
 							{
@@ -919,15 +828,19 @@ namespace IfsSync2Sender
 								task.Result = ErrorMsg;
 							}
 						}
-						else if (DeleteObject(task.FilePath, out string ErrorMsg)) task.UploadFlag = true;
 						else
 						{
-							if (_status.Error) return false;
-							task.UploadFlag = false;
-							task.Result = ErrorMsg;
+							log.Debug($"{Job.JobName} Delete File: {task.FilePath}");
+							if (DeleteObject(task.FilePath, out string ErrorMsg)) task.UploadFlag = true;
+							else
+							{
+								if (_status.Error) return false;
+								task.UploadFlag = false;
+								task.Result = ErrorMsg;
+							}
 						}
 
-						task.UploadTime = MainData.GetCurrentTime();
+						task.UploadTime = IfsSync2Utilities.GetCurrentTime();
 						_taskManager.Update(task);
 						break;
 					}

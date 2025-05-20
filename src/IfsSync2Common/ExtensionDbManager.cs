@@ -1,4 +1,4 @@
-﻿/*
+/*
 * Copyright (c) 2021 PSPACE, inc. KSAN Development Team ksan@pspace.co.kr
 * KSAN is a suite of free software: you can redistribute it and/or modify it under the terms of
 * the GNU General Public License as published by the Free Software Foundation, either version 
@@ -9,28 +9,16 @@
 * KSAN 개발팀은 사전 공지, 허락, 동의 없이 KSAN 개발에 관련된 모든 결과물에 대한 LICENSE 방식을 변경 할 권리가 있습니다.
 */
 using log4net;
-using System;
-using System.Collections.Generic;
 using System.Data.SQLite;
-using System.IO;
-using System.Reflection;
 using System.Text;
-using System.Threading;
 
-namespace IfsSync2Data
+namespace IfsSync2Common
 {
-	class ExtensionDbManager
+	public class ExtensionDbManager
 	{
-		#region Define
-		const string STR_EXT_TABLE_NAME = "ExtensionList";
-		const string STR_EXT_ID = "Id";
-		const string STR_EXT_EXTENSION = "Extension";
-		const string STR_EXT_GROUP = "Group";
-		#endregion
-
 		#region Attributes
-		readonly ILog _log = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
-		readonly string _filePath = MainData.GetDBFilePath(MainData.EXTENSION_NAME);
+		readonly ILog _log = LogManager.GetLogger(typeof(ExtensionDbManager));
+		readonly string _filePath = IfsSync2Utilities.GetDBFilePath(IfsSync2Constants.EXTENSION_NAME);
 		readonly Mutex _sqliteMutex;
 		#endregion
 
@@ -38,14 +26,15 @@ namespace IfsSync2Data
 		{
 			try
 			{
-				_sqliteMutex = new Mutex(false, MainData.MUTEX_NAME_JOB_SQL, out bool CreatedNew);
+				_sqliteMutex = new Mutex(false, IfsSync2Constants.MUTEX_NAME_JOB_SQL, out bool createdNew);
 
-				if (!CreatedNew) _log.Debug($"Mutex({MainData.MUTEX_NAME_JOB_SQL})");
-				else _log.Debug($"Mutex({MainData.MUTEX_NAME_JOB_SQL}) create");
+				if (!createdNew) _log.Debug($"Mutex({IfsSync2Constants.MUTEX_NAME_JOB_SQL})");
+				else _log.Debug($"Mutex({IfsSync2Constants.MUTEX_NAME_JOB_SQL}) create");
 			}
 			catch (Exception e)
 			{
-				_log.Error($"Mutex({MainData.MUTEX_NAME_JOB_SQL}) fail", e);
+				_log.Error($"Mutex({IfsSync2Constants.MUTEX_NAME_JOB_SQL}) fail", e);
+				throw new InvalidOperationException($"Mutex({IfsSync2Constants.MUTEX_NAME_JOB_SQL}) fail", e);
 			}
 		}
 
@@ -53,7 +42,7 @@ namespace IfsSync2Data
 		{
 			try
 			{
-				MainData.CreateFile(_filePath);
+				IfsSync2Utilities.CreateFile(_filePath);
 
 				_sqliteMutex.WaitOne();
 				using var conn = new SQLiteConnection($"Data Source={_filePath};Version=3;");
@@ -62,10 +51,10 @@ namespace IfsSync2Data
 				{
 					//GlobalScheduleList
 					CommandText = "\n" +
-					$"Create Table IF NOT EXISTS '{STR_EXT_TABLE_NAME}'(" +
-								 $"'{STR_EXT_ID}' INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT, " +
-								 $"'{STR_EXT_EXTENSION}' TEXT NOT NULL, " +
-								 $"'{STR_EXT_GROUP}' TEXT NULL);"
+					$"Create Table IF NOT EXISTS '{IfsSync2Constants.DB_TABLE_EXTENSION_LIST}'(" +
+								 $"'{IfsSync2Constants.DB_FIELD_ID}' INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT, " +
+								 $"'{IfsSync2Constants.DB_FIELD_EXTENSION}' TEXT NOT NULL, " +
+								 $"'{IfsSync2Constants.DB_FIELD_GROUP}' TEXT NULL);"
 				};
 
 				cmd.ExecuteNonQuery();
@@ -89,14 +78,15 @@ namespace IfsSync2Data
 				using var conn = new SQLiteConnection($"Data Source={_filePath};Version=3;");
 				conn.Open();
 
-				using var cmd = new SQLiteCommand(conn) { CommandText = $"SELECT * FROM '{STR_EXT_TABLE_NAME}'" };
+				using var cmd = new SQLiteCommand(conn) { CommandText = $"SELECT * FROM '{IfsSync2Constants.DB_TABLE_EXTENSION_LIST}'" };
 				using var rdr = cmd.ExecuteReader();
 
 				while (rdr.Read())
 				{
-					items.Add(rdr[STR_EXT_EXTENSION].ToString());
+					var item = rdr.GetString(IfsSync2Constants.DB_FIELD_EXTENSION);
+					if (!string.IsNullOrEmpty(item)) items.Add(item);
 				}
-				_log.Debug($"{STR_EXT_EXTENSION} : {items.Count}");
+				_log.Debug($"{IfsSync2Constants.DB_FIELD_EXTENSION} : {items.Count}");
 			}
 			catch (Exception e) { _log.Error(e); }
 			finally { _sqliteMutex.ReleaseMutex(); }
@@ -113,7 +103,7 @@ namespace IfsSync2Data
 				using var conn = new SQLiteConnection($"Data Source={_filePath};Version=3;");
 				conn.Open();
 
-				using var cmd = new SQLiteCommand(conn) { CommandText = $"INSERT INTO '{STR_EXT_TABLE_NAME}' ({STR_EXT_EXTENSION}) VALUES ('{extension}');" };
+				using var cmd = new SQLiteCommand(conn) { CommandText = $"INSERT INTO '{IfsSync2Constants.DB_TABLE_EXTENSION_LIST}' ({IfsSync2Constants.DB_FIELD_EXTENSION}) VALUES ('{extension}');" };
 
 				int result = cmd.ExecuteNonQuery();
 				if (result > 0)
@@ -143,9 +133,9 @@ namespace IfsSync2Data
 
 				var query = new StringBuilder();
 
-				foreach (string Ext in extensions)
+				foreach (string ext in extensions)
 				{
-					query.Append($"INSERT INTO '{STR_EXT_TABLE_NAME}' ({STR_EXT_EXTENSION}) VALUES ('{Ext}');\n");
+					query.Append($"INSERT INTO '{IfsSync2Constants.DB_TABLE_EXTENSION_LIST}' ({IfsSync2Constants.DB_FIELD_EXTENSION}) VALUES ('{ext}');\n");
 				}
 
 				using var cmd = new SQLiteCommand(conn) { CommandText = query.ToString() };
@@ -176,7 +166,7 @@ namespace IfsSync2Data
 				using var conn = new SQLiteConnection($"Data Source={_filePath};Version=3;");
 				conn.Open();
 
-				using var cmd = new SQLiteCommand(conn) { CommandText = $"DELETE FROM '{STR_EXT_TABLE_NAME}' WHERE {STR_EXT_EXTENSION} = '{extension}'" };
+				using var cmd = new SQLiteCommand(conn) { CommandText = $"DELETE FROM '{IfsSync2Constants.DB_TABLE_EXTENSION_LIST}' WHERE {IfsSync2Constants.DB_FIELD_EXTENSION} = '{extension}'" };
 
 				int result = cmd.ExecuteNonQuery();
 				if (result > 0)
@@ -204,7 +194,7 @@ namespace IfsSync2Data
 				using var conn = new SQLiteConnection($"Data Source={_filePath};Version=3;");
 				conn.Open();
 
-				using var cmd = new SQLiteCommand(conn) { CommandText = $"SELECT count(*) FROM '{STR_EXT_TABLE_NAME}' WHERE {STR_EXT_EXTENSION} = '{extension}';" };
+				using var cmd = new SQLiteCommand(conn) { CommandText = $"SELECT count(*) FROM '{IfsSync2Constants.DB_TABLE_EXTENSION_LIST}' WHERE {IfsSync2Constants.DB_FIELD_EXTENSION} = '{extension}';" };
 
 				int result = Convert.ToInt32(cmd.ExecuteScalar());
 				if (result > 0)
@@ -225,7 +215,7 @@ namespace IfsSync2Data
 
 		void DefaultExtensionList()
 		{
-			Insert([.. MainData.DEFAULT_EXTENSION_LIST.Replace(" ", "").Split(',')]);
+			Insert([.. IfsSync2Constants.DEFAULT_EXTENSION_LIST.Replace(" ", "").Split(',')]);
 		}
 	}
 }

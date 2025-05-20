@@ -12,11 +12,9 @@ using log4net;
 using log4net.Config;
 using System;
 using System.ComponentModel;
-using System.Reflection;
 using System.Windows;
 using System.Windows.Controls;
 using System.Collections.Generic;
-using IfsSync2Data;
 using System.Collections.ObjectModel;
 using System.Windows.Shapes;
 using System.Windows.Media;
@@ -25,6 +23,7 @@ using System.Windows.Input;
 using System.Windows.Controls.Primitives;
 using System.Threading;
 using System.Runtime.Versioning;
+using IfsSync2Common;
 
 [assembly: XmlConfigurator(ConfigFile = "IfsSync2UILogConfig.xml", Watch = true)]
 
@@ -36,7 +35,7 @@ namespace IfsSync2UI
 		const double MAX_ANGLE = 360;
 		const string NULL_STORAGE_NAME = "N/A";
 
-		static readonly ILog _log = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
+		static readonly ILog _log = LogManager.GetLogger(typeof(MainWindow));
 
 		readonly ObservableCollection<JobDetailData> _jobDetailList = [];
 
@@ -64,9 +63,9 @@ namespace IfsSync2UI
 
 		public MainWindow()
 		{
-			DuplicateExecution(MainData.MUTEX_NAME_UI);
+			DuplicateExecution(IfsSync2Constants.MUTEX_NAME_UI);
 
-			MainUtility.DeleteOldLogs(MainData.GetLogFolder("IfsSync2UI"));
+			MainUtility.DeleteOldLogs(IfsSync2Utilities.GetLogFolder("IfsSync2UI"));
 			_log.Error("Main Start");
 			_watcherConfigs = new WatcherConfig(true);
 			_jobSQL = new JobDbManager();
@@ -91,7 +90,7 @@ namespace IfsSync2UI
 			_updateStorageListTimer.Elapsed += UpdateStorageList;
 			_updateStorageListTimer.Start();
 
-			Title += " " + MainData.GetVersion();
+			Title += " " + IfsSync2Utilities.GetVersion();
 		}
 		void DuplicateExecution(string mutexName)
 		{
@@ -135,7 +134,7 @@ namespace IfsSync2UI
 				//Instant Backup
 				var instant = new JobData()
 				{
-					JobName = MainData.INSTANT_BACKUP_NAME,
+					JobName = IfsSync2Constants.INSTANT_BACKUP_NAME,
 					HostName = Environment.UserName,
 					StrPolicy = JobData.PolicyType.Now.ToString()
 				};
@@ -205,7 +204,7 @@ namespace IfsSync2UI
 		{
 			return Policy switch
 			{
-				JobData.PolicyType.Now => MainData.INSTANT_BACKUP_NAME,
+				JobData.PolicyType.Now => IfsSync2Constants.INSTANT_BACKUP_NAME,
 				JobData.PolicyType.RealTime => "Real-Time",
 				JobData.PolicyType.Schedule => "Schedule",
 				_ => "None",
@@ -260,7 +259,7 @@ namespace IfsSync2UI
 						if (storage.IsGlobalUser == Job.IsGlobalUser && storage.Id == Job.UserId)
 						{
 							Visibility BtnVisibility = Visibility.Hidden;
-							if (!Job.Global && Job.JobName != MainData.INSTANT_BACKUP_NAME) BtnVisibility = Visibility.Visible;
+							if (!Job.Global && Job.JobName != IfsSync2Constants.INSTANT_BACKUP_NAME) BtnVisibility = Visibility.Visible;
 
 							_jobDetailList.Add(new JobDetailData(Job.HostName, Job.JobName, Job.Id)
 							{
@@ -281,7 +280,7 @@ namespace IfsSync2UI
 					if (_mainStorage != null && _mainStorage.IsGlobalUser == Job.IsGlobalUser && _mainStorage.Id == Job.UserId)
 					{
 						Visibility BtnVisibility = Visibility.Hidden;
-						if (!Job.Global && Job.JobName != MainData.INSTANT_BACKUP_NAME) BtnVisibility = Visibility.Visible;
+						if (!Job.Global && Job.JobName != IfsSync2Constants.INSTANT_BACKUP_NAME) BtnVisibility = Visibility.Visible;
 
 						_jobDetailList.Add(new JobDetailData(Job.HostName, Job.JobName, Job.Id)
 						{
@@ -297,7 +296,7 @@ namespace IfsSync2UI
 						});
 						break;
 					}
-					if (!CreateSuccess && Job.JobName == MainData.INSTANT_BACKUP_NAME)
+					if (!CreateSuccess && Job.JobName == IfsSync2Constants.INSTANT_BACKUP_NAME)
 					{
 						_jobDetailList.Add(new JobDetailData(Job.HostName, Job.JobName, Job.Id)
 						{
@@ -660,7 +659,7 @@ namespace IfsSync2UI
 
 		void Btn_StorageToggleClick(object sender, RoutedEventArgs e) { ToggleButtonAllClose((ToggleButton)sender); T_AddStorageName.Focus(); }
 
-		static bool CheckConnect(S3Client Client)
+		static bool CheckConnect(IfsSync2Common.S3Client Client)
 		{
 			try
 			{
@@ -675,7 +674,7 @@ namespace IfsSync2UI
 		{
 			try
 			{
-				var Client = new S3Client(User);
+				var Client = new IfsSync2Common.S3Client(User);
 				if (CheckConnect(Client))
 				{
 					_log.Info($"Login Success : {User.UserName}");
@@ -810,10 +809,10 @@ namespace IfsSync2UI
 
 		void DefaultStorageSave()
 		{
-			if (string.IsNullOrWhiteSpace(T_StorageName.Text)) { Utility.ErrorMessageBox("Storage Name is Empty", Title); return; }
-			if (string.IsNullOrWhiteSpace(T_EditMainIP.Text)) { Utility.ErrorMessageBox("IP Address is Empty", Title); return; }
-			if (string.IsNullOrWhiteSpace(T_PortNumber.Text)) { Utility.ErrorMessageBox("Port Number is Empty", Title); return; }
-			if (string.IsNullOrWhiteSpace(T_AditPCName.Text)) { Utility.ErrorMessageBox("PCName is Empty", Title); return; }
+			if (string.IsNullOrWhiteSpace(T_StorageName.Text)) { Utility.ErrorMessageBox("스토리지 이름이 비어 있습니다", Title); return; }
+			if (string.IsNullOrWhiteSpace(T_EditMainIP.Text)) { Utility.ErrorMessageBox("IP 주소가 비어 있습니다", Title); return; }
+			if (string.IsNullOrWhiteSpace(T_PortNumber.Text)) { Utility.ErrorMessageBox("포트 번호가 비어 있습니다", Title); return; }
+			if (string.IsNullOrWhiteSpace(T_AditPCName.Text)) { Utility.ErrorMessageBox("PC 이름이 비어 있습니다", Title); return; }
 
 			string StorageName = T_StorageName.Text;
 			string S3FileManagerURL = T_S3FileManagerURL.Text;
@@ -823,14 +822,14 @@ namespace IfsSync2UI
 				string Address = T_EditMainIP.Text;
 				string Port = T_PortNumber.Text;
 
-				string URL = MainData.CreateAddress(Address, Port);
+				string URL = IfsSync2Utilities.CreateAddress(Address, Port);
 
 				try
 				{
 					UserData GlobalUser = Utility.GetGlobalUser(URL, _watcherConfigs.PcName);
 					GlobalUser.StorageName = StorageName;
 
-					if (string.IsNullOrWhiteSpace(S3FileManagerURL)) GlobalUser.S3FileManagerURL = MainData.CreateS3FileManagerURL(Address);
+					if (string.IsNullOrWhiteSpace(S3FileManagerURL)) GlobalUser.S3FileManagerURL = IfsSync2Utilities.CreateS3FileManagerURL(Address);
 					else GlobalUser.S3FileManagerURL = S3FileManagerURL;
 
 					if (!_userSQL.InsertUser(GlobalUser, true)) return;
@@ -838,7 +837,7 @@ namespace IfsSync2UI
 				catch (Exception ex)
 				{
 					_log.Error(ex);
-					Utility.ErrorMessageBox($"Global User Get Error : {ex.Message}", Title);
+					Utility.ErrorMessageBox($"글로벌 사용자 정보 가져오기 오류 : {ex.Message}", Title);
 					return;
 				}
 				_watcherConfigs.IP = Address;
@@ -944,12 +943,12 @@ namespace IfsSync2UI
 
 			if (!_storageList[index].StorageName.Equals(StorageName) && !_userSQL.UpdateUserStorageName(_storageList[index].Id, StorageName, false))
 			{
-				Utility.ErrorMessageBox("StorageName save failed!", Title);
+				Utility.ErrorMessageBox("스토리지 이름 저장에 실패했습니다!", Title);
 				return;
 			}
 			if (!_storageList[index].S3FileManagerURL.Equals(S3FileManagerURL) && !_userSQL.UpdateUserS3FileManagerURL(_storageList[index].Id, S3FileManagerURL, false))
 			{
-				Utility.ErrorMessageBox("S3 File Manager URL save failed!", Title);
+				Utility.ErrorMessageBox("S3 파일 매니저 URL 저장에 실패했습니다!", Title);
 				return;
 			}
 			_storageUIList[index].PopupButton.IsChecked = false;
@@ -1141,11 +1140,6 @@ namespace IfsSync2UI
 			ConfigWindow settingsWindow = new();
 			settingsWindow.WindowStartupLocation = WindowStartupLocation.CenterScreen;
 			settingsWindow.Show();
-		}
-
-		private void B_StorageToggle_Checked(object sender, RoutedEventArgs e)
-		{
-
 		}
 	}
 }

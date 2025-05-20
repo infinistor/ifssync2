@@ -17,7 +17,7 @@
 		</layout>
 	</appender>
 	<root>
-		<level value="ERROR"/>
+		<level value="DEBUG"/>
 		<appender-ref ref="RollingFile"/>
 	</root>
 </log4net>

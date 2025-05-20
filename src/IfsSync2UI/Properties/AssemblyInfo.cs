@@ -18,5 +18,5 @@ using System.Windows;
 )]
 
 // 버전 정보
-[assembly: AssemblyVersion("2.0.1")]
-[assembly: AssemblyFileVersion("2.0.1")] 
+[assembly: AssemblyVersion("2.0.2")]
+[assembly: AssemblyFileVersion("2.0.2")] 

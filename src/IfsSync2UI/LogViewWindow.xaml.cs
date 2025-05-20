@@ -9,12 +9,10 @@
 * KSAN 개발팀은 사전 공지, 허락, 동의 없이 KSAN 개발에 관련된 모든 결과물에 대한 LICENSE 방식을 변경 할 권리가 있습니다.
 */
 using System;
-using System.Collections.Generic;
-using System.Reflection;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Forms;
-using IfsSync2Data;
+using IfsSync2Common;
 using log4net;
 using System.Runtime.Versioning;
 
@@ -26,36 +24,36 @@ namespace IfsSync2UI
 	[SupportedOSPlatform("windows6.1")]
 	public partial class LogViewWindow : Window
 	{
-		private static readonly ILog log = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
-		private readonly JobData Job;
+		private static readonly ILog log = LogManager.GetLogger(typeof(LogViewWindow));
+		private readonly JobData job;
 
-		private readonly LogTab SuccessTab = new();
-		private readonly LogTab FailureTab = new();
+		private readonly LogTab successTab = new();
+		private readonly LogTab failureTab = new();
 
-		private readonly TaskDbManager TaskSQL;
+		private readonly TaskDbManager taskSql;
 
 		public bool IsClose { get; private set; } = false;
 
 		public LogViewWindow(JobData job)
 		{
 			InitializeComponent();
-			Job = job;
+			this.job = job;
 			TabInit();
-			TaskSQL = new TaskDbManager(job.JobName);
-			Title = Job.JobName + " Log View";
+			taskSql = new TaskDbManager(job.JobName);
+			Title = job.JobName + " Log View";
 			UpdateLogList();
 		}
 
 		private void UpdateLogList()
 		{
-			var successIndex = SuccessTab.LogIndex;
-			var failureIndex = FailureTab.LogIndex;
+			var successIndex = successTab.LogIndex;
+			var failureIndex = failureTab.LogIndex;
 
-			var success = TaskSQL.GetSuccessList(successIndex, 10000);
-			var failure = TaskSQL.GetFailureList(failureIndex, 10000);
+			var success = taskSql.GetSuccessList(successIndex, 10000);
+			var failure = taskSql.GetFailureList(failureIndex, 10000);
 
-			SuccessTab.TaskLogUpdates(success);
-			FailureTab.TaskLogUpdates(failure);
+			successTab.TaskLogUpdates(success);
+			failureTab.TaskLogUpdates(failure);
 		}
 
 		private void TabInit()
@@ -64,11 +62,11 @@ namespace IfsSync2UI
 			{
 				MainTab.Dispatcher.Invoke(delegate
 				{
-					TabItem Success = new() { Content = SuccessTab, Header = "Success" };
-					MainTab.Items.Add(Success);
+					TabItem success = new() { Content = successTab, Header = "Success" };
+					MainTab.Items.Add(success);
 
-					TabItem Failure = new() { Content = FailureTab, Header = "Failure" };
-					MainTab.Items.Add(Failure);
+					TabItem failure = new() { Content = failureTab, Header = "Failure" };
+					MainTab.Items.Add(failure);
 				});
 			}
 			catch (Exception e) { log.Error(e); }
@@ -76,8 +74,8 @@ namespace IfsSync2UI
 
 		private void Btn_Clear(object sender, RoutedEventArgs e)
 		{
-			SuccessTab.Clear();
-			FailureTab.Clear();
+			successTab.Clear();
+			failureTab.Clear();
 		}
 
 		private void Btn_Refresh(object sender, RoutedEventArgs e)
@@ -108,12 +106,12 @@ namespace IfsSync2UI
 			if (fileDialog.ShowDialog() == System.Windows.Forms.DialogResult.Cancel) return;
 
 			if (string.IsNullOrWhiteSpace(fileDialog.FileName)) return;
-			var FileName = fileDialog.FileName;
-			var Item = MainTab.Items[index] as TabItem;
-			var Tab = Item.Content as LogTab;
+			var fileName = fileDialog.FileName;
+			var item = MainTab.Items[index] as TabItem;
+			var tab = item.Content as LogTab;
 
-			if (Tab.SaveCSV(FileName)) System.Windows.MessageBox.Show(FileName + "\n저장 성공!", Title);
-			else Utility.ErrorMessageBox(FileName + "\n저장 실패!", Title);
+			if (tab.SaveCSV(fileName)) System.Windows.MessageBox.Show(fileName + "\n저장 성공!", Title);
+			else Utility.ErrorMessageBox(fileName + "\n저장 실패!", Title);
 		}
 	}
 }

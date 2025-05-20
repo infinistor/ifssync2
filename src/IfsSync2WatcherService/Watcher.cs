@@ -10,8 +10,7 @@
 */
 using log4net;
 using log4net.Config;
-using System.Reflection;
-using IfsSync2Data;
+using IfsSync2Common;
 using System.Collections.Generic;
 using System;
 
@@ -21,7 +20,7 @@ namespace IfsSync2WatcherService
 {
 	class Watcher
 	{
-		private readonly ILog log = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
+		private readonly ILog log = LogManager.GetLogger(typeof(Watcher));
 		private readonly WatcherConfig WatcherConfigs;
 		private readonly FilterConfig FilterConfigs;
 		private readonly SenderConfig SenderConfigs;
@@ -45,7 +44,7 @@ namespace IfsSync2WatcherService
 		{
 			if (WatcherConfigs.IP != "")
 			{
-				string URL = MainData.CreateAddress(WatcherConfigs.IP, WatcherConfigs.Port);
+				string URL = IfsSync2Utilities.CreateAddress(WatcherConfigs.IP, WatcherConfigs.Port);
 				UserData GlobalUser;
 				try
 				{
@@ -67,7 +66,7 @@ namespace IfsSync2WatcherService
 
 				try
 				{
-					IFSSyncUtility.CheckUpdate(URL, GlobalUser.UserName, MainData.GetVersion());
+					IfsPortalManager.CheckUpdate(URL, GlobalUser.UserName, IfsSync2Utilities.GetVersion());
 				}
 				catch (Exception e)
 				{
@@ -80,7 +79,7 @@ namespace IfsSync2WatcherService
 				try
 				{
 					//글로벌 옵션 가져오기
-					var GlobalConfig = IFSSyncUtility.GetGlobalConfig(URL, GlobalUser.UserName, GlobalUser.Id);
+					var GlobalConfig = IfsPortalManager.GetGlobalConfig(URL, GlobalUser.UserName, GlobalUser.Id);
 
 					//s3proxy 정보 확인
 					if (!string.IsNullOrWhiteSpace(GlobalConfig.S3Proxy))
@@ -120,7 +119,7 @@ namespace IfsSync2WatcherService
 						if (CreateCheck)
 						{
 							int index = JobSQL.NextJobIndex();
-							NewJob.JobName = MainData.DEFAULT_GLOBAL_JOB_NAME + index.ToString();
+							NewJob.JobName = IfsSync2Constants.DEFAULT_GLOBAL_JOB_NAME + index.ToString();
 							JobSQL.Insert(NewJob);
 						}
 					}
@@ -145,7 +144,7 @@ namespace IfsSync2WatcherService
 					FailRemain = TrayIconConfigs.UploadFailCount
 				};
 
-				if (!IFSSyncUtility.SendAlive(URL, GlobalUser.UserName, Alive, out string Error))
+				if (!IfsPortalManager.SendAlive(URL, GlobalUser.UserName, Alive, out string Error))
 					log.Error($"Alive send fail {Error}");
 				else
 					log.Info("Alive send OK");

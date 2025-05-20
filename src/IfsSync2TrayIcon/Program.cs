@@ -11,10 +11,9 @@
 using log4net;
 using log4net.Config;
 using System;
-using System.Reflection;
 using System.Threading;
 using System.Windows.Forms;
-using IfsSync2Data;
+using IfsSync2Common;
 using System.Runtime.Versioning;
 
 [assembly: XmlConfigurator(ConfigFile = "IfsSync2TrayIconLigConfig.xml", Watch = true)]
@@ -24,20 +23,20 @@ namespace IfsSync2TrayIcon
 	[SupportedOSPlatform("windows")]
 	static class Program
 	{
-		private static readonly ILog log = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
+		private static readonly ILog log = LogManager.GetLogger(typeof(Program));
 		private static readonly TrayIconConfig TrayIconConfigs = new(true);
 
 		[STAThread]
 		static void Main()
 		{
-			Mutex mutex = new(true, MainData.MUTEX_NAME_TRAY_ICON, out bool CreateNew);
+			Mutex mutex = new(true, IfsSync2Constants.MUTEX_NAME_TRAY_ICON, out bool CreateNew);
 
 			if (!CreateNew)
 			{
 				log.Error("Prevent duplicate execution");
 				return;
 			}
-			MainUtility.DeleteOldLogs(MainData.GetLogFolder("TrayIcon"));
+			MainUtility.DeleteOldLogs(IfsSync2Utilities.GetLogFolder("TrayIcon"));
 
 			TrayIconManager TrayIcon = new();
 

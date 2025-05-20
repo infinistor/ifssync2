@@ -8,42 +8,37 @@
 * KSAN 프로젝트의 개발자 및 개발사는 이 프로그램을 사용한 결과에 따른 어떠한 책임도 지지 않습니다.
 * KSAN 개발팀은 사전 공지, 허락, 동의 없이 KSAN 개발에 관련된 모든 결과물에 대한 LICENSE 방식을 변경 할 권리가 있습니다.
 */
-using System;
-using System.Collections.Generic;
 using System.Data.SQLite;
-using System.IO;
 using log4net;
-using System.Reflection;
-using System.Threading;
 
-namespace IfsSync2Data
+namespace IfsSync2Common
 {
-	class TaskDbManager
+	public class TaskDbManager
 	{
 		#region Define
 		const string SQLITE_SEQUENCE = "sqlite_sequence";
-		const string STR_TASK_TABLE_NAME = "TaskList";
-		const string STR_PENDING_TABLE_NAME = "PendingList";
-		const string STR_SUCCESS_TABLE_NAME = "SuccessTaskList";
-		const string STR_FAILURE_TABLE_NAME = "FailureTaskList";
-		const string STR_INDEX_NAME = "Id";
-		const string STR_TASK_NAME = "TaskName";
-		const string STR_FILEPATH = "FilePath";
-		const string STR_NEW_FILE_PATH = "NewFilePath";
-		const string STR_SNAPSHOT_PATH = "SnapshotPath";
-		const string STR_FILE_SIZE = "FileSize";
-		const string STR_EVENT_TIME = "EventTime";
-		const string STR_UPLOAD_TIME = "UploadTime";
-		const string STR_RESULT = "Result";
+		const string TASK_TABLE_NAME = "TaskList";
+		const string PENDING_TABLE_NAME = "PendingList";
+		const string SUCCESS_TABLE_NAME = "SuccessTaskList";
+		const string FAILURE_TABLE_NAME = "FailureTaskList";
+		const string INDEX_NAME = "Id";
+		const string TASK_NAME = "TaskName";
+		const string FILEPATH = "FilePath";
+		const string NEW_FILE_PATH = "NewFilePath";
+		const string SNAPSHOT_PATH = "SnapshotPath";
+		const string FILE_SIZE = "FileSize";
+		const string EVENT_TIME = "EventTime";
+		const string UPLOAD_TIME = "UploadTime";
+		const string RESULT = "Result";
 
-		const string STR_LOG_TABLE_NAME = "LogList";
-		const string STR_LOG_NAME = "Log";
+		const string LOG_TABLE_NAME = "LogList";
+		const string LOG_NAME = "Log";
 
 		const int DEFAULT_LIMIT = 3000;
 		#endregion
 
 		#region Attributes
-		readonly ILog _log = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
+		readonly ILog _log = LogManager.GetLogger(typeof(TaskDbManager));
 
 		readonly Mutex _sqliteMutex;
 		readonly string _filePath;
@@ -66,16 +61,17 @@ namespace IfsSync2Data
 		{
 			try
 			{
-				_filePath = MainData.GetDBFilePath(jobName);
-				_sqliteMutex = new Mutex(false, MainData.MUTEX_NAME_JOB_SQL, out bool createdNew);
+				_filePath = IfsSync2Utilities.GetDBFilePath(jobName);
+				_sqliteMutex = new Mutex(false, IfsSync2Constants.MUTEX_NAME_JOB_SQL, out bool createdNew);
 
-				if (!createdNew) _log.Debug($"Mutex({MainData.MUTEX_NAME_JOB_SQL})");
-				else _log.Debug($"Mutex({MainData.MUTEX_NAME_JOB_SQL}) create");
+				if (!createdNew) _log.Debug($"Mutex({IfsSync2Constants.MUTEX_NAME_JOB_SQL})");
+				else _log.Debug($"Mutex({IfsSync2Constants.MUTEX_NAME_JOB_SQL}) create");
 				CreateDBFile();
 			}
 			catch (Exception e)
 			{
-				_log.Error($"Mutex({MainData.MUTEX_NAME_JOB_SQL}) fail", e);
+				_log.Error($"Mutex({IfsSync2Constants.MUTEX_NAME_JOB_SQL}) fail", e);
+				throw new InvalidOperationException($"Mutex({IfsSync2Constants.MUTEX_NAME_JOB_SQL}) fail", e);
 			}
 		}
 
@@ -83,7 +79,7 @@ namespace IfsSync2Data
 		{
 			try
 			{
-				MainData.CreateFile(_filePath);
+				IfsSync2Utilities.CreateFile(_filePath);
 
 				_sqliteMutex.WaitOne();
 				using var conn = new SQLiteConnection($"Data Source={_filePath};Version=3;");
@@ -92,47 +88,47 @@ namespace IfsSync2Data
 				{
 					//Task List
 					CommandText =
-					$"Create Table IF NOT EXISTS '{STR_TASK_TABLE_NAME}'(" +
-								 $"'{STR_INDEX_NAME}' INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT, " +
-								 $"'{STR_TASK_NAME}' TEXT NOT NULL, " +
-								 $"'{STR_FILEPATH}' TEXT NOT NULL, " +
-								 $"'{STR_NEW_FILE_PATH}' TEXT, " +
-								 $"'{STR_FILE_SIZE}' INTEGER DEFAULT 0," +
-								 $"'{STR_EVENT_TIME}' TEXT NOT NULL, " +
-								 $"'{STR_UPLOAD_TIME}' TEXT);" +
+					$"Create Table IF NOT EXISTS '{TASK_TABLE_NAME}'(" +
+								 $"'{INDEX_NAME}' INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT, " +
+								 $"'{TASK_NAME}' TEXT NOT NULL, " +
+								 $"'{FILEPATH}' TEXT NOT NULL, " +
+								 $"'{NEW_FILE_PATH}' TEXT, " +
+								 $"'{FILE_SIZE}' INTEGER DEFAULT 0," +
+								 $"'{EVENT_TIME}' TEXT NOT NULL, " +
+								 $"'{UPLOAD_TIME}' TEXT);" +
 					//Pending List
-					$"Create Table IF NOT EXISTS '{STR_PENDING_TABLE_NAME}'(" +
-								 $"'{STR_INDEX_NAME}' INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT, " +
-								 $"'{STR_TASK_NAME}' TEXT NOT NULL, " +
-								 $"'{STR_FILEPATH}' TEXT NOT NULL, " +
-								 $"'{STR_NEW_FILE_PATH}' TEXT, " +
-								 $"'{STR_SNAPSHOT_PATH}' TEXT NOT NULL, " +
-								 $"'{STR_FILE_SIZE}' INTEGER DEFAULT 0," +
-								 $"'{STR_EVENT_TIME}' TEXT NOT NULL, " +
-								 $"'{STR_RESULT}' TEXT);" +
+					$"Create Table IF NOT EXISTS '{PENDING_TABLE_NAME}'(" +
+								 $"'{INDEX_NAME}' INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT, " +
+								 $"'{TASK_NAME}' TEXT NOT NULL, " +
+								 $"'{FILEPATH}' TEXT NOT NULL, " +
+								 $"'{NEW_FILE_PATH}' TEXT, " +
+								 $"'{SNAPSHOT_PATH}' TEXT NOT NULL, " +
+								 $"'{FILE_SIZE}' INTEGER DEFAULT 0," +
+								 $"'{EVENT_TIME}' TEXT NOT NULL, " +
+								 $"'{RESULT}' TEXT);" +
 					////Success
-					$"Create Table IF NOT EXISTS '{STR_SUCCESS_TABLE_NAME}'(" +
-								 $"'{STR_INDEX_NAME}' INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT, " +
-								 $"'{STR_TASK_NAME}' TEXT NOT NULL, " +
-								 $"'{STR_FILEPATH}' TEXT NOT NULL, " +
-								 $"'{STR_NEW_FILE_PATH}' TEXT, " +
-								 $"'{STR_FILE_SIZE}' INTEGER DEFAULT 0," +
-								 $"'{STR_EVENT_TIME}' TEXT NOT NULL, " +
-								 $"'{STR_UPLOAD_TIME}' TEXT);" +
+					$"Create Table IF NOT EXISTS '{SUCCESS_TABLE_NAME}'(" +
+								 $"'{INDEX_NAME}' INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT, " +
+								 $"'{TASK_NAME}' TEXT NOT NULL, " +
+								 $"'{FILEPATH}' TEXT NOT NULL, " +
+								 $"'{NEW_FILE_PATH}' TEXT, " +
+								 $"'{FILE_SIZE}' INTEGER DEFAULT 0," +
+								 $"'{EVENT_TIME}' TEXT NOT NULL, " +
+								 $"'{UPLOAD_TIME}' TEXT);" +
 					//Failure
-					$"Create Table IF NOT EXISTS '{STR_FAILURE_TABLE_NAME}'(" +
-								 $"'{STR_INDEX_NAME}' INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT, " +
-								 $"'{STR_TASK_NAME}' TEXT NOT NULL, " +
-								 $"'{STR_FILEPATH}' TEXT NOT NULL, " +
-								 $"'{STR_NEW_FILE_PATH}' TEXT, " +
-								 $"'{STR_FILE_SIZE}' INTEGER DEFAULT 0," +
-								 $"'{STR_EVENT_TIME}' TEXT NOT NULL, " +
-								 $"'{STR_UPLOAD_TIME}' TEXT NOT NULL, " +
-								 $"'{STR_RESULT}' TEXT);" +
+					$"Create Table IF NOT EXISTS '{FAILURE_TABLE_NAME}'(" +
+								 $"'{INDEX_NAME}' INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT, " +
+								 $"'{TASK_NAME}' TEXT NOT NULL, " +
+								 $"'{FILEPATH}' TEXT NOT NULL, " +
+								 $"'{NEW_FILE_PATH}' TEXT, " +
+								 $"'{FILE_SIZE}' INTEGER DEFAULT 0," +
+								 $"'{EVENT_TIME}' TEXT NOT NULL, " +
+								 $"'{UPLOAD_TIME}' TEXT NOT NULL, " +
+								 $"'{RESULT}' TEXT);" +
 					//Log List
-					$"Create Table IF NOT EXISTS '{STR_LOG_TABLE_NAME}'(" +
-								 $"'{STR_INDEX_NAME}' INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT, " +
-								 $"'{STR_LOG_NAME}' TEXT NOT NULL);" +
+					$"Create Table IF NOT EXISTS '{LOG_TABLE_NAME}'(" +
+								 $"'{INDEX_NAME}' INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT, " +
+								 $"'{LOG_NAME}' TEXT NOT NULL);" +
 							 "PRAGMA foreign_keys = On;"
 				};
 				cmd.ExecuteNonQuery();
@@ -180,7 +176,7 @@ namespace IfsSync2Data
 				conn.Open();
 				using var cmd = new SQLiteCommand(conn)
 				{
-					CommandText = $"INSERT INTO '{STR_TASK_TABLE_NAME}'({STR_TASK_NAME}, {STR_FILEPATH}, {STR_NEW_FILE_PATH}, {STR_FILE_SIZE}, {STR_EVENT_TIME})" +
+					CommandText = $"INSERT INTO '{TASK_TABLE_NAME}'({TASK_NAME}, {FILEPATH}, {NEW_FILE_PATH}, {FILE_SIZE}, {EVENT_TIME})" +
 															$" VALUES ('{task.TaskType}', '{task.FilePath}', '{task.NewFilePath}', {task.FileSize}, '{task.EventTime}')"
 				};
 				var result = cmd.ExecuteNonQuery();
@@ -200,11 +196,11 @@ namespace IfsSync2Data
 				_sqliteMutex.WaitOne();
 				conn.Open();
 
-				var query = $"DELETE FROM '{STR_TASK_TABLE_NAME}' WHERE {STR_INDEX_NAME} = {task.Index};";
+				var query = $"DELETE FROM '{TASK_TABLE_NAME}' WHERE {INDEX_NAME} = {task.Index};";
 				query += task.UploadFlag ?
-				$"\nINSERT INTO '{STR_SUCCESS_TABLE_NAME}' ( {STR_TASK_NAME}, {STR_FILEPATH}, {STR_NEW_FILE_PATH}, {STR_FILE_SIZE}, {STR_UPLOAD_TIME} ,{STR_EVENT_TIME} )" +
+				$"\nINSERT INTO '{SUCCESS_TABLE_NAME}' ( {TASK_NAME}, {FILEPATH}, {NEW_FILE_PATH}, {FILE_SIZE}, {UPLOAD_TIME} ,{EVENT_TIME} )" +
 													$" VALUES('{task.TaskType}', '{task.FilePath}', '{task.NewFilePath}', {task.FileSize}, '{task.UploadTime}', '{task.EventTime}');"
-				: $"\nINSERT INTO '{STR_FAILURE_TABLE_NAME}' ( {STR_TASK_NAME}, {STR_FILEPATH}, {STR_NEW_FILE_PATH}, {STR_FILE_SIZE}, {STR_UPLOAD_TIME} ,{STR_EVENT_TIME}, {STR_RESULT} )" +
+				: $"\nINSERT INTO '{FAILURE_TABLE_NAME}' ( {TASK_NAME}, {FILEPATH}, {NEW_FILE_PATH}, {FILE_SIZE}, {UPLOAD_TIME} ,{EVENT_TIME}, {RESULT} )" +
 													$" VALUES('{task.TaskType}', '{task.FilePath}', '{task.NewFilePath}', {task.FileSize}, '{task.UploadTime}', '{task.EventTime}', '{task.Result.Replace("'", "\"")}');";
 
 				using var cmd = new SQLiteCommand(conn) { CommandText = query };
@@ -225,7 +221,7 @@ namespace IfsSync2Data
 				_sqliteMutex.WaitOne();
 				conn.Open();
 
-				using var cmd = new SQLiteCommand(conn) { CommandText = $"DELETE FROM '{STR_TASK_TABLE_NAME}' WHERE {STR_INDEX_NAME} = {task.Index};" };
+				using var cmd = new SQLiteCommand(conn) { CommandText = $"DELETE FROM '{TASK_TABLE_NAME}' WHERE {INDEX_NAME} = {task.Index};" };
 				int result = cmd.ExecuteNonQuery();
 				if (result > 0) { _log.Debug($"Success : {cmd.CommandText}"); return true; }
 				else { _log.Error($"Failed : {cmd.CommandText}"); return false; }
@@ -244,8 +240,8 @@ namespace IfsSync2Data
 
 				using var cmd = new SQLiteCommand(conn)
 				{
-					CommandText = $"DELETE FROM '{STR_TASK_TABLE_NAME}' WHERE {STR_INDEX_NAME} = {task.Index};"
-								+ $"\nINSERT INTO '{STR_FAILURE_TABLE_NAME}' ({STR_TASK_NAME}, {STR_FILEPATH}, {STR_NEW_FILE_PATH}, {STR_FILE_SIZE}, {STR_EVENT_TIME}, {STR_UPLOAD_TIME} ,{STR_RESULT} )" +
+					CommandText = $"DELETE FROM '{TASK_TABLE_NAME}' WHERE {INDEX_NAME} = {task.Index};"
+								+ $"\nINSERT INTO '{FAILURE_TABLE_NAME}' ({TASK_NAME}, {FILEPATH}, {NEW_FILE_PATH}, {FILE_SIZE}, {EVENT_TIME}, {UPLOAD_TIME} ,{RESULT} )" +
 																$" VALUES('{task.TaskType}', '{task.FilePath}', '{task.NewFilePath}', {task.FileSize}, '{task.EventTime}', '{task.UploadTime}', '{task.Result.Replace("'", "\"")}');",
 				};
 
@@ -267,20 +263,20 @@ namespace IfsSync2Data
 				_sqliteMutex.WaitOne();
 				conn.Open();
 
-				using var cmd = new SQLiteCommand(conn) { CommandText = $"SELECT * FROM '{STR_SUCCESS_TABLE_NAME}' WHERE {STR_INDEX_NAME} < {startIndex} ORDER BY {STR_INDEX_NAME} DESC LIMIT {limit}" };
+				using var cmd = new SQLiteCommand(conn) { CommandText = $"SELECT * FROM '{SUCCESS_TABLE_NAME}' WHERE {INDEX_NAME} < {startIndex} ORDER BY {INDEX_NAME} DESC LIMIT {limit}" };
 
 				using var rdr = cmd.ExecuteReader();
 				while (rdr.Read())
 				{
 					var task = new TaskData
 					{
-						Index = Convert.ToInt64(rdr[STR_INDEX_NAME]),
-						StrTaskType = rdr[STR_TASK_NAME].ToString(),
-						FilePath = rdr[STR_FILEPATH].ToString(),
-						NewFilePath = rdr[STR_NEW_FILE_PATH].ToString(),
-						FileSize = Convert.ToInt64(rdr[STR_FILE_SIZE]),
-						EventTime = rdr[STR_EVENT_TIME].ToString(),
-						UploadTime = rdr[STR_UPLOAD_TIME].ToString()
+						Index = rdr.GetLong(INDEX_NAME),
+						StrTaskType = rdr.GetString(TASK_NAME),
+						FilePath = rdr.GetString(FILEPATH),
+						NewFilePath = rdr.GetString(NEW_FILE_PATH),
+						FileSize = rdr.GetLong(FILE_SIZE),
+						EventTime = rdr.GetString(EVENT_TIME),
+						UploadTime = rdr.GetString(UPLOAD_TIME)
 					};
 
 					tasks.Add(task);
@@ -302,21 +298,21 @@ namespace IfsSync2Data
 				_sqliteMutex.WaitOne();
 				conn.Open();
 
-				using var cmd = new SQLiteCommand(conn) { CommandText = $"SELECT * FROM '{STR_FAILURE_TABLE_NAME}' WHERE {STR_INDEX_NAME} < {startIndex} ORDER BY {STR_INDEX_NAME} DESC LIMIT {limit}" };
+				using var cmd = new SQLiteCommand(conn) { CommandText = $"SELECT * FROM '{FAILURE_TABLE_NAME}' WHERE {INDEX_NAME} < {startIndex} ORDER BY {INDEX_NAME} DESC LIMIT {limit}" };
 
 				using var rdr = cmd.ExecuteReader();
 				while (rdr.Read())
 				{
 					tasks.Add(new TaskData
 					{
-						Index = Convert.ToInt64(rdr[STR_INDEX_NAME]),
-						StrTaskType = rdr[STR_TASK_NAME].ToString(),
-						FilePath = rdr[STR_FILEPATH].ToString(),
-						NewFilePath = rdr[STR_NEW_FILE_PATH].ToString(),
-						FileSize = Convert.ToInt64(rdr[STR_FILE_SIZE]),
-						EventTime = rdr[STR_EVENT_TIME].ToString(),
-						UploadTime = rdr[STR_UPLOAD_TIME].ToString(),
-						Result = rdr[STR_RESULT].ToString()
+						Index = rdr.GetLong(INDEX_NAME),
+						StrTaskType = rdr.GetString(TASK_NAME),
+						FilePath = rdr.GetString(FILEPATH),
+						NewFilePath = rdr.GetString(NEW_FILE_PATH),
+						FileSize = rdr.GetLong(FILE_SIZE),
+						EventTime = rdr.GetString(EVENT_TIME),
+						UploadTime = rdr.GetString(UPLOAD_TIME),
+						Result = rdr.GetString(RESULT)
 					});
 				}
 
@@ -334,7 +330,7 @@ namespace IfsSync2Data
 
 				_sqliteMutex.WaitOne();
 				conn.Open();
-				using var cmd = new SQLiteCommand(conn) { CommandText = string.Format("DELETE FROM '{0}';", STR_TASK_TABLE_NAME) };
+				using var cmd = new SQLiteCommand(conn) { CommandText = string.Format("DELETE FROM '{0}';", TASK_TABLE_NAME) };
 
 				int result = cmd.ExecuteNonQuery();
 				if (result > 0) { _log.Debug($"Success({result}) : {cmd.CommandText}"); return true; }
@@ -353,11 +349,11 @@ namespace IfsSync2Data
 				conn.Open();
 				using var cmd = new SQLiteCommand(conn)
 				{
-					CommandText = $"DELETE FROM '{STR_TASK_TABLE_NAME}';"
-								+ $" DELETE FROM '{STR_PENDING_TABLE_NAME}';"
-								+ $" DELETE FROM '{STR_SUCCESS_TABLE_NAME}';"
-								+ $" DELETE FROM '{STR_FAILURE_TABLE_NAME}';"
-								+ $" DELETE FROM '{STR_LOG_TABLE_NAME}';"
+					CommandText = $"DELETE FROM '{TASK_TABLE_NAME}';"
+								+ $" DELETE FROM '{PENDING_TABLE_NAME}';"
+								+ $" DELETE FROM '{SUCCESS_TABLE_NAME}';"
+								+ $" DELETE FROM '{FAILURE_TABLE_NAME}';"
+								+ $" DELETE FROM '{LOG_TABLE_NAME}';"
 								+ $" DELETE FROM '{SQLITE_SEQUENCE}';"
 				};
 
@@ -380,20 +376,20 @@ namespace IfsSync2Data
 				TaskList.Clear();
 
 				using var cmd = new SQLiteCommand(conn)
-				{ CommandText = $"SELECT * FROM '{STR_TASK_TABLE_NAME}' Limit {limit}" };
+				{ CommandText = $"SELECT * FROM '{TASK_TABLE_NAME}' Limit {limit}" };
 
 				using var rdr = cmd.ExecuteReader();
 				while (rdr.Read())
 				{
 					TaskList.Add(new TaskData
 					{
-						Index = Convert.ToInt64(rdr[STR_INDEX_NAME]),
-						StrTaskType = rdr[STR_TASK_NAME].ToString(),
-						FilePath = rdr[STR_FILEPATH].ToString(),
-						NewFilePath = rdr[STR_NEW_FILE_PATH].ToString(),
-						FileSize = Convert.ToInt64(rdr[STR_FILE_SIZE]),
-						EventTime = rdr[STR_EVENT_TIME].ToString(),
-						UploadTime = rdr[STR_UPLOAD_TIME].ToString()
+						Index = rdr.GetLong(INDEX_NAME),
+						StrTaskType = rdr.GetString(TASK_NAME),
+						FilePath = rdr.GetString(FILEPATH),
+						NewFilePath = rdr.GetString(NEW_FILE_PATH),
+						FileSize = rdr.GetLong(FILE_SIZE),
+						EventTime = rdr.GetString(EVENT_TIME),
+						UploadTime = rdr.GetString(UPLOAD_TIME)
 					});
 				}
 
@@ -412,7 +408,7 @@ namespace IfsSync2Data
 
 				_sqliteMutex.WaitOne();
 				conn.Open();
-				using var cmd = new SQLiteCommand(conn) { CommandText = $"INSERT INTO '{STR_LOG_TABLE_NAME}' ({STR_LOG_NAME}) VALUES ('[{DateTime.Now:yyyy-MM-dd HH:mm:ss}] {msg}')" };
+				using var cmd = new SQLiteCommand(conn) { CommandText = $"INSERT INTO '{LOG_TABLE_NAME}' ({LOG_NAME}) VALUES ('[{DateTime.Now:yyyy-MM-dd HH:mm:ss}] {msg}')" };
 				int result = cmd.ExecuteNonQuery();
 				if (result > 0)
 				{
@@ -444,13 +440,13 @@ namespace IfsSync2Data
 				_sqliteMutex.WaitOne();
 				conn.Open();
 
-				using var cmd = new SQLiteCommand(conn) { CommandText = $"SELECT * FROM {STR_LOG_TABLE_NAME} WHERE {STR_INDEX_NAME} < {startIndex} ORDER BY {STR_INDEX_NAME} DESC LIMIT 50000;" };
+				using var cmd = new SQLiteCommand(conn) { CommandText = $"SELECT * FROM {LOG_TABLE_NAME} WHERE {INDEX_NAME} < {startIndex} ORDER BY {INDEX_NAME} DESC LIMIT 50000;" };
 				using var rdr = cmd.ExecuteReader();
 
 				var items = new List<string>();
 				while (rdr.Read())
 				{
-					items.Add(rdr[STR_LOG_NAME].ToString());
+					items.Add(rdr.GetString(LOG_NAME));
 				}
 
 				_log.Debug($"List Count : {items.Count}");
@@ -467,14 +463,14 @@ namespace IfsSync2Data
 			}
 		}
 
-		public bool DeleteOldLogs(int days = MainData.DEFAULT_DELETE_DATE)
+		public bool DeleteOldLogs(int days = IfsSync2Constants.DEFAULT_DELETE_DATE)
 		{
 			try
 			{
 				using var conn = new SQLiteConnection($"Data Source={_filePath};Version=3;");
 				conn.Open();
 
-				using var cmd = new SQLiteCommand(conn) { CommandText = $"DELETE FROM {STR_LOG_TABLE_NAME} WHERE {STR_LOG_NAME} < '{DateTime.Now.AddDays(-days):yyyy-MM-dd HH:mm:ss}';" };
+				using var cmd = new SQLiteCommand(conn) { CommandText = $"DELETE FROM {LOG_TABLE_NAME} WHERE {LOG_NAME} < '{DateTime.Now.AddDays(-days):yyyy-MM-dd HH:mm:ss}';" };
 				int result = cmd.ExecuteNonQuery();
 				if (result > 0) { _log.Debug($"Success({result}) : {cmd.CommandText}"); return true; }
 				else { _log.Error($"Failed({result}) : {cmd.CommandText}"); return false; }

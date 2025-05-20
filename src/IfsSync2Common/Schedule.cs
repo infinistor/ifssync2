@@ -1,6 +1,4 @@
-using System;
-
-namespace IfsSync2Data
+namespace IfsSync2Common
 {
 	public sealed class Schedule : IEquatable<Schedule>
 	{
@@ -151,11 +149,25 @@ namespace IfsSync2Data
 		}
 
 		/// <summary>
+		/// 현재 시간이 스케줄에 포함되는지 확인합니다.
+		/// </summary>
+		/// <param name="now">현재 시간</param>
+		/// <returns>스케줄 포함 여부</returns>
+		public bool ScheduleCheck(DateTime now)
+		{
+			var dayOfWeek = now.DayOfWeek.ToString();
+			var hour = now.Hour;
+			var minute = now.Minute;
+
+			return IsExistSchedule(dayOfWeek, hour, minute);
+		}
+
+		/// <summary>
 		/// 두 스케줄 객체가 동일한지 비교합니다.
 		/// </summary>
 		/// <param name="Data">비교할 스케줄 객체</param>
 		/// <returns>동일 여부</returns>
-		public bool Equals(Schedule Data)
+		public bool Equals(Schedule? Data)
 		{
 			if (Data == null) return false;
 			if (Weeks != Data.Weeks) return false;
@@ -164,7 +176,7 @@ namespace IfsSync2Data
 			return true;
 		}
 
-		public override bool Equals(object obj)
+		public override bool Equals(object? obj)
 		{
 			return Equals(obj as Schedule);
 		}

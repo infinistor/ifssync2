@@ -8,7 +8,7 @@
 * KSAN 프로젝트의 개발자 및 개발사는 이 프로그램을 사용한 결과에 따른 어떠한 책임도 지지 않습니다.
 * KSAN 개발팀은 사전 공지, 허락, 동의 없이 KSAN 개발에 관련된 모든 결과물에 대한 LICENSE 방식을 변경 할 권리가 있습니다.
 */
-using IfsSync2Data;
+using IfsSync2Common;
 using callback.CBFSFilter;
 using log4net;
 using System;
@@ -49,7 +49,6 @@ namespace IfsSync2Filter
 
 		readonly WriteFileManager _writeFileManager;
 
-		public bool IsAlive { get; set; }
 		public bool IsFilterUpdate { get; set; }
 
 		public void FilterStateOn()
@@ -58,12 +57,11 @@ namespace IfsSync2Filter
 		}
 		public FilterThread(JobData job)
 		{
-			IsAlive = true;
 			IsFilterUpdate = false;
 			Job = job;
 			_taskDb = new(job.JobName);
 			State = new(Job.HostName, Job.JobName, true);
-			monitor = new(MainData.RUNTIME_LICENSE_KEY);
+			monitor = new(IfsSync2Constants.RUNTIME_LICENSE_KEY);
 
 			// WriteFileManager 초기화
 			_writeFileManager = new WriteFileManager(CreateBackup);
@@ -90,7 +88,7 @@ namespace IfsSync2Filter
 			if (!monitor.Active)
 			{
 				monitor.ProcessFailedRequests = false;
-				monitor.Initialize(MainData.mGuid);
+				monitor.Initialize(IfsSync2Constants.mGuid);
 				monitor.StartFilter();
 				State.Filter = true;
 				log.Info("Filter started");
@@ -124,16 +122,16 @@ namespace IfsSync2Filter
 				try
 				{
 					//NUC Folder Check
-					if (MainData.CheckUNCFolder(filter))
+					if (IfsSync2Utilities.CheckUNCFolder(filter))
 					{
 						monitor.AddFilterRule(filter, DEFAULT_NOTIFY_FILTER);
 						log.Debug($"NUC Folder Filter : {filter}");
 					}
 					//Drive Check
-					else if (!MainData.IsDriveAccessible(filter, out string error))
+					else if (!IfsSync2Utilities.IsDriveAccessible(filter))
 					{
 						failCheck = true;
-						log.Debug($"Drive Check Fail : {filter}, Error: {error}");
+						log.Debug($"Drive Check Fail : {filter}");
 					}
 					else
 					{
@@ -217,7 +215,105 @@ namespace IfsSync2Filter
 			_taskDb.DeleteDBFile();
 		}
 
-		#region Sql Task Upload
+		#region Backup
+		void CreateBackup(string FilePath)
+		{
+			string FileName = IfsSync2Utilities.GetFileName(FilePath);
+			log.Debug($"{Job.JobName} CreateBackup: {FilePath}");
+
+			// 폴더인 경우
+			if (CheckIsFolder(FilePath))
+			{
+				log.Debug($"{Job.JobName} Folder detected: {FilePath}");
+
+				// MainUtility 사용하여 직접 TaskData 목록 생성
+				var taskList = MainUtility.GetFilesWithTaskData(FilePath, Job.WhiteFileExt, TaskData.TaskTypeList.Upload);
+				log.Debug($"{Job.JobName} Upload Items : {taskList.Count}");
+
+				// 생성된 작업 목록을 데이터베이스에 추가
+				foreach (var task in taskList)
+				{
+					_taskDb.Insert(task);
+					log.Debug($"{Job.JobName} Insert Upload: {task.FilePath}");
+				}
+			}
+			// 파일인 경우
+			else if (CheckWhiteFileList(FileName, Job.WhiteFileExt))
+			{
+				long fileSize = GetFileSize(FilePath);
+				_taskDb.Insert(new TaskData(TaskData.TaskTypeList.Upload, FilePath, DateTime.Now.ToString(DEFAULT_DATE_FORMAT), fileSize));
+				log.Debug($"{Job.JobName} Insert Upload: {FilePath}");
+			}
+		}
+
+		void DeleteBackup(string FilePath)
+		{
+			string FileName = IfsSync2Utilities.GetFileName(FilePath);
+			log.Debug($"{Job.JobName} DeleteBackup: {FilePath}");
+
+			// 폴더인 경우
+			if (FilterEventHandler.IsLikeFolder(FilePath))
+			{
+				log.Debug($"{Job.JobName} Like Folder: {FilePath}");
+				// 백슬래시가 없는 경우 추가
+				if (!FilePath.EndsWith('\\')) FilePath += "\\";
+
+				_taskDb.Insert(new TaskData(TaskData.TaskTypeList.Delete, FilePath, DateTime.Now.ToString(DEFAULT_DATE_FORMAT)));
+				log.Debug($"{Job.JobName} Insert Delete: {FilePath}");
+			}
+			else if (CheckWhiteFileList(FileName, Job.WhiteFileExt))
+			{
+				_taskDb.Insert(new TaskData(TaskData.TaskTypeList.Delete, FilePath, DateTime.Now.ToString(DEFAULT_DATE_FORMAT)));
+				log.Debug($"{Job.JobName} Insert Delete: {FilePath}");
+			}
+		}
+
+		void RenameBackup(string FilePath, string NewFilePath)
+		{
+			string NewFileName = IfsSync2Utilities.GetFileName(NewFilePath);
+			log.Debug($"{Job.JobName} RenameBackup: {FilePath} => {NewFilePath}");
+
+			// 폴더인 경우
+			if (CheckIsFolder(NewFilePath))
+			{
+				log.Debug($"{Job.JobName} Folder detected: {FilePath} => {NewFilePath}");
+
+				// 폴더인 경우 폴더 하위 모든 파일을 읽어서 rename 처리
+				try
+				{
+					var taskList = MainUtility.GetFilesWithTaskData(NewFilePath, Job.WhiteFileExt, TaskData.TaskTypeList.Rename);
+					log.Debug($"{Job.JobName} Rename Items : {taskList.Count}");
+					log.Debug($"old Path : {FilePath}, new Path : {NewFilePath}");
+
+					foreach (var task in taskList)
+					{
+						// NewFilePath을 추가
+						task.NewFilePath = task.FilePath;
+
+						// 원본 경로 생성
+						string originalPath = task.FilePath.Replace(NewFilePath, FilePath);
+						log.Debug($"{Job.JobName} Rename: {task.FilePath} => {originalPath}");
+						task.FilePath = originalPath;
+
+						// 데이터베이스에 삽입
+						_taskDb.Insert(task);
+						log.Debug($"{Job.JobName} Insert Rename: {task.FilePath} => {task.NewFilePath}");
+					}
+				}
+				catch (Exception ex)
+				{
+					log.Error($"{Job.JobName} Error processing folder for rename: {ex.Message}");
+				}
+			}
+			// 파일인 경우
+			else if (CheckWhiteFileList(NewFileName, Job.WhiteFileExt))
+			{
+				_taskDb.Insert(new TaskData(TaskData.TaskTypeList.Rename, FilePath, DateTime.Now.ToString(DEFAULT_DATE_FORMAT), NewFilePath));
+				log.Debug($"{Job.JobName} Insert Rename: {FilePath} => {NewFilePath}");
+			}
+		}
+		#endregion Sql Task Upload
+		#region ETC
 
 		static bool CheckWhiteFileList(string FileName, ObservableCollection<string> WhiteFileExt)
 		{
@@ -235,137 +331,34 @@ namespace IfsSync2Filter
 				FileName.EndsWith(ext, StringComparison.OrdinalIgnoreCase));
 		}
 
-
-		static List<string> SubDirectory(string ParentDirectory, ObservableCollection<string> ExtList)
-		{
-			DirectoryInfo dInfoParent = new(ParentDirectory);
-			List<string> FileList = [];
-			if (!dInfoParent.Exists) return FileList;
-			log.Debug($"Processing directory {ParentDirectory}, found {dInfoParent.GetDirectories().Length} subdirectories");
-
-			//add Folder List
-			foreach (DirectoryInfo dInfo in dInfoParent.GetDirectories())
-			{
-				try { FileList.AddRange(SubDirectory(dInfo.FullName, ExtList)); }
-				catch
-				{
-					log.Error($"Error processing directory: {dInfo.FullName}");
-				}
-			}
-			FileList.AddRange(AddBackupFile(ParentDirectory, ExtList));
-
-			return FileList;
-		}
-
-		static List<string> AddBackupFile(string ParentDirectory, ObservableCollection<string> ExtList)
-		{
-			//add File List
-			string[] files = Directory.GetFiles(ParentDirectory);
-			log.Debug($"Found {files.Length} files in {ParentDirectory}");
-			List<string> FileList = [];
-
-			// 파일 나열
-			foreach (string file in files)
-			{
-				FileInfo info = new(file);
-				if (!info.Exists) continue;
-				if ((info.Attributes & FileAttributes.System) == FileAttributes.System) { /*empty*/ }
-				else if (CheckWhiteFileList(info.Name, ExtList))
-				{
-					FileList.Add(info.FullName);
-				}
-			}
-			log.Debug($"Added {FileList.Count} files from {ParentDirectory}");
-			return FileList;
-		}
-
-		static List<string> GetFileListToDirectory(string Directory, ObservableCollection<string> ExtList)
-		{
-			return SubDirectory(Directory, ExtList);
-		}
-
 		static long GetFileSize(string FilePath)
 		{
-			try { return new FileInfo(FilePath).Length; }
-			catch
+			try
 			{
-				log.Error($"Error getting size for file: {FilePath}");
+				return new FileInfo(FilePath).Length;
+			}
+			catch (FileNotFoundException ex)
+			{
+				log.Error($"File not found: {FilePath}", ex);
+				return 0;
+			}
+			catch (IOException ex)
+			{
+				log.Error($"I/O error getting size for file: {FilePath}", ex);
+				return 0;
+			}
+			catch (UnauthorizedAccessException ex)
+			{
+				log.Error($"Access denied to file: {FilePath}", ex);
+				return 0;
+			}
+			catch (Exception ex)
+			{
+				log.Error($"Error getting size for file: {FilePath}", ex);
 				return 0;
 			}
 		}
 
-		void CreateBackup(string FilePath)
-		{
-			string FileName = MainData.GetFileName(FilePath);
-			log.Debug($"Processing: {FilePath}");
-
-			// 폴더인 경우
-			if (CheckIsFolder(FilePath))
-			{
-				log.Debug($"Folder detected: {FilePath}");
-				List<string> FileList = GetFileListToDirectory(FilePath, Job.WhiteFileExt);
-				log.Debug($"Found {FileList.Count} files in folder");
-				foreach (string File in FileList)
-				{
-					long fileSize = GetFileSize(File);
-					TaskData Data = new(TaskData.TaskTypeList.Upload, File, DateTime.Now.ToString(DEFAULT_DATE_FORMAT), fileSize);
-					_taskDb.Insert(Data);
-					log.Debug($"SubFile Upload: {Data.FilePath}");
-				}
-			}
-			// 파일인 경우
-			else if (CheckWhiteFileList(FileName, Job.WhiteFileExt))
-			{
-				long fileSize = GetFileSize(FilePath);
-				TaskData Data = new(TaskData.TaskTypeList.Upload, FilePath, DateTime.Now.ToString(DEFAULT_DATE_FORMAT), fileSize);
-				_taskDb.Insert(Data);
-				log.Debug($"File Upload: {Data.FilePath}");
-			}
-		}
-
-		void DeleteBackup(string FilePath)
-		{
-			string FileName = MainData.GetFileName(FilePath);
-
-			if (CheckWhiteFileList(FileName, Job.WhiteFileExt))
-			{
-				TaskData Data = new(TaskData.TaskTypeList.Delete, FilePath, DateTime.Now.ToString(DEFAULT_DATE_FORMAT));
-				_taskDb.Insert(Data);
-				log.Debug(Data.FilePath);
-			}
-		}
-
-		void RenameBackup(string FilePath, string NewFilePath)
-		{
-			string NewFileName = MainData.GetFileName(NewFilePath);
-
-			// 폴더인 경우
-			if (CheckIsFolder(NewFilePath))
-			{
-				log.Debug($"Folder detected: {FilePath} => {NewFilePath}");
-
-				// 폴더인 경우 폴더 하위 모든 파일을 읽어서 rename 처리
-				List<string> FileList = GetFileListToDirectory(NewFilePath, Job.WhiteFileExt);
-				log.Debug($"Number of files in folder: {FileList.Count}");
-				foreach (string File in FileList)
-				{
-					var oldFilePath = File.Replace(NewFilePath, FilePath);
-					TaskData Data = new(TaskData.TaskTypeList.Rename, oldFilePath, DateTime.Now.ToString(DEFAULT_DATE_FORMAT), File);
-					_taskDb.Insert(Data);
-					log.Debug($"SubFile Rename : {Data.FilePath} => {Data.NewFilePath}");
-				}
-			}
-			// 파일인 경우
-			else if (CheckWhiteFileList(NewFileName, Job.WhiteFileExt))
-			{
-				TaskData Data = new(TaskData.TaskTypeList.Rename, FilePath, DateTime.Now.ToString(DEFAULT_DATE_FORMAT), NewFilePath);
-				_taskDb.Insert(Data);
-				log.Debug($"File Rename : {Data.FilePath} => {Data.NewFilePath}");
-			}
-		}
-		#endregion Sql Task Upload
-
-		#region ETC
 		string ChangeHardLinkDriveName(string FilePath)
 		{
 			//\Device\LanmanRedirector\;<drive letter>:<logon-session id>\<server>\<share>\<path>"
@@ -391,7 +384,7 @@ namespace IfsSync2Filter
 
 		void NotifyRenameOrMoveFile(object Sender, CbmonitorNotifyRenameOrMoveFileEventArgs args)
 		{
-			log.Debug($"{args.FileName} => {args.NewFileName}");
+			log.Debug($"{Job.JobName} RenameOrMove: {args.FileName} => {args.NewFileName}");
 
 			string FilePath = ChangeHardLinkDriveName(args.FileName);
 			string NewFilePath = ChangeHardLinkDriveName(args.NewFileName);
@@ -401,10 +394,10 @@ namespace IfsSync2Filter
 			string Msg;
 			switch (Event)
 			{
-				case FilterEventHandler.EventList.Rename: RenameBackup(FilePath, NewFilePath); Msg = $"Rename      : {FilePath} => {NewFilePath}"; break;
-				case FilterEventHandler.EventList.SaveFile: CreateBackup(FilePath); Msg = $"SaveFile    : {FilePath}"; break;
+				case FilterEventHandler.EventList.Rename: RenameBackup(FilePath, NewFilePath); Msg = $"Rename : {FilePath} => {NewFilePath}"; break;
+				case FilterEventHandler.EventList.SaveFile: CreateBackup(FilePath); Msg = $"SaveFile : {FilePath}"; break;
 				case FilterEventHandler.EventList.SaveNewFile: CreateBackup(NewFilePath); Msg = $"SaveNewFile : {FilePath}"; break;
-				case FilterEventHandler.EventList.Delete: DeleteBackup(FilePath); Msg = $"Delete      : {FilePath}"; break;
+				case FilterEventHandler.EventList.Delete: DeleteBackup(FilePath); Msg = $"Delete : {FilePath}"; break;
 				case FilterEventHandler.EventList.None:
 				default: return;
 			}
@@ -413,21 +406,26 @@ namespace IfsSync2Filter
 		}
 		void NotifyCreateFile(object Sender, CbmonitorNotifyCreateFileEventArgs args)
 		{
-			log.Debug($"{args.FileName}");
-
-			// 생성 이벤트가 폴더가 아닌 경우 백업
-			if (!CheckIsFolder(args.FileName)) CreateBackup(args.FileName);
+			if (FilterEventHandler.RecycleCheck(args.FileName))
+			{
+				log.Debug($"{Job.JobName} Skip Create: {args.FileName}");
+			}
+			else
+			{
+				log.Debug($"{Job.JobName} Create: {args.FileName}");
+				CreateBackup(args.FileName);
+			}
 		}
 		#region File Write Event
 
 		void NotifySetFileSize(object Sender, CbmonitorNotifySetFileSizeEventArgs args)
 		{
-			log.Debug($"Processing: {args.FileName}");
+			log.Debug($"{Job.JobName} SetFileSize: {args.FileName}");
 			_writeFileManager.AddOrUpdateFile(args.FileName);
 		}
 		void NotifyGetFileSizes(object Sender, CbmonitorNotifyGetFileSizesEventArgs args)
 		{
-			log.Debug($"Processing: {args.FileName}");
+			log.Debug($"{Job.JobName} GetFileSizes: {args.FileName}");
 
 			// 특정 프로세스에서 수정중인 파일 추가.
 			string ProcessName = ((Cbmonitor)Sender).GetOriginatorProcessName();
@@ -436,7 +434,7 @@ namespace IfsSync2Filter
 		}
 		void NotifyWriteFile(object Sender, CbmonitorNotifyWriteFileEventArgs args)
 		{
-			log.Debug($"Processing: {args.FileName}");
+			log.Debug($"{Job.JobName} Write: {args.FileName}");
 			_writeFileManager.AddOrUpdateFile(args.FileName);
 		}
 		#endregion File Write Event
@@ -444,13 +442,13 @@ namespace IfsSync2Filter
 		#region File Delete Event
 		void NotifyDeleteFile(object Sender, CbmonitorNotifyDeleteFileEventArgs args)
 		{
-			log.Debug($"Processing: {args.FileName}");
+			log.Debug($"{Job.JobName} Delete: {args.FileName}");
 			DeleteBackup(args.FileName);
 		}
 
 		void NotifyCanFileBeDeleted(object Sender, CbmonitorNotifyCanFileBeDeletedEventArgs args)
 		{
-			log.Debug($"Processing: {args.FileName}");
+			log.Debug($"{Job.JobName} CanFileBeDeleted: {args.FileName}");
 
 			if (!args.CanDelete)
 			{
@@ -480,18 +478,19 @@ namespace IfsSync2Filter
 		{
 			try
 			{
-				var info = new DirectoryInfo(FilePath);
-				if ((info.Attributes & FileAttributes.Directory) == FileAttributes.Directory) return true;
-				return false;
+				// 단순히 경로가 존재하고 디렉토리인지 확인
+				return Directory.Exists(FilePath);
 			}
-			catch
+			catch (Exception ex)
 			{
+				log.Error($"Error checking if path is a folder: {FilePath}", ex);
 				return false;
 			}
 		}
+
 		static bool FilePathException(string FilePath)
 		{
-			string FileName = MainData.GetFileName(FilePath);
+			string FileName = IfsSync2Utilities.GetFileName(FilePath);
 
 			if (FileName.StartsWith('~')) return true;
 			else if (FileName.EndsWith("tmp", StringComparison.OrdinalIgnoreCase)) return true;

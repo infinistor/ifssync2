@@ -8,11 +8,10 @@
 * KSAN 프로젝트의 개발자 및 개발사는 이 프로그램을 사용한 결과에 따른 어떠한 책임도 지지 않습니다.
 * KSAN 개발팀은 사전 공지, 허락, 동의 없이 KSAN 개발에 관련된 모든 결과물에 대한 LICENSE 방식을 변경 할 권리가 있습니다.
 */
-using IfsSync2Data;
+using IfsSync2Common;
 using log4net;
 using log4net.Config;
 using System;
-using System.Reflection;
 using System.Threading;
 
 [assembly: XmlConfigurator(ConfigFile = "IfsSync2FilterLogConfig.xml", Watch = true)]
@@ -21,11 +20,11 @@ namespace IfsSync2Filter
 {
 	static class Program
 	{
-		private static readonly ILog log = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
+		private static readonly ILog log = LogManager.GetLogger(typeof(Program));
 
 		static void Main()
 		{
-			var mutex = new Mutex(true, MainData.MUTEX_NAME_FILTER, out bool CreateNew);
+			var mutex = new Mutex(true, IfsSync2Constants.MUTEX_NAME_FILTER, out bool CreateNew);
 			if (!CreateNew)
 			{
 				log.Error("Prevent duplicate execution");
@@ -33,27 +32,34 @@ namespace IfsSync2Filter
 			}
 			log.Error("Main Start");
 
-			MainUtility.DeleteOldLogs(MainData.GetLogFolder("Filter"));
+			MainUtility.DeleteOldLogs(IfsSync2Utilities.GetLogFolder("Filter"));
 
 			var filterConfigs = new FilterConfig(true);
 
 			var filter = new Filter();
 
-			while (true)
+			try
 			{
-				filterConfigs.Alive = true;
-				try
+				while (true)
 				{
-					filter.CheckOnce();
-					log.Info("Filter Check End");
-					Thread.Sleep(filterConfigs.FilterCheckDelay);
+					filterConfigs.Alive = true;
+					try
+					{
+						filter.CheckOnce();
+						log.Info("Filter Check End");
+						Thread.Sleep(filterConfigs.FilterCheckDelay);
+					}
+					catch (Exception e)
+					{
+						log.Error("Filter Check Error", e);
+						Thread.Sleep(filterConfigs.FilterCheckDelay);
+						break;
+					}
 				}
-				catch (Exception e)
-				{
-					log.Error("Filter Check Error", e);
-					mutex.ReleaseMutex();
-					Thread.Sleep(filterConfigs.FilterCheckDelay);
-				}
+			}
+			finally
+			{
+				mutex.ReleaseMutex();
 			}
 		}
 	}

@@ -1,7 +1,6 @@
-using System;
 using System.Text;
 
-namespace IfsSync2Data
+namespace IfsSync2Common
 {
 	/// <summary>
 	/// 요일을 비트 플래그로 표현하는 열거형
@@ -105,4 +104,4 @@ namespace IfsSync2Data
 			return data.ToString();
 		}
 	}
-}
+} 

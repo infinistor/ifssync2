@@ -13,8 +13,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Reflection;
-using IfsSync2Data;
+using IfsSync2Common;
 
 namespace IfsSync2Sender
 {
@@ -23,7 +22,7 @@ namespace IfsSync2Sender
 	/// </summary>
 	public class ShadowCopyManager : IDisposable
 	{
-		private static readonly ILog log = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
+		private static readonly ILog log = LogManager.GetLogger(typeof(ShadowCopyManager));
 		private List<ShadowCopy> _shadowCopies;
 		private bool _disposed = false;
 
@@ -70,7 +69,7 @@ namespace IfsSync2Sender
 			foreach (var directory in paths)
 			{
 				string root = Path.GetPathRoot(directory);
-				if (MainData.CheckUNCFolder(root)) continue;
+				if (IfsSync2Utilities.CheckUNCFolder(root)) continue;
 				if (!volumeList.Contains(root)) volumeList.Add(root);
 			}
 			return volumeList;
@@ -91,9 +90,7 @@ namespace IfsSync2Sender
 					var drive = new DriveInfo(item);
 					if (drive.DriveFormat == "NTFS" && drive.DriveType == DriveType.Fixed)
 					{
-						var shadow = new ShadowCopy();
-						shadow.Init();
-						shadow.Setup(item);
+						var shadow = new ShadowCopy(item);
 						shadowCopyList.Add(shadow);
 					}
 

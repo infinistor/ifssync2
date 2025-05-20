@@ -11,7 +11,7 @@
 using log4net;
 using log4net.Config;
 using System.Reflection;
-using IfsSync2Data;
+using IfsSync2Common;
 using System.Threading;
 using System;
 
@@ -24,42 +24,48 @@ namespace IfsSync2Sender
 		private static readonly ILog log = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
 		static void Main()
 		{
-			var mutex = new Mutex(true, MainData.MUTEX_NAME_SENDER, out bool CreateNew);
+			var mutex = new Mutex(true, IfsSync2Constants.MUTEX_NAME_SENDER, out bool CreateNew);
 			if (!CreateNew)
 			{
 				log.Error("Prevent duplicate execution");
 				return;
 			}
 			log.Error("Main Start");
-			MainUtility.DeleteOldLogs(MainData.GetLogFolder("Sender"));
+			MainUtility.DeleteOldLogs(IfsSync2Utilities.GetLogFolder("Sender"));
 
 			var senderConfigs = new SenderConfig(true);
 			var senderManager = new SenderManager();
 
-			while (true)
+			try
 			{
-				try
+				while (true)
 				{
-					while (senderConfigs.Stop)
+					try
 					{
-						senderManager.AllStop();
+						while (senderConfigs.Stop)
+						{
+							senderManager.AllStop();
+							Thread.Sleep(senderConfigs.SenderCheckDelay);
+						}
+
+						senderConfigs.Alive = true;
+						senderManager.Once(senderConfigs.FetchCount, senderConfigs.SenderDelay, senderConfigs.ThreadCount, senderConfigs.MultipartUploadFileSize, senderConfigs.MultipartUploadPartSize, senderConfigs.LogRetention);
+
 						Thread.Sleep(senderConfigs.SenderCheckDelay);
 					}
-
-					senderConfigs.Alive = true;
-					senderManager.Once(senderConfigs.FetchCount, senderConfigs.SenderDelay, senderConfigs.ThreadCount, senderConfigs.MultipartUploadFileSize, senderConfigs.MultipartUploadPartSize, senderConfigs.LogRetention);
-
-					Thread.Sleep(senderConfigs.SenderCheckDelay);
-				}
-				catch (Exception e)
-				{
-					log.Error("Sender Error", e);
-					mutex.ReleaseMutex();
-					Thread.Sleep(senderConfigs.SenderCheckDelay);
+					catch (Exception e)
+					{
+						log.Error("Sender Error", e);
+						mutex.ReleaseMutex();
+						Thread.Sleep(senderConfigs.SenderCheckDelay);
+						break;
+					}
 				}
 			}
+			finally
+			{
+				mutex.ReleaseMutex();
+			}
 		}
-
-
 	}
 }

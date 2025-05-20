@@ -1,4 +1,4 @@
-﻿/*
+/*
 * Copyright (c) 2021 PSPACE, inc. KSAN Development Team ksan@pspace.co.kr
 * KSAN is a suite of free software: you can redistribute it and/or modify it under the terms of
 * the GNU General Public License as published by the Free Software Foundation, either version 
@@ -9,7 +9,7 @@
 * KSAN 개발팀은 사전 공지, 허락, 동의 없이 KSAN 개발에 관련된 모든 결과물에 대한 LICENSE 방식을 변경 할 권리가 있습니다.
 */
 
-namespace IfsSync2Data
+namespace IfsSync2Common
 {
 	public class UserData
 	{
@@ -37,23 +37,23 @@ namespace IfsSync2Data
 			UpdateFlag = true;
 		}
 
-		public UserData(UserData Data)
+		public UserData(UserData data) : this()
 		{
-			CopyTo(Data);
+			CopyTo(data);
 		}
 
-		public void CopyTo(UserData Data)
+		public void CopyTo(UserData data)
 		{
-			Id = Data.Id;
-			HostName = Data.HostName;
-			URL = Data.URL;
-			UserName = Data.UserName;
-			AccessKey = Data.AccessKey;
-			SecretKey = Data.SecretKey;
-			S3FileManagerURL = Data.S3FileManagerURL;
-			StorageName = Data.StorageName;
-			Debug = Data.Debug;
-			UpdateFlag = Data.UpdateFlag;
+			Id = data.Id;
+			HostName = data.HostName;
+			URL = data.URL;
+			UserName = data.UserName;
+			AccessKey = data.AccessKey;
+			SecretKey = data.SecretKey;
+			S3FileManagerURL = data.S3FileManagerURL;
+			StorageName = data.StorageName;
+			Debug = data.Debug;
+			UpdateFlag = data.UpdateFlag;
 		}
 	}
 }

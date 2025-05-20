@@ -8,11 +8,10 @@
 * KSAN 프로젝트의 개발자 및 개발사는 이 프로그램을 사용한 결과에 따른 어떠한 책임도 지지 않습니다.
 * KSAN 개발팀은 사전 공지, 허락, 동의 없이 KSAN 개발에 관련된 모든 결과물에 대한 LICENSE 방식을 변경 할 권리가 있습니다.
 */
-using IfsSync2Data;
+using IfsSync2Common;
 using log4net;
 using Microsoft.Win32;
 using System;
-using System.Reflection;
 using System.Windows.Forms;
 using System.Runtime.Versioning;
 
@@ -21,13 +20,13 @@ namespace IfsSync2TrayIcon
 	[SupportedOSPlatform("windows")]
 	class TrayIconManager
 	{
-		private readonly ILog log = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
-		private NotifyIcon Tray;
-		private readonly TrayIconConfig TrayIconConfigs = new(true);
-		private readonly SenderConfig SenderConfigs = new(true);
+		private readonly ILog log = LogManager.GetLogger(typeof(TrayIconManager));
+		private NotifyIcon tray;
+		private readonly TrayIconConfig trayIconConfigs = new(true);
+		private readonly SenderConfig senderConfigs = new(true);
 
-		private string DetailMessage;
-		private string SummaryMessage = string.Empty;
+		private string detailMessage;
+		private string summaryMessage = string.Empty;
 		private const int DefaultBalloonTipDelay = 5 * 1000; //5sec
 		public TrayIconManager()
 		{
@@ -40,15 +39,15 @@ namespace IfsSync2TrayIcon
 			//Set tray option
 			try
 			{
-				Tray = new NotifyIcon { Visible = true, Icon = new System.Drawing.Icon(TrayIconConfigs.IconPath) };
-				Tray.Click += delegate (object click, EventArgs e) { IconClickEvent(); };
+				tray = new NotifyIcon { Visible = true, Icon = new System.Drawing.Icon(trayIconConfigs.IconPath) };
+				tray.Click += delegate (object click, EventArgs e) { IconClickEvent(); };
 
-				var Menu = new ContextMenuStrip();
-				var SenderStop = new ToolStripMenuItem { Text = "일시중지", Name = "SenderStop" };
-				SenderStop.Click += SenderStop_Click;
-				if (SenderConfigs.Stop) SenderStop.Text = "재시작";
-				Menu.Items.Add(SenderStop);
-				Tray.ContextMenuStrip = Menu;
+				var menu = new ContextMenuStrip();
+				var senderStop = new ToolStripMenuItem { Text = "일시중지", Name = "SenderStop" };
+				senderStop.Click += SenderStop_Click;
+				if (senderConfigs.Stop) senderStop.Text = "재시작";
+				menu.Items.Add(senderStop);
+				tray.ContextMenuStrip = menu;
 
 				log.Info("Create Tray Icon");
 
@@ -64,14 +63,14 @@ namespace IfsSync2TrayIcon
 		private void SenderStop_Click(object sender, EventArgs e)
 		{
 			var menu = sender as ContextMenuStrip;
-			if (SenderConfigs.Stop)
+			if (senderConfigs.Stop)
 			{
-				SenderConfigs.Stop = false;
+				senderConfigs.Stop = false;
 				menu.Text = "일시중지";
 			}
 			else
 			{
-				SenderConfigs.Stop = true;
+				senderConfigs.Stop = true;
 				menu.Text = "재시작";
 			}
 		}
@@ -80,7 +79,7 @@ namespace IfsSync2TrayIcon
 			Console.WriteLine("Test");
 			try
 			{
-				Tray.ShowBalloonTip(DefaultBalloonTipDelay, "IfsSync2", SummaryMessage, ToolTipIcon.Info);
+				tray.ShowBalloonTip(DefaultBalloonTipDelay, "IfsSync2", summaryMessage, ToolTipIcon.Info);
 			}
 			catch (Exception e)
 			{
@@ -90,42 +89,42 @@ namespace IfsSync2TrayIcon
 
 		public void UpdateTray()
 		{
-			long MainRemaining = 0;
-			long MainRemainingSize = 0;
-			long MainUploadCount = 0;
-			long MainUploadFailCount = 0;
-			long MainUploadSize = 0;
+			long mainRemaining = 0;
+			long mainRemainingSize = 0;
+			long mainUploadCount = 0;
+			long mainUploadFailCount = 0;
+			long mainUploadSize = 0;
 
-			DetailMessage = string.Empty;
-			SummaryMessage = string.Empty;
+			detailMessage = string.Empty;
+			summaryMessage = string.Empty;
 			try
 			{
-				RegistryKey UserKey = Registry.LocalMachine.OpenSubKey(MainData.REGISTRY_ROOT + "Job");
-				string[] UserKeyList = UserKey.GetSubKeyNames();
+				RegistryKey userKey = Registry.LocalMachine.OpenSubKey(IfsSync2Constants.REGISTRY_ROOT + "Job");
+				string[] userKeyList = userKey.GetSubKeyNames();
 
-				foreach (string UserName in UserKeyList)
+				foreach (string userName in userKeyList)
 				{
-					RegistryKey JobKey = Registry.LocalMachine.OpenSubKey(MainData.REGISTRY_ROOT + MainData.JOB_CONFIG_NAME + UserName);
+					RegistryKey jobKey = Registry.LocalMachine.OpenSubKey(IfsSync2Constants.REGISTRY_ROOT + IfsSync2Constants.JOB_CONFIG_NAME + userName);
 
-					string[] JobKeyList = JobKey.GetSubKeyNames();
+					string[] jobKeyList = jobKey.GetSubKeyNames();
 
-					foreach (string JobName in JobKeyList)
+					foreach (string jobName in jobKeyList)
 					{
-						var State = new JobStatus(UserName, JobName);
+						var state = new JobStatus(userName, jobName);
 
-						long Remaining = State.RemainingCount;
-						long RemainingSize = State.RemainingSize;
-						long UploadCount = State.UploadCount;
-						long UploadFailCount = State.UploadFailCount;
-						long UploadSize = State.UploadSize;
+						long remaining = state.RemainingCount;
+						long remainingSize = state.RemainingSize;
+						long uploadCount = state.UploadCount;
+						long uploadFailCount = state.UploadFailCount;
+						long uploadSize = state.UploadSize;
 
-						DetailMessage += $"{State.JobName} : {State.Status}\nRemaining File : {Remaining} ({MainData.SizeToString(RemainingSize)})\nUpload File : {UploadCount} ({MainData.SizeToString(UploadSize)})\n";
+						detailMessage += $"{state.JobName} : {state.Status}\nRemaining File : {remaining} ({CapacityUnit.Format(remainingSize)})\nUpload File : {uploadCount} ({CapacityUnit.Format(uploadSize)})\n";
 
-						MainRemaining += Remaining;
-						MainRemainingSize += RemainingSize;
-						MainUploadCount += UploadCount;
-						MainUploadFailCount += UploadFailCount;
-						MainUploadSize += UploadSize;
+						mainRemaining += remaining;
+						mainRemainingSize += remainingSize;
+						mainUploadCount += uploadCount;
+						mainUploadFailCount += uploadFailCount;
+						mainUploadSize += uploadSize;
 					}
 				}
 			}
@@ -134,32 +133,32 @@ namespace IfsSync2TrayIcon
 				log.Error("Registry Key Read Faill", e);
 			}
 
-			TrayIconConfigs.Remaining = MainRemaining;
-			TrayIconConfigs.RemainingSize = MainRemainingSize;
-			TrayIconConfigs.UploadCount = MainUploadCount;
-			TrayIconConfigs.UploadFailCount = MainUploadFailCount;
-			TrayIconConfigs.FileSize = MainUploadSize;
+			trayIconConfigs.Remaining = mainRemaining;
+			trayIconConfigs.RemainingSize = mainRemainingSize;
+			trayIconConfigs.UploadCount = mainUploadCount;
+			trayIconConfigs.UploadFailCount = mainUploadFailCount;
+			trayIconConfigs.FileSize = mainUploadSize;
 
-			//Tray.Text =
-			SummaryMessage = $"Remaining Files     : {MainRemaining}({MainData.SizeToString(MainRemainingSize)})\n" +
-							 $"Uploaded Files      : {MainUploadCount}({MainData.SizeToString(MainUploadSize)})\n" +
-							 $"Upload Failed Files : {MainUploadFailCount}\n";
+			//tray.Text =
+			summaryMessage = $"Remaining Files     : {mainRemaining}({CapacityUnit.Format(mainRemainingSize)})\n" +
+							 $"Uploaded Files      : {mainUploadCount}({CapacityUnit.Format(mainUploadSize)})\n" +
+							 $"Upload Failed Files : {mainUploadFailCount}\n";
 		}
 
 		private void Clear()
 		{
 			try
 			{
-				RegistryKey UserKey = Registry.LocalMachine.OpenSubKey(MainData.REGISTRY_ROOT + "Job");
-				string[] UserKeyList = UserKey.GetSubKeyNames();
+				RegistryKey userKey = Registry.LocalMachine.OpenSubKey(IfsSync2Constants.REGISTRY_ROOT + "Job");
+				string[] userKeyList = userKey.GetSubKeyNames();
 
-				foreach (string UserName in UserKeyList)
+				foreach (string userName in userKeyList)
 				{
-					RegistryKey JobKey = Registry.LocalMachine.OpenSubKey(MainData.REGISTRY_ROOT + MainData.JOB_CONFIG_NAME + UserName);
+					RegistryKey jobKey = Registry.LocalMachine.OpenSubKey(IfsSync2Constants.REGISTRY_ROOT + IfsSync2Constants.JOB_CONFIG_NAME + userName);
 
-					string[] JobKeyList = JobKey.GetSubKeyNames();
+					string[] jobKeyList = jobKey.GetSubKeyNames();
 
-					foreach (string JobName in JobKeyList) new JobStatus(UserName, JobName, true).UploadClear();
+					foreach (string jobName in jobKeyList) new JobStatus(userName, jobName, true).UploadClear();
 				}
 			}
 			catch (Exception e)
@@ -170,7 +169,7 @@ namespace IfsSync2TrayIcon
 
 		public void Close()
 		{
-			Tray?.Dispose();
+			tray?.Dispose();
 		}
 	}
 }

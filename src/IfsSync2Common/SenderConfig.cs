@@ -1,4 +1,4 @@
-﻿/*
+/*
 * Copyright (c) 2021 PSPACE, inc. KSAN Development Team ksan@pspace.co.kr
 * KSAN is a suite of free software: you can redistribute it and/or modify it under the terms of
 * the GNU General Public License as published by the Free Software Foundation, either version 
@@ -10,7 +10,7 @@
 */
 using Microsoft.Win32;
 
-namespace IfsSync2Data
+namespace IfsSync2Common
 {
 	public class SenderConfig
 	{
@@ -33,78 +33,79 @@ namespace IfsSync2Data
 		const int DEFAULT_LOG_RETENTION = 0; // 무제한
 		#endregion
 
-		readonly RegistryKey SenderConfigKey = null;
+		readonly RegistryKey SenderConfigKey;
 
 #pragma warning disable CA1416
 
 		public long MultipartUploadFileSize
 		{
-			get => long.TryParse(SenderConfigKey.GetValue(MULTIPART_UPLOAD_FILE_SIZE)?.ToString(), out long value) ? value : DEFAULT_MULTIPART_UPLOAD_FILE_SIZE;
+			get => RegistryUtility.GetLongValue(SenderConfigKey, MULTIPART_UPLOAD_FILE_SIZE);
 			set => SenderConfigKey.SetValue(MULTIPART_UPLOAD_FILE_SIZE, value, RegistryValueKind.QWord);
 		}
 		public long MultipartUploadPartSize
 		{
-			get => long.TryParse(SenderConfigKey.GetValue(MULTIPART_UPLOAD_PART_SIZE)?.ToString(), out long value) ? value : DEFAULT_MULTIPART_UPLOAD_PART_SIZE;
+			get => RegistryUtility.GetLongValue(SenderConfigKey, MULTIPART_UPLOAD_PART_SIZE);
 			set => SenderConfigKey.SetValue(MULTIPART_UPLOAD_PART_SIZE, value, RegistryValueKind.QWord);
 		}
 		public int ThreadCount
 		{
-			get => int.TryParse(SenderConfigKey.GetValue(SENDER_THREAD_COUNT)?.ToString(), out int value) ? value : DEFAULT_THREAD_COUNT;
+			get => RegistryUtility.GetIntValue(SenderConfigKey, SENDER_THREAD_COUNT);
 			set => SenderConfigKey.SetValue(SENDER_THREAD_COUNT, value, RegistryValueKind.DWord);
 		}
 		public int LogRetention
 		{
-			get => int.TryParse(SenderConfigKey.GetValue(SENDER_LOG_RETENTION)?.ToString(), out int value) ? value : DEFAULT_LOG_RETENTION;
+			get => RegistryUtility.GetIntValue(SenderConfigKey, SENDER_LOG_RETENTION);
 			set => SenderConfigKey.SetValue(SENDER_LOG_RETENTION, value, RegistryValueKind.DWord);
 		}
 		public int FetchCount
 		{
-			get => int.TryParse(SenderConfigKey.GetValue(SENDER_FETCH_COUNT).ToString(), out int value) ? value : DEFAULT_FETCH_COUNT;
+			get => RegistryUtility.GetIntValue(SenderConfigKey, SENDER_FETCH_COUNT);
 			set => SenderConfigKey.SetValue(SENDER_FETCH_COUNT, value, RegistryValueKind.DWord);
 		}
 		public int SenderDelay
 		{
-			get => int.TryParse(SenderConfigKey.GetValue(SENDER_DELAY).ToString(), out int value) ? value : DEFAULT_SENDER_DELAY;
+			get => RegistryUtility.GetIntValue(SenderConfigKey, SENDER_DELAY);
 			set => SenderConfigKey.SetValue(SENDER_DELAY, value, RegistryValueKind.DWord);
 		}
 		public int SenderCheckDelay
 		{
-			get => int.TryParse(SenderConfigKey.GetValue(SENDER_CHECK_DELAY).ToString(), out int value) ? value : DEFAULT_SENDER_CHECK_DELAY;
+			get => RegistryUtility.GetIntValue(SenderConfigKey, SENDER_CHECK_DELAY);
 			set => SenderConfigKey.SetValue(SENDER_CHECK_DELAY, value, RegistryValueKind.DWord);
 		}
 		public string RootPath
 		{
-			get => SenderConfigKey.GetValue(ROOT_PATH).ToString();
+			get => RegistryUtility.GetStringValue(SenderConfigKey, ROOT_PATH);
 			set => SenderConfigKey.SetValue(ROOT_PATH, value, RegistryValueKind.String);
 		}
 		public bool Stop
 		{
-			get => int.TryParse(SenderConfigKey.GetValue(SENDER_STOP).ToString(), out int value) && value == MainData.MY_TRUE;
-			set => SenderConfigKey.SetValue(SENDER_STOP, value ? MainData.MY_TRUE : MainData.MY_FALSE, RegistryValueKind.DWord);
+			get => RegistryUtility.GetBoolValue(SenderConfigKey, SENDER_STOP);
+			set => SenderConfigKey.SetValue(SENDER_STOP, value ? IfsSync2Constants.MY_TRUE : IfsSync2Constants.MY_FALSE, RegistryValueKind.DWord);
 		}
 		public bool Alive
 		{
-			get => int.TryParse(SenderConfigKey.GetValue(MainData.ALIVE_CHECK).ToString(), out int value) && value == MainData.MY_TRUE;
-			set => SenderConfigKey.SetValue(MainData.ALIVE_CHECK, value ? MainData.MY_TRUE : MainData.MY_FALSE, RegistryValueKind.DWord);
+			get => RegistryUtility.GetBoolValue(SenderConfigKey, IfsSync2Constants.ALIVE_CHECK);
+			set => SenderConfigKey.SetValue(IfsSync2Constants.ALIVE_CHECK, value ? IfsSync2Constants.MY_TRUE : IfsSync2Constants.MY_FALSE, RegistryValueKind.DWord);
 		}
 		public SenderConfig(bool write = false)
 		{
-			SenderConfigKey = Registry.LocalMachine.OpenSubKey(MainData.SENDER_CONFIG_PATH, write);
-			if (SenderConfigKey == null)
+			var temp = Registry.LocalMachine.OpenSubKey(IfsSync2Constants.SENDER_CONFIG_PATH, write);
+			if (temp == null)
 			{
-				SenderConfigKey = Registry.LocalMachine.CreateSubKey(MainData.SENDER_CONFIG_PATH);
+				temp = Registry.LocalMachine.CreateSubKey(IfsSync2Constants.SENDER_CONFIG_PATH);
 
-				SenderConfigKey.SetValue(MULTIPART_UPLOAD_FILE_SIZE, DEFAULT_MULTIPART_UPLOAD_FILE_SIZE, RegistryValueKind.QWord);
-				SenderConfigKey.SetValue(MULTIPART_UPLOAD_PART_SIZE, DEFAULT_MULTIPART_UPLOAD_PART_SIZE, RegistryValueKind.QWord);
-				SenderConfigKey.SetValue(SENDER_THREAD_COUNT, DEFAULT_THREAD_COUNT, RegistryValueKind.DWord);
-				SenderConfigKey.SetValue(SENDER_FETCH_COUNT, DEFAULT_FETCH_COUNT, RegistryValueKind.DWord);
-				SenderConfigKey.SetValue(SENDER_DELAY, DEFAULT_SENDER_DELAY, RegistryValueKind.DWord);
-				SenderConfigKey.SetValue(SENDER_CHECK_DELAY, DEFAULT_SENDER_CHECK_DELAY, RegistryValueKind.DWord);
-				SenderConfigKey.SetValue(ROOT_PATH, "", RegistryValueKind.String);
-				SenderConfigKey.SetValue(SENDER_STOP, MainData.MY_FALSE, RegistryValueKind.DWord);
-				SenderConfigKey.SetValue(MainData.ALIVE_CHECK, MainData.MY_FALSE, RegistryValueKind.DWord);
-				SenderConfigKey.SetValue(SENDER_LOG_RETENTION, DEFAULT_LOG_RETENTION, RegistryValueKind.DWord);
+				temp.SetValue(MULTIPART_UPLOAD_FILE_SIZE, DEFAULT_MULTIPART_UPLOAD_FILE_SIZE, RegistryValueKind.QWord);
+				temp.SetValue(MULTIPART_UPLOAD_PART_SIZE, DEFAULT_MULTIPART_UPLOAD_PART_SIZE, RegistryValueKind.QWord);
+				temp.SetValue(SENDER_THREAD_COUNT, DEFAULT_THREAD_COUNT, RegistryValueKind.DWord);
+				temp.SetValue(SENDER_FETCH_COUNT, DEFAULT_FETCH_COUNT, RegistryValueKind.DWord);
+				temp.SetValue(SENDER_DELAY, DEFAULT_SENDER_DELAY, RegistryValueKind.DWord);
+				temp.SetValue(SENDER_CHECK_DELAY, DEFAULT_SENDER_CHECK_DELAY, RegistryValueKind.DWord);
+				temp.SetValue(ROOT_PATH, "", RegistryValueKind.String);
+				temp.SetValue(SENDER_STOP, IfsSync2Constants.MY_FALSE, RegistryValueKind.DWord);
+				temp.SetValue(IfsSync2Constants.ALIVE_CHECK, IfsSync2Constants.MY_FALSE, RegistryValueKind.DWord);
+				temp.SetValue(SENDER_LOG_RETENTION, DEFAULT_LOG_RETENTION, RegistryValueKind.DWord);
 			}
+			SenderConfigKey = temp;
 		}
 		public void SetOptions(long multipartUploadFileSize, long multipartUploadPartSize, int threadCount, int logRetention)
 		{
@@ -117,7 +118,7 @@ namespace IfsSync2Data
 		public void Close() { SenderConfigKey?.Close(); }
 		public void Delete()
 		{
-			SenderConfigKey.DeleteSubKeyTree(MainData.SENDER_CONFIG_PATH);
+			SenderConfigKey.DeleteSubKeyTree(IfsSync2Constants.SENDER_CONFIG_PATH);
 		}
 #pragma warning restore CA1416
 	}

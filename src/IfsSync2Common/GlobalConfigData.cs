@@ -1,4 +1,4 @@
-﻿/*
+/*
 * Copyright (c) 2021 PSPACE, inc. KSAN Development Team ksan@pspace.co.kr
 * KSAN is a suite of free software: you can redistribute it and/or modify it under the terms of
 * the GNU General Public License as published by the Free Software Foundation, either version 
@@ -8,22 +8,21 @@
 * KSAN 프로젝트의 개발자 및 개발사는 이 프로그램을 사용한 결과에 따른 어떠한 책임도 지지 않습니다.
 * KSAN 개발팀은 사전 공지, 허락, 동의 없이 KSAN 개발에 관련된 모든 결과물에 대한 LICENSE 방식을 변경 할 권리가 있습니다.
 */
-namespace IfsSync2WatcherService
+namespace IfsSync2Common
 {
-	public class AliveData
+	public class GlobalConfigData
 	{
-		public bool SenderAlive { get; set; }
-		public bool ListenAlive { get; set; }
-		public bool IniStatus { get; set; }
-		public long MonRemain { get; set; }
-		public long FailRemain { get; set; }
-		public AliveData()
+		public int FetchCount { get; set; } = 1000;
+		public int DeleteCount { get; set; } = 100;
+		public int SenderDelay { get; set; } = 5000;
+
+		public bool SenderPause { get; set; } = false;
+		public string S3Proxy { get; set; } = "";
+
+		public List<JobData> JobList { get; set; } = [];
+
+		public GlobalConfigData()
 		{
-			SenderAlive = false;
-			ListenAlive = false;
-			IniStatus = false;
-			MonRemain = 0;
-			FailRemain = 0;
 		}
 	}
 }

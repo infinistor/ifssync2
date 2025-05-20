@@ -134,10 +134,10 @@
 		<WCFMetadata Include="Connected Services\" />
 	</ItemGroup>
 	<ItemGroup>
-		<PackageReference Include="AWSSDK.Core" Version="3.7.402.17" />
-		<PackageReference Include="AWSSDK.S3" Version="3.7.415.16" />
+		<PackageReference Include="AWSSDK.Core" Version="4.0.0.3" />
+		<PackageReference Include="AWSSDK.S3" Version="4.0.0.3" />
 		<PackageReference Include="callback.CBFSFilter" Version="20.0.7656" />
-		<PackageReference Include="log4net" Version="3.0.4" />
+		<PackageReference Include="log4net" Version="3.1.0" />
 		<PackageReference Include="Microsoft.CSharp" Version="4.7.0" />
 		<PackageReference Include="System.ComponentModel.Annotations" Version="5.0.0" />
 		<PackageReference Include="System.Data.DataSetExtensions" Version="4.5.0" />
@@ -155,6 +155,9 @@
 		<PackageReference Include="System.Security.Permissions" Version="8.0.0" />
 		<PackageReference Include="System.Configuration.ConfigurationManager" Version="8.0.0" />
 		<PackageReference Include="System.ServiceProcess.ServiceController" Version="9.0.0" />
+	</ItemGroup>
+	<ItemGroup>
+		<ProjectReference Include="..\IfsSync2Common\IfsSync2Common.csproj" />
 	</ItemGroup>
 	<ItemGroup>
 		<Compile Remove="packages\CefSharp.Common.95.7.141\src\CefSharp.BrowserSubprocess\obj\x64\Release\.NETFramework,Version=v4.5.2.AssemblyAttributes.cs" />
@@ -544,5 +547,4 @@
 		<Compile Remove="packages\CefSharp.Wpf.95.7.141\src\CefSharp.Wpf\VirtualKeyboardRequestedEventArgs.cs" />
 		<Compile Remove="packages\CefSharp.Wpf.95.7.141\src\CefSharp.Wpf\WM.cs" />
 	</ItemGroup>
-	<Import Project="..\IfsSync2Data\IfsSync2Data.projitems" Label="Shared" />
 </Project>

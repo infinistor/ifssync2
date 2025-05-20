@@ -10,7 +10,7 @@
 */
 using System.ServiceProcess;
 using System.Timers;
-using IfsSync2Data;
+using IfsSync2Common;
 
 namespace IfsSync2WatcherService
 {
@@ -23,7 +23,7 @@ namespace IfsSync2WatcherService
 		public WatcherService()
 		{
 			InitializeComponent();
-			MainUtility.DeleteOldLogs(MainData.GetLogFolder("WatcherService"));
+			MainUtility.DeleteOldLogs(IfsSync2Utilities.GetLogFolder("WatcherService"));
 
 			BackupThreadTimer = new Timer { Interval = 5000 };
 			BackupThreadTimer.Elapsed += new ElapsedEventHandler(OnBackupThreadTimer);

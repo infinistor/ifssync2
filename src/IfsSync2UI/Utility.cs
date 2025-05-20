@@ -25,7 +25,7 @@ using System.Windows.Media.Imaging;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Runtime.Versioning;
-using IfsSync2Data;
+using IfsSync2Common;
 
 namespace IfsSync2UI
 {
@@ -129,8 +129,8 @@ namespace IfsSync2UI
 		public static UserData GetGlobalUser(string url, string pcName)
 		{
 			string URL;
-			if (url.EndsWith('/')) URL = url + MainData.WATCHER_SERVICE_GET_USER;
-			else URL = url + "/" + MainData.WATCHER_SERVICE_GET_USER;
+			if (url.EndsWith('/')) URL = url + IfsSync2Constants.WATCHER_SERVICE_GET_USER;
+			else URL = url + "/" + IfsSync2Constants.WATCHER_SERVICE_GET_USER;
 
 			OperatingSystem os = Environment.OSVersion;
 			string data = $"{{\"{STR_IP}\":\"{GetIPAddress()}\", " +
@@ -142,9 +142,9 @@ namespace IfsSync2UI
 						$"\"{STR_PC_NAME}\":\"{pcName}\"}}";
 
 			using var client = new HttpClient();
-			client.Timeout = TimeSpan.FromMilliseconds(MainData.CURL_TIMEOUT_DELAY);
+			client.Timeout = TimeSpan.FromMilliseconds(IfsSync2Constants.CURL_TIMEOUT_DELAY);
 
-			var content = new StringContent(data, Encoding.UTF8, MainData.CURL_STR_CONTENT_TYPE);
+			var content = new StringContent(data, Encoding.UTF8, IfsSync2Constants.CURL_CONTENT_TYPE);
 			var response = client.PostAsync(URL, content).Result;
 			var responseText = response.Content.ReadAsStringAsync().Result;
 
@@ -173,8 +173,8 @@ namespace IfsSync2UI
 		public static UserData GetGlobalUser(string _URL, string IP, string HostName, string MAC, string PcName)
 		{
 			string URL;
-			if (_URL.EndsWith('/')) URL = _URL + MainData.WATCHER_SERVICE_GET_USER;
-			else URL = _URL + "/" + MainData.WATCHER_SERVICE_GET_USER;
+			if (_URL.EndsWith('/')) URL = _URL + IfsSync2Constants.WATCHER_SERVICE_GET_USER;
+			else URL = _URL + "/" + IfsSync2Constants.WATCHER_SERVICE_GET_USER;
 
 			OperatingSystem os = Environment.OSVersion;
 			string data = $"{{\"{STR_IP}\":\"{IP}\", " +
@@ -186,10 +186,10 @@ namespace IfsSync2UI
 							$"\"{STR_PC_NAME}\":\"{PcName}\"}}";
 
 			using var client = new HttpClient();
-			client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue(MainData.CURL_STR_CONTENT_TYPE));
-			client.Timeout = TimeSpan.FromMilliseconds(MainData.CURL_TIMEOUT_DELAY);
+			client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue(IfsSync2Constants.CURL_CONTENT_TYPE));
+			client.Timeout = TimeSpan.FromMilliseconds(IfsSync2Constants.CURL_TIMEOUT_DELAY);
 
-			var content = new StringContent(data, Encoding.UTF8, MainData.CURL_STR_CONTENT_TYPE);
+			var content = new StringContent(data, Encoding.UTF8, IfsSync2Constants.CURL_CONTENT_TYPE);
 			var response = client.PostAsync(URL, content).Result;
 			var responseText = response.Content.ReadAsStringAsync().Result;
 

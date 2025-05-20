@@ -12,7 +12,7 @@ using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Windows;
 using System.Windows.Media;
-using IfsSync2Data;
+using IfsSync2Common;
 
 namespace IfsSync2UI
 {

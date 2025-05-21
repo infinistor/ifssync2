@@ -358,12 +358,12 @@ namespace IfsSync2Init
 		private static void CBFSInstall(string targetPath)
 		{
 			var path = targetPath + IfsSync2Constants.FILTER_DRIVE_PATH;
-			Console.WriteLine(path);
+			Console.WriteLine("CBFS Install Path: " + path);
 
-			var mFilter = new Cbfilter(IfsSync2Constants.RUNTIME_LICENSE_KEY);
-			if (!CBFSInstallCheck(mFilter))
+			try
 			{
-				try
+				var mFilter = new Cbfilter(IfsSync2Constants.RUNTIME_LICENSE_KEY);
+				if (!CBFSInstallCheck(mFilter))
 				{
 					bool Reboot = mFilter.Install(path, IfsSync2Constants.mGuid, null, Constants.FS_FILTER_MODE_MINIFILTER, IfsSync2Constants.ALTITUDE_FAKE_VALUE_FOR_DEBUG, 0);
 
@@ -372,19 +372,23 @@ namespace IfsSync2Init
 					else
 						Console.WriteLine("Driver installed successfully");
 				}
-				catch (CBFSFilterCbfilterException e)
-				{
-					Console.WriteLine(e.Message);
-				}
+			}
+			catch (CBFSFilterCbfilterException e)
+			{
+				Console.WriteLine("CBFS Install Error: " + e.Message);
+			}
+			catch (Exception e)
+			{
+				Console.WriteLine("CBFS Install Error: " + e.Message);
 			}
 		}
 		private static void CBFSUninstall()
 		{
 			var mFilter = new Cbfilter(IfsSync2Constants.RUNTIME_LICENSE_KEY);
 
-			if (CBFSInstallCheck(mFilter))
+			try
 			{
-				try
+				if (CBFSInstallCheck(mFilter))
 				{
 					bool Reboot = mFilter.Uninstall(IfsSync2Constants.FILTER_DRIVE_PATH, IfsSync2Constants.mGuid, null, 0);
 
@@ -393,10 +397,10 @@ namespace IfsSync2Init
 					else
 						Console.WriteLine("Driver installed successfully");
 				}
-				catch (CBFSFilterCbfilterException e)
-				{
-					Console.WriteLine(e.Message);
-				}
+			}
+			catch (CBFSFilterCbfilterException e)
+			{
+				Console.WriteLine("CBFS Uninstall Error: " + e.Message);
 			}
 		}
 		public static bool CBFSInstallCheck(Cbfilter mFilter)

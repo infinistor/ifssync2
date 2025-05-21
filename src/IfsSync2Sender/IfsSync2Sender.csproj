@@ -2,25 +2,25 @@
 	<PropertyGroup>
 		<TargetFramework>net8.0-windows</TargetFramework>
 		<GenerateAssemblyInfo>false</GenerateAssemblyInfo>
-		<BaseOutputPath>../IfsSync2</BaseOutputPath>
+		<BaseOutputPath>../dist</BaseOutputPath>
 		<AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
 		<AppendRuntimeIdentifierToOutputPath>false</AppendRuntimeIdentifierToOutputPath>
 	</PropertyGroup>
 	<PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">
-		<OutputPath>..\IfsSync2\</OutputPath>
-		<PublishDir>..\IfsSync2\</PublishDir>
+		<OutputPath>..\dist\</OutputPath>
+		<PublishDir>..\dist\</PublishDir>
 		<CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
 	</PropertyGroup>
 
 	<PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|x86'">
-		<OutputPath>..\IfsSync2\</OutputPath>
-		<PublishDir>..\IfsSync2\</PublishDir>
+		<OutputPath>..\dist\</OutputPath>
+		<PublishDir>..\dist\</PublishDir>
 		<CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
 	</PropertyGroup>
 
 	<PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|x86'">
-		<OutputPath>..\IfsSync2\</OutputPath>
-		<PublishDir>..\IfsSync2\</PublishDir>
+		<OutputPath>..\dist\</OutputPath>
+		<PublishDir>..\dist\</PublishDir>
 		<CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
 	</PropertyGroup>
 	<PropertyGroup>

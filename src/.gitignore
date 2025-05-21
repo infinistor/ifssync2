@@ -3,3 +3,5 @@
 .vs/
 IfsSync2/
 .sonarqube/
+dist/
+*.ps1

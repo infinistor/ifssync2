@@ -4,19 +4,19 @@
     <TargetFramework>net8.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
-    <BaseOutputPath>..\IfsSync2</BaseOutputPath>
+    <BaseOutputPath>..\dist</BaseOutputPath>
     <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
     <AppendRuntimeIdentifierToOutputPath>false</AppendRuntimeIdentifierToOutputPath>
   </PropertyGroup>
   
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|AnyCPU'">
-    <OutputPath>..\IfsSync2\</OutputPath>
-    <PublishDir>..\IfsSync2\</PublishDir>
+    <OutputPath>..\dist\</OutputPath>
+    <PublishDir>..\dist\</PublishDir>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|AnyCPU'">
-    <OutputPath>..\IfsSync2\</OutputPath>
-    <PublishDir>..\IfsSync2\</PublishDir>
+    <OutputPath>..\dist\</OutputPath>
+    <PublishDir>..\dist\</PublishDir>
   </PropertyGroup>
 
   <ItemGroup>

@@ -212,7 +212,6 @@ namespace IfsSync2Filter
 			}
 			State.Filter = false;
 			_writeFileManager.Stop();
-			_taskDb.DeleteDBFile();
 		}
 
 		#region Backup
@@ -227,7 +226,7 @@ namespace IfsSync2Filter
 				log.Debug($"{Job.JobName} Folder detected: {FilePath}");
 
 				// MainUtility 사용하여 직접 TaskData 목록 생성
-				var taskList = MainUtility.GetFilesWithTaskData(FilePath, Job.WhiteFileExt, TaskData.TaskTypeList.Upload);
+				var taskList = MainUtility.GetFilesWithTaskData(FilePath, Job.WhiteFileExt, EnumTaskType.Upload);
 				log.Debug($"{Job.JobName} Upload Items : {taskList.Count}");
 
 				// 생성된 작업 목록을 데이터베이스에 추가
@@ -241,7 +240,7 @@ namespace IfsSync2Filter
 			else if (CheckWhiteFileList(FileName, Job.WhiteFileExt))
 			{
 				long fileSize = GetFileSize(FilePath);
-				_taskDb.Insert(new TaskData(TaskData.TaskTypeList.Upload, FilePath, DateTime.Now.ToString(DEFAULT_DATE_FORMAT), fileSize));
+				_taskDb.Insert(new TaskData(EnumTaskType.Upload, FilePath, DateTime.Now.ToString(DEFAULT_DATE_FORMAT), fileSize));
 				log.Debug($"{Job.JobName} Insert Upload: {FilePath}");
 			}
 		}
@@ -258,12 +257,12 @@ namespace IfsSync2Filter
 				// 백슬래시가 없는 경우 추가
 				if (!FilePath.EndsWith('\\')) FilePath += "\\";
 
-				_taskDb.Insert(new TaskData(TaskData.TaskTypeList.Delete, FilePath, DateTime.Now.ToString(DEFAULT_DATE_FORMAT)));
+				_taskDb.Insert(new TaskData(EnumTaskType.Delete, FilePath, DateTime.Now.ToString(DEFAULT_DATE_FORMAT)));
 				log.Debug($"{Job.JobName} Insert Delete: {FilePath}");
 			}
 			else if (CheckWhiteFileList(FileName, Job.WhiteFileExt))
 			{
-				_taskDb.Insert(new TaskData(TaskData.TaskTypeList.Delete, FilePath, DateTime.Now.ToString(DEFAULT_DATE_FORMAT)));
+				_taskDb.Insert(new TaskData(EnumTaskType.Delete, FilePath, DateTime.Now.ToString(DEFAULT_DATE_FORMAT)));
 				log.Debug($"{Job.JobName} Insert Delete: {FilePath}");
 			}
 		}
@@ -281,7 +280,7 @@ namespace IfsSync2Filter
 				// 폴더인 경우 폴더 하위 모든 파일을 읽어서 rename 처리
 				try
 				{
-					var taskList = MainUtility.GetFilesWithTaskData(NewFilePath, Job.WhiteFileExt, TaskData.TaskTypeList.Rename);
+					var taskList = MainUtility.GetFilesWithTaskData(NewFilePath, Job.WhiteFileExt, EnumTaskType.Rename);
 					log.Debug($"{Job.JobName} Rename Items : {taskList.Count}");
 					log.Debug($"old Path : {FilePath}, new Path : {NewFilePath}");
 
@@ -308,7 +307,7 @@ namespace IfsSync2Filter
 			// 파일인 경우
 			else if (CheckWhiteFileList(NewFileName, Job.WhiteFileExt))
 			{
-				_taskDb.Insert(new TaskData(TaskData.TaskTypeList.Rename, FilePath, DateTime.Now.ToString(DEFAULT_DATE_FORMAT), NewFilePath));
+				_taskDb.Insert(new TaskData(EnumTaskType.Rename, FilePath, DateTime.Now.ToString(DEFAULT_DATE_FORMAT), NewFilePath));
 				log.Debug($"{Job.JobName} Insert Rename: {FilePath} => {NewFilePath}");
 			}
 		}

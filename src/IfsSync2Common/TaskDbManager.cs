@@ -16,7 +16,6 @@ namespace IfsSync2Common
 	public class TaskDbManager
 	{
 		#region Define
-		const string SQLITE_SEQUENCE = "sqlite_sequence";
 		const string TASK_TABLE_NAME = "TaskList";
 		const string PENDING_TABLE_NAME = "PendingList";
 		const string SUCCESS_TABLE_NAME = "SuccessTaskList";
@@ -79,6 +78,13 @@ namespace IfsSync2Common
 		{
 			try
 			{
+				// 기존 파일이 있으면 삭제
+				if (File.Exists(_filePath))
+				{
+					File.Delete(_filePath);
+					_log.Error($"기존 파일 삭제: {_filePath}");
+				}
+
 				IfsSync2Utilities.CreateFile(_filePath);
 
 				_sqliteMutex.WaitOne();
@@ -144,7 +150,6 @@ namespace IfsSync2Common
 
 			if (File.Exists(_filePath))
 			{
-				AllClear();
 				try
 				{
 					_sqliteMutex.WaitOne();
@@ -339,31 +344,7 @@ namespace IfsSync2Common
 			catch (Exception e) { _log.Error(e); return false; }
 			finally { _sqliteMutex.ReleaseMutex(); }
 		}
-		public bool AllClear()
-		{
-			try
-			{
-				using var conn = new SQLiteConnection($"Data Source={_filePath};Version=3;");
 
-				_sqliteMutex.WaitOne();
-				conn.Open();
-				using var cmd = new SQLiteCommand(conn)
-				{
-					CommandText = $"DELETE FROM '{TASK_TABLE_NAME}';"
-								+ $" DELETE FROM '{PENDING_TABLE_NAME}';"
-								+ $" DELETE FROM '{SUCCESS_TABLE_NAME}';"
-								+ $" DELETE FROM '{FAILURE_TABLE_NAME}';"
-								+ $" DELETE FROM '{LOG_TABLE_NAME}';"
-								+ $" DELETE FROM '{SQLITE_SEQUENCE}';"
-				};
-
-				int result = cmd.ExecuteNonQuery();
-				if (result > 0) { _log.Debug($"Success({result}) : {cmd.CommandText}"); return true; }
-				else { _log.Error($"Failed({result}) : {cmd.CommandText}"); return false; }
-			}
-			catch (Exception e) { _log.Error(e); return false; }
-			finally { _sqliteMutex.ReleaseMutex(); }
-		}
 		public bool GetList(int limit = 3000)
 		{
 			try

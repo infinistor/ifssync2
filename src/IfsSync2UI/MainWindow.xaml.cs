@@ -150,7 +150,7 @@ namespace IfsSync2UI
 					{
 						var item = new TabItem();
 
-						var tabItemContent = new JobTab(item, Job);
+						var tabItemContent = new JobTab(item, Job, false);
 						item.Content = tabItemContent;
 
 						item.Header = Job.JobName;

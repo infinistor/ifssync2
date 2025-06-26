@@ -21,6 +21,7 @@ using System.Windows.Input;
 using IfsSync2Common;
 using System.Timers;
 using System.Runtime.Versioning;
+using System.Threading.Tasks;
 
 namespace IfsSync2UI
 {
@@ -31,8 +32,8 @@ namespace IfsSync2UI
 		private static readonly ILog log = LogManager.GetLogger(typeof(JobTab));
 
 		public bool IsChanged { get; set; }
-		private TabItem ThisTab { get; set; }
-		private bool NewTab { get; set; }
+		private TabItem _thisTab { get; set; }
+		private bool _newTab { get; set; }
 		/**************************** User Data *************************************/
 		private List<UserData> NormalUserList;
 		private List<UserData> GlobalUserList;
@@ -71,10 +72,10 @@ namespace IfsSync2UI
 		LogViewWindow LogViewWindow = null;
 		private readonly System.Timers.Timer UpdateLogTimer;
 		/****************************** Init *************************************/
-		public JobTab(TabItem Tab, JobData job, bool _NewTab = false)
+		public JobTab(TabItem tab, JobData job, bool newTab = false)
 		{
-			NewTab = _NewTab;
-			ThisTab = Tab;
+			_newTab = newTab;
+			_thisTab = tab;
 			Job = job;
 			DirectoryList = [];
 			_userDb = new();
@@ -109,7 +110,14 @@ namespace IfsSync2UI
 			UpdateLogTimer = new System.Timers.Timer { Interval = IfsSync2Constants.DEFAULT_STATUS_CHECK_DELAY };
 			UpdateLogTimer.Elapsed += new ElapsedEventHandler(LogUpdate);
 
-			if (!NewTab) StateInit();
+			if (_newTab)
+			{
+				// DB 파일 생성을 별도 스레드에서 실행하여 UI 블록 방지
+				_ = Task.Run(() => _taskDb.CreateDBFile());
+			}
+			else
+				StateInit();
+
 			UpdateButton();
 			ChangeData(false);
 		}
@@ -194,16 +202,16 @@ namespace IfsSync2UI
 				if (IsChanged != Changed)
 				{
 					IsChanged = Changed;
-					ThisTab.Header += "*";
+					_thisTab.Header += "*";
 				}
 			}
 			else
 			{
-				ThisTab.Header = Job.JobName;
+				_thisTab.Header = Job.JobName;
 				IsChanged = Changed;
 			}
 
-			if (!NewTab)
+			if (!_newTab)
 			{
 				B_LogView.IsEnabled = true;
 				if (Job.Policy != JobData.PolicyType.Now)
@@ -373,11 +381,11 @@ namespace IfsSync2UI
 				return;
 			}
 			if (Job.Id < 0) Job.Id = _jobDb.GetJobDataId(Job.HostName, Job.JobName);
-			if (NewTab)
+			if (_newTab)
 			{
 				Job.StrBlackPath = IfsSync2Constants.DEFAULT_BLACK_PATH_LIST;
 				StateInit();
-				NewTab = false;
+				_newTab = false;
 			}
 
 			ChangeData(false);
@@ -668,7 +676,7 @@ namespace IfsSync2UI
 		{
 			foreach (var Node in TreeList)
 			{
-				if (Node.Children.Count > 0) 
+				if (Node.Children.Count > 0)
 					if (IsCheckedSubNode(Node, MainPath)) return true;
 					else return true;
 			}

@@ -13,6 +13,11 @@ namespace IfsSync2Sender
 			if (algorithm == S3ChecksumAlgorithm.None)
 				return string.Empty;
 
+			if (filePath.Length > 320)
+			{
+				return string.Empty;
+			}
+
 			if (!File.Exists(filePath))
 				throw new FileNotFoundException("파일을 찾을 수 없습니다.", filePath);
 

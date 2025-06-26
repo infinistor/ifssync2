@@ -191,6 +191,12 @@ namespace IfsSync2Common
 		{
 			try
 			{
+				// 긴 경로인 경우 MD5 계산을 건너뛰고 빈 문자열 반환
+				if (fileName.Length > 320)
+				{
+					return string.Empty;
+				}
+
 				using var md5 = MD5.Create();
 				using var stream = File.OpenRead(fileName);
 				var hash = md5.ComputeHash(stream);

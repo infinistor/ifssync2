@@ -19,6 +19,7 @@ namespace IfsSync2Common
 		public string SnapshotPath { get; set; } = string.Empty;
 		public long FileSize { get; set; }
 		public string EventTime { get; set; } = string.Empty;
+		public string UploadStartTime { get; set; } = string.Empty;
 		public string UploadTime { get; set; } = string.Empty;
 		public string Result { get; set; } = string.Empty;
 		public bool UploadFlag { get; set; }

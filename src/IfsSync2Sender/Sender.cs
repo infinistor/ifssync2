@@ -747,6 +747,9 @@ namespace IfsSync2Sender
 			{
 				case EnumTaskType.Upload:
 					{
+						// 업로드 시작 시점 저장
+						task.UploadStartTime = IfsSync2Utilities.GetCurrentTime();
+						
 						string uploadPath = string.IsNullOrWhiteSpace(task.SnapshotPath) ? task.FilePath : task.SnapshotPath;
 
 						//File Check
@@ -761,7 +764,8 @@ namespace IfsSync2Sender
 								try
 								{
 									var checksum = ChecksumCalculator.CalculateChecksum(uploadPath, meta.ChecksumAlgorithm);
-									if (checksum.Equals(meta.Checksum, StringComparison.OrdinalIgnoreCase))
+									// 체크섬 계산이 실패하거나 빈 문자열인 경우 업로드 진행
+									if (!string.IsNullOrEmpty(checksum) && checksum.Equals(meta.Checksum, StringComparison.OrdinalIgnoreCase))
 									{
 										log.Debug($"{Job.JobName} Duplicate file : {uploadPath}");
 										_taskManager.Delete(task);
@@ -776,16 +780,24 @@ namespace IfsSync2Sender
 							// checksum 이 없을 경우 MD5Sum에 -가 없을 경우 비교
 							else if (!string.IsNullOrWhiteSpace(meta.MD5) && !meta.MD5.Contains('-'))
 							{
-								var md5sum = IfsSync2Utilities.CalculateMD5(uploadPath);
-								if (meta.MD5.Equals(md5sum, StringComparison.OrdinalIgnoreCase))
+								try
 								{
-									log.Debug($"{Job.JobName} Duplicate file : {uploadPath}");
-									_taskManager.Delete(task);
-									return true;
+									var md5sum = IfsSync2Utilities.CalculateMD5(uploadPath);
+									// MD5 계산이 실패하거나 빈 문자열인 경우 업로드 진행
+									if (!string.IsNullOrEmpty(md5sum) && meta.MD5.Equals(md5sum, StringComparison.OrdinalIgnoreCase))
+									{
+										log.Debug($"{Job.JobName} Duplicate file : {uploadPath}");
+										_taskManager.Delete(task);
+										return true;
+									}
+									else if (!string.IsNullOrEmpty(md5sum))
+									{
+										log.Debug($"{Job.JobName} {uploadPath} mismatch : {meta.MD5} != {md5sum}");
+									}
 								}
-								else
+								catch (Exception ex)
 								{
-									log.Debug($"{Job.JobName} {uploadPath} mismatch : {meta.MD5} != {md5sum}");
+									log.Error($"{Job.JobName} MD5 계산 중 오류 발생: {uploadPath}", ex);
 								}
 							}
 						}
@@ -803,6 +815,9 @@ namespace IfsSync2Sender
 					}
 				case EnumTaskType.Rename:
 					{
+						// 업로드 시작 시점 저장
+						task.UploadStartTime = IfsSync2Utilities.GetCurrentTime();
+						
 						if (RenameObject(task.FilePath, task.NewFilePath, out string ErrorMsg)) task.UploadFlag = true;
 						else
 						{
@@ -816,6 +831,9 @@ namespace IfsSync2Sender
 					}
 				case EnumTaskType.Delete:
 					{
+						// 업로드 시작 시점 저장
+						task.UploadStartTime = IfsSync2Utilities.GetCurrentTime();
+						
 						// 폴더일 경우 폴더 내 모든 파일 삭제
 						if (task.FilePath.EndsWith('\\'))
 						{

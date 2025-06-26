@@ -27,6 +27,7 @@ namespace IfsSync2Common
 		const string SNAPSHOT_PATH = "SnapshotPath";
 		const string FILE_SIZE = "FileSize";
 		const string EVENT_TIME = "EventTime";
+		const string UPLOAD_START_TIME = "UploadStartTime";
 		const string UPLOAD_TIME = "UploadTime";
 		const string RESULT = "Result";
 
@@ -65,7 +66,15 @@ namespace IfsSync2Common
 
 				if (!createdNew) _log.Debug($"Mutex({IfsSync2Constants.MUTEX_NAME_JOB_SQL})");
 				else _log.Debug($"Mutex({IfsSync2Constants.MUTEX_NAME_JOB_SQL}) create");
-				CreateDBFile();
+				
+				// 파일이 존재하지 않는 경우에만 새로 생성
+				if (!File.Exists(_filePath))
+				{
+					CreateDBFile();
+				}
+				
+				// 기존 테이블과의 호환성을 위한 컬럼 추가
+				EnsureTableCompatibility();
 			}
 			catch (Exception e)
 			{
@@ -74,7 +83,7 @@ namespace IfsSync2Common
 			}
 		}
 
-		void CreateDBFile()
+		public void CreateDBFile()
 		{
 			try
 			{
@@ -82,7 +91,7 @@ namespace IfsSync2Common
 				if (File.Exists(_filePath))
 				{
 					File.Delete(_filePath);
-					_log.Error($"기존 파일 삭제: {_filePath}");
+					_log.Info($"기존 파일 삭제: {_filePath}");
 				}
 
 				IfsSync2Utilities.CreateFile(_filePath);
@@ -120,6 +129,7 @@ namespace IfsSync2Common
 								 $"'{NEW_FILE_PATH}' TEXT, " +
 								 $"'{FILE_SIZE}' INTEGER DEFAULT 0," +
 								 $"'{EVENT_TIME}' TEXT NOT NULL, " +
+								 $"'{UPLOAD_START_TIME}' TEXT, " +
 								 $"'{UPLOAD_TIME}' TEXT);" +
 					//Failure
 					$"Create Table IF NOT EXISTS '{FAILURE_TABLE_NAME}'(" +
@@ -129,6 +139,7 @@ namespace IfsSync2Common
 								 $"'{NEW_FILE_PATH}' TEXT, " +
 								 $"'{FILE_SIZE}' INTEGER DEFAULT 0," +
 								 $"'{EVENT_TIME}' TEXT NOT NULL, " +
+								 $"'{UPLOAD_START_TIME}' TEXT, " +
 								 $"'{UPLOAD_TIME}' TEXT NOT NULL, " +
 								 $"'{RESULT}' TEXT);" +
 					//Log List
@@ -143,32 +154,6 @@ namespace IfsSync2Common
 			}
 			catch (Exception e) { _log.Error(e); }
 			finally { _sqliteMutex.ReleaseMutex(); }
-		}
-
-		public bool DeleteDBFile()
-		{
-
-			if (File.Exists(_filePath))
-			{
-				try
-				{
-					_sqliteMutex.WaitOne();
-
-					for (int i = 0; i < 5; i++)
-					{
-						if (new FileInfo(_filePath).Exists) File.Delete(_filePath);
-						else break;
-						Thread.Sleep(100);
-					}
-
-					_log.Debug($"Success : {_filePath}");
-
-					return true;
-				}
-				catch (Exception e) { _log.Error(e); return false; }
-				finally { _sqliteMutex.ReleaseMutex(); }
-			}
-			return false;
 		}
 
 		public bool Insert(TaskData task)
@@ -203,10 +188,10 @@ namespace IfsSync2Common
 
 				var query = $"DELETE FROM '{TASK_TABLE_NAME}' WHERE {INDEX_NAME} = {task.Index};";
 				query += task.UploadFlag ?
-				$"\nINSERT INTO '{SUCCESS_TABLE_NAME}' ( {TASK_NAME}, {FILEPATH}, {NEW_FILE_PATH}, {FILE_SIZE}, {UPLOAD_TIME} ,{EVENT_TIME} )" +
-													$" VALUES('{task.TaskType}', '{task.FilePath}', '{task.NewFilePath}', {task.FileSize}, '{task.UploadTime}', '{task.EventTime}');"
-				: $"\nINSERT INTO '{FAILURE_TABLE_NAME}' ( {TASK_NAME}, {FILEPATH}, {NEW_FILE_PATH}, {FILE_SIZE}, {UPLOAD_TIME} ,{EVENT_TIME}, {RESULT} )" +
-													$" VALUES('{task.TaskType}', '{task.FilePath}', '{task.NewFilePath}', {task.FileSize}, '{task.UploadTime}', '{task.EventTime}', '{task.Result.Replace("'", "\"")}');";
+				$"\nINSERT INTO '{SUCCESS_TABLE_NAME}' ( {TASK_NAME}, {FILEPATH}, {NEW_FILE_PATH}, {FILE_SIZE}, {UPLOAD_START_TIME}, {UPLOAD_TIME} ,{EVENT_TIME} )" +
+													$" VALUES('{task.TaskType}', '{task.FilePath}', '{task.NewFilePath}', {task.FileSize}, '{task.UploadStartTime}', '{task.UploadTime}', '{task.EventTime}');"
+				: $"\nINSERT INTO '{FAILURE_TABLE_NAME}' ( {TASK_NAME}, {FILEPATH}, {NEW_FILE_PATH}, {FILE_SIZE}, {UPLOAD_START_TIME}, {UPLOAD_TIME} ,{EVENT_TIME}, {RESULT} )" +
+													$" VALUES('{task.TaskType}', '{task.FilePath}', '{task.NewFilePath}', {task.FileSize}, '{task.UploadStartTime}', '{task.UploadTime}', '{task.EventTime}', '{task.Result.Replace("'", "\"")}');";
 
 				using var cmd = new SQLiteCommand(conn) { CommandText = query };
 
@@ -281,6 +266,7 @@ namespace IfsSync2Common
 						NewFilePath = rdr.GetString(NEW_FILE_PATH),
 						FileSize = rdr.GetLong(FILE_SIZE),
 						EventTime = rdr.GetString(EVENT_TIME),
+						UploadStartTime = rdr.GetString(UPLOAD_START_TIME),
 						UploadTime = rdr.GetString(UPLOAD_TIME)
 					};
 
@@ -316,6 +302,7 @@ namespace IfsSync2Common
 						NewFilePath = rdr.GetString(NEW_FILE_PATH),
 						FileSize = rdr.GetLong(FILE_SIZE),
 						EventTime = rdr.GetString(EVENT_TIME),
+						UploadStartTime = rdr.GetString(UPLOAD_START_TIME),
 						UploadTime = rdr.GetString(UPLOAD_TIME),
 						Result = rdr.GetString(RESULT)
 					});
@@ -369,8 +356,7 @@ namespace IfsSync2Common
 						FilePath = rdr.GetString(FILEPATH),
 						NewFilePath = rdr.GetString(NEW_FILE_PATH),
 						FileSize = rdr.GetLong(FILE_SIZE),
-						EventTime = rdr.GetString(EVENT_TIME),
-						UploadTime = rdr.GetString(UPLOAD_TIME)
+						EventTime = rdr.GetString(EVENT_TIME)
 					});
 				}
 
@@ -458,6 +444,56 @@ namespace IfsSync2Common
 			}
 			catch (Exception e) { _log.Error(e); return false; }
 			finally { _sqliteMutex.ReleaseMutex(); }
+		}
+
+		private void EnsureTableCompatibility()
+		{
+			try
+			{
+				_sqliteMutex.WaitOne();
+				using var conn = new SQLiteConnection($"Data Source={_filePath};Version=3;");
+				conn.Open();
+
+				// SuccessTaskList 테이블에 UploadStartTime 컬럼 추가
+				try
+				{
+					using var alterCmd = new SQLiteCommand(conn)
+					{
+						CommandText = $"ALTER TABLE '{SUCCESS_TABLE_NAME}' ADD COLUMN '{UPLOAD_START_TIME}' TEXT;"
+					};
+					alterCmd.ExecuteNonQuery();
+					_log.Debug($"UploadStartTime 컬럼 추가 성공: {SUCCESS_TABLE_NAME}");
+				}
+				catch (Exception e)
+				{
+					// 컬럼이 이미 존재하는 경우 무시
+					_log.Debug($"UploadStartTime 컬럼이 이미 존재하거나 추가 실패: {e.Message}");
+				}
+
+				// FailureTaskList 테이블에 UploadStartTime 컬럼 추가
+				try
+				{
+					using var alterCmd2 = new SQLiteCommand(conn)
+					{
+						CommandText = $"ALTER TABLE '{FAILURE_TABLE_NAME}' ADD COLUMN '{UPLOAD_START_TIME}' TEXT;"
+					};
+					alterCmd2.ExecuteNonQuery();
+					_log.Debug($"UploadStartTime 컬럼 추가 성공: {FAILURE_TABLE_NAME}");
+				}
+				catch (Exception e)
+				{
+					// 컬럼이 이미 존재하는 경우 무시
+					_log.Debug($"UploadStartTime 컬럼이 이미 존재하거나 추가 실패: {e.Message}");
+				}
+			}
+			catch (Exception e) 
+			{ 
+				_log.Error("테이블 호환성 확인 중 오류 발생", e); 
+			}
+			finally 
+			{ 
+				_sqliteMutex.ReleaseMutex(); 
+			}
 		}
 	}
 }

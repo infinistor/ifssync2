@@ -112,7 +112,7 @@ namespace IfsSync2Sender
 				return;
 
 			// 업로드 작업에만 스냅샷 경로 적용
-			if (task.TaskType == TaskData.TaskTypeList.Upload)
+			if (task.TaskType == EnumTaskType.Upload)
 			{
 				foreach (ShadowCopy shadow in shadowCopies)
 				{

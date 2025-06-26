@@ -12,10 +12,8 @@ namespace IfsSync2Common
 {
 	public class TaskData
 	{
-		public enum TaskTypeList { None = -1, Upload = 0, Rename, Delete }
-		//Index, FileName, Policy, Path, event time, upload time, upload flag
 		public long Index { get; set; }
-		public TaskTypeList TaskType { get; set; } = TaskTypeList.None;
+		public EnumTaskType TaskType { get; set; } = EnumTaskType.None;
 		public string FilePath { get; set; } = string.Empty;
 		public string NewFilePath { get; set; } = string.Empty;
 		public string SnapshotPath { get; set; } = string.Empty;
@@ -28,24 +26,24 @@ namespace IfsSync2Common
 		{
 		}
 
-		public TaskData(TaskTypeList taskType, string filepath, string eventTime)
+		public TaskData(EnumTaskType taskType, string filepath, string eventTime)
 		{
 			TaskType = taskType;
 			FilePath = filepath;
 			EventTime = eventTime;
 		}
 
-		public TaskData(TaskTypeList taskType, string filepath, string eventTime, long _FileSize)
+		public TaskData(EnumTaskType taskType, string filepath, string eventTime, long _FileSize)
 			: this(taskType, filepath, eventTime) { FileSize = _FileSize; }
 
-		public TaskData(TaskTypeList taskType, string filepath, string eventTime, string newFilepath)
+		public TaskData(EnumTaskType taskType, string filepath, string eventTime, string newFilepath)
 			: this(taskType, filepath, eventTime) { NewFilePath = newFilepath; }
 
 
 		public string StrTaskType
 		{
-			get => TaskType.ToString();
-			set => TaskType = Enum.TryParse<TaskTypeList>(value, out var result) ? result : TaskTypeList.None;
+			get => TaskType.ToStr();
+			set => TaskType = value.ToEnum();
 		}
 	}
-} 
+}

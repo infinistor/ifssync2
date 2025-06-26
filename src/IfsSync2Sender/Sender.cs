@@ -615,7 +615,7 @@ namespace IfsSync2Sender
 						var taskList = MainUtility.GetFilesWithTaskData(
 							directory,
 							extensionList,
-							TaskData.TaskTypeList.Upload);
+							EnumTaskType.Upload);
 
 						log.Debug($"Directory {directory}: {taskList.Count} files found");
 
@@ -745,7 +745,7 @@ namespace IfsSync2Sender
 
 			switch (task.TaskType)
 			{
-				case TaskData.TaskTypeList.Upload:
+				case EnumTaskType.Upload:
 					{
 						string uploadPath = string.IsNullOrWhiteSpace(task.SnapshotPath) ? task.FilePath : task.SnapshotPath;
 
@@ -801,7 +801,7 @@ namespace IfsSync2Sender
 						_taskManager.Update(task);
 						break;
 					}
-				case TaskData.TaskTypeList.Rename:
+				case EnumTaskType.Rename:
 					{
 						if (RenameObject(task.FilePath, task.NewFilePath, out string ErrorMsg)) task.UploadFlag = true;
 						else
@@ -814,7 +814,7 @@ namespace IfsSync2Sender
 						_taskManager.Update(task);
 						break;
 					}
-				case TaskData.TaskTypeList.Delete:
+				case EnumTaskType.Delete:
 					{
 						// 폴더일 경우 폴더 내 모든 파일 삭제
 						if (task.FilePath.EndsWith('\\'))

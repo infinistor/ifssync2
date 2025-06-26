@@ -180,7 +180,7 @@ namespace IfsSync2Common
 		public static List<TaskData> GetFilesWithTaskData<T>(
 			string directoryPath,
 			T extensionList,
-			TaskData.TaskTypeList taskType = TaskData.TaskTypeList.Upload) where T : IEnumerable<string>
+			EnumTaskType taskType = EnumTaskType.Upload) where T : IEnumerable<string>
 		{
 			var taskList = new List<TaskData>();
 

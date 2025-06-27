@@ -23,6 +23,7 @@ namespace IfsSync2Common
 		public string UploadTime { get; set; } = string.Empty;
 		public string Result { get; set; } = string.Empty;
 		public bool UploadFlag { get; set; }
+		
 		public TaskData()
 		{
 		}

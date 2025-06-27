@@ -325,10 +325,11 @@ namespace IfsSync2Common
 				using var cmd = new SQLiteCommand(conn) { CommandText = string.Format("DELETE FROM '{0}';", TASK_TABLE_NAME) };
 
 				int result = cmd.ExecuteNonQuery();
-				if (result > 0) { _log.Debug($"Success({result}) : {cmd.CommandText}"); return true; }
-				else { _log.Error($"Failed({result}) : {cmd.CommandText}"); return false; }
+				// DELETE 결과가 0이어도 성공으로 간주 (테이블이 이미 비어있을 수 있음)
+				_log.Debug($"Clear result: {result} rows deleted from {TASK_TABLE_NAME}");
+				return true;
 			}
-			catch (Exception e) { _log.Error(e); return false; }
+			catch (Exception e) { _log.Error($"Clear failed: {e.Message}", e); return false; }
 			finally { _sqliteMutex.ReleaseMutex(); }
 		}
 
@@ -497,3 +498,4 @@ namespace IfsSync2Common
 		}
 	}
 }
+

@@ -18,6 +18,22 @@ namespace IfsSync2Sender
 				return string.Empty;
 			}
 
+			// 폴더인 경우 빈 문자열 반환 (체크섬 계산 불가)
+			try
+			{
+				if (Directory.Exists(filePath.TrimEnd('\\', '/')) || 
+					filePath.EndsWith('\\') || 
+					filePath.EndsWith('/'))
+				{
+					return string.Empty;
+				}
+			}
+			catch (Exception)
+			{
+				// 경로 검증 중 오류가 발생하면 빈 문자열 반환
+				return string.Empty;
+			}
+
 			if (!File.Exists(filePath))
 				throw new FileNotFoundException("파일을 찾을 수 없습니다.", filePath);
 

@@ -22,12 +22,14 @@ namespace IfsSync2Common
 		const string SENDER_FETCH_COUNT = "SenderFetchCount";
 		const string SENDER_DELAY = "SenderDelay";
 		const string SENDER_CHECK_DELAY = "SenderCheckDelay";
+		const string SENDER_RETRY_DELAY = "SenderRetryDelay";
 		const string SENDER_STOP = "SenderStop";
 		const string ROOT_PATH = "RootPath";
 		const int DEFAULT_THREAD_COUNT = 10;
-		const int DEFAULT_FETCH_COUNT = 1000; //5sec
+		const int DEFAULT_FETCH_COUNT = 1000; //1 sec
 		const int DEFAULT_SENDER_DELAY = 5 * 1000; //5sec
 		const int DEFAULT_SENDER_CHECK_DELAY = 5 * 1000; //5 sec
+		const int DEFAULT_RETRY_DELAY = 10; //10 sec
 		const long DEFAULT_MULTIPART_UPLOAD_FILE_SIZE = 100000000; //100MB
 		const long DEFAULT_MULTIPART_UPLOAD_PART_SIZE = 10000000; //10MB
 		const int DEFAULT_LOG_RETENTION = 0; // 무제한
@@ -72,6 +74,11 @@ namespace IfsSync2Common
 			get => RegistryUtility.GetIntValue(SenderConfigKey, SENDER_CHECK_DELAY);
 			set => SenderConfigKey.SetValue(SENDER_CHECK_DELAY, value, RegistryValueKind.DWord);
 		}
+		public int RetryDelay
+		{
+			get => RegistryUtility.GetIntValue(SenderConfigKey, SENDER_RETRY_DELAY, DEFAULT_RETRY_DELAY);
+			set => SenderConfigKey.SetValue(SENDER_RETRY_DELAY, value, RegistryValueKind.DWord);
+		}
 		public string RootPath
 		{
 			get => RegistryUtility.GetStringValue(SenderConfigKey, ROOT_PATH);
@@ -100,6 +107,7 @@ namespace IfsSync2Common
 				temp.SetValue(SENDER_FETCH_COUNT, DEFAULT_FETCH_COUNT, RegistryValueKind.DWord);
 				temp.SetValue(SENDER_DELAY, DEFAULT_SENDER_DELAY, RegistryValueKind.DWord);
 				temp.SetValue(SENDER_CHECK_DELAY, DEFAULT_SENDER_CHECK_DELAY, RegistryValueKind.DWord);
+				temp.SetValue(SENDER_RETRY_DELAY, DEFAULT_RETRY_DELAY, RegistryValueKind.DWord);
 				temp.SetValue(ROOT_PATH, "", RegistryValueKind.String);
 				temp.SetValue(SENDER_STOP, IfsSync2Constants.MY_FALSE, RegistryValueKind.DWord);
 				temp.SetValue(IfsSync2Constants.ALIVE_CHECK, IfsSync2Constants.MY_FALSE, RegistryValueKind.DWord);
@@ -107,12 +115,13 @@ namespace IfsSync2Common
 			}
 			SenderConfigKey = temp;
 		}
-		public void SetOptions(long multipartUploadFileSize, long multipartUploadPartSize, int threadCount, int logRetention)
+		public void SetOptions(long multipartUploadFileSize, long multipartUploadPartSize, int threadCount, int logRetention, int retryDelay)
 		{
 			MultipartUploadFileSize = multipartUploadFileSize;
 			MultipartUploadPartSize = multipartUploadPartSize;
 			ThreadCount = threadCount;
 			LogRetention = logRetention;
+			RetryDelay = retryDelay;
 		}
 
 		public void Close() { SenderConfigKey?.Close(); }

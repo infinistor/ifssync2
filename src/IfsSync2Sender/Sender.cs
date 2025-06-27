@@ -38,6 +38,7 @@ namespace IfsSync2Sender
 		public JobData Job { get; protected set; }
 
 		public int Delay { get; protected set; }
+		public int RetryDelay { get; protected set; }
 		public bool Pause { get; protected set; }
 
 		protected Thread SenderThread;
@@ -52,7 +53,7 @@ namespace IfsSync2Sender
 		protected long _partSize;
 		protected int _logRetention;
 
-		public Sender(JobData jobData, UserData userData, int fetchCount, int delayTime, int threadCount, long multipartUploadFileSize, long multipartUploadPartSize, int logRetention)
+		public Sender(JobData jobData, UserData userData, int fetchCount, int delayTime, int retryDelay, int threadCount, long multipartUploadFileSize, long multipartUploadPartSize, int logRetention)
 		{
 			Pause = false;
 			Job = jobData;
@@ -60,6 +61,7 @@ namespace IfsSync2Sender
 			_user = userData;
 			_client = new S3Client(_user);
 			Delay = delayTime;
+			RetryDelay = retryDelay;
 			_fetchCount = fetchCount;
 			_threadCount = threadCount;
 			_multipartUploadFileSize = multipartUploadFileSize;
@@ -107,10 +109,11 @@ namespace IfsSync2Sender
 			// 작업 재개
 			Pause = false;
 		}
-		public void Update(int fetchCount, int delayTime, int threadCount, long multipartUploadFileSize, long multipartUploadPartSize, int logRetention)
+		public void Update(int fetchCount, int delayTime, int retryDelay, int threadCount, long multipartUploadFileSize, long multipartUploadPartSize, int logRetention)
 		{
 			_fetchCount = fetchCount;
 			Delay = delayTime;
+			RetryDelay = retryDelay;
 			_threadCount = threadCount;
 			_multipartUploadFileSize = multipartUploadFileSize;
 			_partSize = multipartUploadPartSize;
@@ -869,7 +872,7 @@ namespace IfsSync2Sender
 										ErrorMsg.Contains("TooManyRequestsException"))
 									{
 										log.Warn($"{Job.JobName} 일시적 오류 (3초 후 재시도): {task.FilePath} - {ErrorMsg}");
-										Thread.Sleep(3000); // 3초 대기
+										Thread.Sleep(RetryDelay * 1000);
 									}
 									else
 									{

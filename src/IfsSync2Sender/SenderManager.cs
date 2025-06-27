@@ -29,7 +29,7 @@ namespace IfsSync2Sender
 		List<UserData> _users;
 		List<UserData> _globalUsers;
 
-		public void Once(int fetchCount, int senderDelay, int threadCount, long multipartUploadFileSize, long multipartUploadPartSize, int logRetention)
+		public void Once(int fetchCount, int senderDelay, int retryDelay, int threadCount, long multipartUploadFileSize, long multipartUploadPartSize, int logRetention)
 		{
 			UserDataUpdate();
 			SenderQuitCheck();
@@ -51,7 +51,7 @@ namespace IfsSync2Sender
 					// 인스턴트 백업 Sender가 없으면 생성
 					if (_instantSender == null)
 					{
-						_instantSender = new(instantJob, user, fetchCount, senderDelay, threadCount, multipartUploadFileSize, multipartUploadPartSize);
+						_instantSender = new(instantJob, user, fetchCount, senderDelay, retryDelay, threadCount, multipartUploadFileSize, multipartUploadPartSize);
 						_instantSender.Run();
 						log.Debug($"인스턴트 백업 Sender 생성: {instantJob.JobName}");
 					}
@@ -59,7 +59,7 @@ namespace IfsSync2Sender
 					if (user.UpdateFlag) _instantSender.UpdateUser(user);
 
 					// 작업 파라미터 업데이트
-					_instantSender.Update(fetchCount, senderDelay, threadCount, multipartUploadFileSize, multipartUploadPartSize, logRetention);
+					_instantSender.Update(fetchCount, senderDelay, retryDelay, threadCount, multipartUploadFileSize, multipartUploadPartSize, logRetention);
 				}
 
 				// 인스턴트 작업은 일반 작업 목록에서 제외
@@ -93,13 +93,13 @@ namespace IfsSync2Sender
 					if (user.UpdateFlag) sender.UpdateUser(user);
 					// 작업 파라미터 업데이트
 
-					sender.Update(fetchCount, senderDelay, threadCount, multipartUploadFileSize, multipartUploadPartSize, logRetention);
+					sender.Update(fetchCount, senderDelay, retryDelay, threadCount, multipartUploadFileSize, multipartUploadPartSize, logRetention);
 				}
 				// 해당 sender 존재하지 않음
 				else
 				{
 					// sender 생성
-					sender = new(job, user, fetchCount, senderDelay, threadCount, multipartUploadFileSize, multipartUploadPartSize, logRetention);
+					sender = new(job, user, fetchCount, senderDelay, retryDelay, threadCount, multipartUploadFileSize, multipartUploadPartSize, logRetention);
 					sender.Run();
 					_senders.Add(sender);
 				}

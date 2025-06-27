@@ -21,8 +21,8 @@ namespace IfsSync2Sender
 	/// <remarks>
 	/// 인스턴트 백업 전용 Sender 생성자
 	/// </remarks>
-	public class InstantSender(JobData jobData, UserData userData, int fetchCount, int delayTime, int threadCount, long multipartUploadFileSize, long multipartUploadPartSize)
-		: Sender(jobData, userData, fetchCount, delayTime, threadCount, multipartUploadFileSize, multipartUploadPartSize, 0)
+	public class InstantSender(JobData jobData, UserData userData, int fetchCount, int delayTime, int retryDelay, int threadCount, long multipartUploadFileSize, long multipartUploadPartSize)
+		: Sender(jobData, userData, fetchCount, delayTime, retryDelay, threadCount, multipartUploadFileSize, multipartUploadPartSize, 0)
 	{
 		const string INSTANT_BACKUP_START = "Instant Backup Start";
 		const string INSTANT_BACKUP_ANALYSIS = "Analysis File count = ";

@@ -64,31 +64,43 @@ namespace IfsSync2UI
 			T_MultipartUploadSize.Text = CapacityUnit.Format(senderConfig.MultipartUploadFileSize);
 			T_MultipartPartSize.Text = CapacityUnit.Format(senderConfig.MultipartUploadPartSize);
 			T_ThreadCount.Text = senderConfig.ThreadCount.ToString();
+			T_RetryDelay.Text = senderConfig.RetryDelay.ToString();
 			CB_LogRetention.SelectedValue = LogRetention2String(senderConfig.LogRetention);
 		}
 
 		public void Btn_Save(object sender, RoutedEventArgs e)
 		{
-			var multipartUploadFileSize = CapacityUnit.Parse(T_MultipartUploadSize.Text);
-			var multipartUploadPartSize = CapacityUnit.Parse(T_MultipartPartSize.Text);
-			var threadCount = int.Parse(T_ThreadCount.Text);
-			var logRetention = String2LogRetention(CB_LogRetention.SelectedValue.ToString());
-
-			if (multipartUploadFileSize == 0)
+			if (!CapacityUnit.TryParse(T_MultipartUploadSize.Text, out var multipartUploadFileSize))
 			{
 				MessageBox.Show("MultipartUploadFileSize에 숫자를 입력해주세요.");
 				return;
 			}
-			if (multipartUploadPartSize == 0)
+
+			if (!CapacityUnit.TryParse(T_MultipartPartSize.Text, out var multipartUploadPartSize))
 			{
 				MessageBox.Show("MultipartUploadPartSize에 숫자를 입력해주세요.");
 				return;
 			}
-			if (threadCount < 1)
+
+			if (!int.TryParse(T_ThreadCount.Text, out var threadCount) || threadCount < 1)
 			{
 				MessageBox.Show("ThreadCount에 1 이상의 숫자를 입력해주세요.");
 				return;
 			}
+
+			if (!int.TryParse(T_RetryDelay.Text, out var retryDelay) || retryDelay < 1)
+			{
+				MessageBox.Show("RetryDelay에 1 이상의 숫자를 입력해주세요.");
+				return;
+			}
+
+			if (CB_LogRetention.SelectedValue == null)
+			{
+				MessageBox.Show("로그 보관 기간을 선택해주세요.");
+				return;
+			}
+
+			var logRetention = String2LogRetention(CB_LogRetention.SelectedValue.ToString());
 
 			if (multipartUploadFileSize < multipartUploadPartSize)
 			{
@@ -97,10 +109,11 @@ namespace IfsSync2UI
 			}
 
 			SenderConfig senderConfig = new(true);
-			senderConfig.SetOptions(multipartUploadFileSize, multipartUploadPartSize, threadCount, logRetention);
+			senderConfig.SetOptions(multipartUploadFileSize, multipartUploadPartSize, threadCount, logRetention, retryDelay);
 
 			MessageBox.Show("설정이 저장되었습니다.");
 		}
+
 		public void Btn_Close(object sender, RoutedEventArgs e)
 		{
 			Close();

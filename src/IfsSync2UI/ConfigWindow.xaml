@@ -5,7 +5,7 @@
 			 xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
 			 xmlns:local="clr-namespace:IfsSync2UI"
 			 mc:Ignorable="d" 
-			 Title="Settings" Height="250" Width="300">
+			 Title="Settings" Height="350" Width="300">
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
@@ -19,6 +19,7 @@
                     <RowDefinition Height="Auto"/>
                     <RowDefinition Height="Auto"/>
                     <RowDefinition Height="Auto"/>
+					<RowDefinition Height="Auto"/>
                 </Grid.RowDefinitions>
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="Auto"/>
@@ -38,6 +39,11 @@
                 <Label Grid.Row="2" Grid.Column="0" Content="Thread Count" 
                        VerticalAlignment="Center" Margin="5"/>
                 <TextBox Grid.Row="2" Grid.Column="1" x:Name="T_ThreadCount" 
+                        VerticalAlignment="Center" Margin="5"/>
+
+                <Label Grid.Row="3" Grid.Column="0" Content="Retry Delay" 
+                       VerticalAlignment="Center" Margin="5"/>
+                <TextBox Grid.Row="3" Grid.Column="1" x:Name="T_RetryDelay" 
                         VerticalAlignment="Center" Margin="5"/>
             </Grid>
         </GroupBox>
@@ -77,3 +83,4 @@
         </StackPanel>
     </Grid>
 </Window>
+ 

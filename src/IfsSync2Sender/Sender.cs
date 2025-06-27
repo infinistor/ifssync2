@@ -383,13 +383,13 @@ namespace IfsSync2Sender
 			}
 			catch (AggregateException e)
 			{
-				errorMsg = $"DeleteObject Failed. S3://{_bucketName}/{filePath}. StatusCode : {GetStatus(e)}, ErrorCode : {GetErrorCode(e)}";
+				errorMsg = $"Upload Failed. S3://{_bucketName}/{filePath}. StatusCode : {GetStatus(e)}, ErrorCode : {GetErrorCode(e)}";
 				log.Error(errorMsg);
 				return false;
 			}
 			catch (AmazonS3Exception e)
 			{
-				errorMsg = $"DeleteObject Failed. S3://{_bucketName}/{filePath}. StatusCode : {e.StatusCode}, ErrorCode : {e.ErrorCode}";
+				errorMsg = $"Upload Failed. S3://{_bucketName}/{filePath}. StatusCode : {e.StatusCode}, ErrorCode : {e.ErrorCode}";
 				log.Error(e);
 				return false;
 			}
@@ -468,13 +468,13 @@ namespace IfsSync2Sender
 			}
 			catch (AggregateException e)
 			{
-				errorMsg = $"DeleteObject Failed. path : {filePath}. StatusCode : {GetStatus(e)}, ErrorCode : {GetErrorCode(e)}";
+				errorMsg = $"RenameObject Failed. path : {filePath}. StatusCode : {GetStatus(e)}, ErrorCode : {GetErrorCode(e)}";
 				log.Error(errorMsg);
 				return false;
 			}
 			catch (AmazonS3Exception e)
 			{
-				errorMsg = $"DeleteObject Failed. path : {filePath}. StatusCode : {e.StatusCode}, ErrorCode : {e.ErrorCode}";
+				errorMsg = $"RenameObject Failed. path : {filePath}. StatusCode : {e.StatusCode}, ErrorCode : {e.ErrorCode}";
 				log.Error(e);
 				return false;
 			}
@@ -502,6 +502,14 @@ namespace IfsSync2Sender
 				while (true)
 				{
 					var response = _client.ListObjects(_bucketName, prefix: prefix, marker: nextMarker);
+					
+					// S3Objects가 null이거나 비어있는 경우 처리
+					if (response.S3Objects == null || response.S3Objects.Count == 0)
+					{
+						log.Debug($"DeleteObjects: No objects found for prefix {prefix}");
+						break;
+					}
+					
 					var deleteList = response.S3Objects.Select(x => new KeyVersion() { Key = x.Key }).ToList();
 					_client.DeleteObjects(new DeleteObjectsRequest() { BucketName = _bucketName, Objects = deleteList });
 
@@ -749,7 +757,7 @@ namespace IfsSync2Sender
 					{
 						// 업로드 시작 시점 저장
 						task.UploadStartTime = IfsSync2Utilities.GetCurrentTime();
-						
+
 						string uploadPath = string.IsNullOrWhiteSpace(task.SnapshotPath) ? task.FilePath : task.SnapshotPath;
 
 						//File Check
@@ -758,8 +766,30 @@ namespace IfsSync2Sender
 						// 중복 파일 처리
 						if (meta != null)
 						{
-							// checksum 이 있을 경우 비교
-							if (meta.ChecksumAlgorithm != S3ChecksumAlgorithm.None)
+							// 경로가 폴더인 경우 체크섬 계산 건너뛰기
+							bool isDirectory;
+							try
+							{
+								// VSS 경로나 일반 경로에서 폴더인지 확인
+								string checkPath = uploadPath.TrimEnd('\\', '/');
+								isDirectory = Directory.Exists(checkPath);
+
+								log.Debug($"{Job.JobName} isDirectory: {isDirectory}");
+
+								// 경로가 백슬래시로 끝나거나 폴더인 경우
+								if (isDirectory || uploadPath.EndsWith('\\') || uploadPath.EndsWith('/'))
+								{
+									log.Debug($"{Job.JobName} 폴더 경로이므로 체크섬 계산 건너뛰기: {uploadPath}");
+								}
+							}
+							catch (Exception ex)
+							{
+								log.Debug($"{Job.JobName} 경로 검증 중 오류 (체크섬 계산 계속 진행): {uploadPath}, 오류: {ex.Message}");
+								isDirectory = false;
+							}
+
+							// checksum 이 있을 경우 비교 (폴더가 아닌 경우에만)
+							if (!isDirectory && meta.ChecksumAlgorithm != S3ChecksumAlgorithm.None)
 							{
 								try
 								{
@@ -777,8 +807,8 @@ namespace IfsSync2Sender
 									log.Error($"{Job.JobName} Checksum 계산 중 오류 발생: {uploadPath}", ex);
 								}
 							}
-							// checksum 이 없을 경우 MD5Sum에 -가 없을 경우 비교
-							else if (!string.IsNullOrWhiteSpace(meta.MD5) && !meta.MD5.Contains('-'))
+							// checksum 이 없을 경우 MD5Sum에 -가 없을 경우 비교 (폴더가 아닌 경우에만)
+							else if (!isDirectory && !string.IsNullOrWhiteSpace(meta.MD5) && !meta.MD5.Contains('-'))
 							{
 								try
 								{
@@ -802,12 +832,52 @@ namespace IfsSync2Sender
 							}
 						}
 
-						if (Upload(task.FilePath, uploadPath, out string ErrorMsg)) task.UploadFlag = true;
-						else
+						while (true)
 						{
-							if (_status.Error) return false;
-							task.UploadFlag = false;
-							task.Result = ErrorMsg;
+							if (Upload(task.FilePath, uploadPath, out string ErrorMsg))
+							{
+								task.UploadFlag = true;
+								break;
+							}
+							else
+							{
+								// 재시도하지 않아야 할 오류들
+								if (ErrorMsg.Contains("Path not found") ||
+									ErrorMsg.Contains("File not found") ||
+									ErrorMsg.Contains("Access denied") ||
+									ErrorMsg.Contains("Unauthorized") ||
+									ErrorMsg.Contains("Forbidden") ||
+									ErrorMsg.Contains("NoSuchBucket") ||
+									ErrorMsg.Contains("InvalidAccessKeyId") ||
+									ErrorMsg.Contains("SignatureDoesNotMatch"))
+								{
+									log.Error($"{Job.JobName} 재시도 불가능한 오류: {task.FilePath} - {ErrorMsg}");
+
+									task.UploadFlag = false;
+									task.Result = ErrorMsg;
+									break;
+								}
+								else
+								{
+									// 네트워크 연결 오류인 경우 짧은 딜레이 후 재시도
+									if (ErrorMsg.Contains("연결할 수 없는 호스트") || 
+										ErrorMsg.Contains("ConnectFailure") ||
+										ErrorMsg.Contains("No route to host") ||
+										ErrorMsg.Contains("Connection refused") ||
+										ErrorMsg.Contains("InternalError") ||
+										ErrorMsg.Contains("SlowDown") ||
+										ErrorMsg.Contains("TooManyRequestsException"))
+									{
+										log.Warn($"{Job.JobName} 일시적 오류 (3초 후 재시도): {task.FilePath} - {ErrorMsg}");
+										Thread.Sleep(3000); // 3초 대기
+									}
+									else
+									{
+										// 그 외 모든 오류는 로그만 남기고 계속 진행 (다음 사이클에서 재시도)
+										log.Warn($"{Job.JobName} 업로드 실패 (재시도 예정): {task.FilePath} - {ErrorMsg}");
+									}
+								}
+							}
 						}
 						task.UploadTime = IfsSync2Utilities.GetCurrentTime();
 						_taskManager.Update(task);
@@ -817,7 +887,7 @@ namespace IfsSync2Sender
 					{
 						// 업로드 시작 시점 저장
 						task.UploadStartTime = IfsSync2Utilities.GetCurrentTime();
-						
+
 						if (RenameObject(task.FilePath, task.NewFilePath, out string ErrorMsg)) task.UploadFlag = true;
 						else
 						{
@@ -833,7 +903,7 @@ namespace IfsSync2Sender
 					{
 						// 업로드 시작 시점 저장
 						task.UploadStartTime = IfsSync2Utilities.GetCurrentTime();
-						
+
 						// 폴더일 경우 폴더 내 모든 파일 삭제
 						if (task.FilePath.EndsWith('\\'))
 						{
@@ -871,4 +941,3 @@ namespace IfsSync2Sender
 		}
 	}
 }
-

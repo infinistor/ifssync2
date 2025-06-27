@@ -24,6 +24,7 @@ using System.Windows.Controls.Primitives;
 using System.Threading;
 using System.Runtime.Versioning;
 using IfsSync2Common;
+using System.Threading.Tasks;
 
 [assembly: XmlConfigurator(ConfigFile = "IfsSync2UILogConfig.xml", Watch = true)]
 
@@ -119,7 +120,7 @@ namespace IfsSync2UI
 				StorageListUpdate();
 			});
 		}
-		void TabInit()
+		async Task TabInit()
 		{
 			//Set Job
 			List<JobData> JobList;
@@ -142,26 +143,21 @@ namespace IfsSync2UI
 				instant.Id = _jobSQL.GetJobDataId(instant.HostName, instant.JobName);
 				JobList.Add(instant);
 			}
+
+			// 각 Job에 대해 탭 생성 및 JobTab 초기화
 			foreach (var Job in JobList)
 			{
-				try
+				var item = new TabItem
 				{
-					MainTab.Dispatcher.Invoke(delegate
-					{
-						var item = new TabItem();
-
-						var tabItemContent = new JobTab(item, Job, false);
-						item.Content = tabItemContent;
-
-						item.Header = Job.JobName;
-						MainTab.Items.Add(item);
-					});
-					_log.Info($"Load JobData : {Job.JobName}");
-				}
-				catch (Exception ex)
-				{
-					_log.Error(ex);
-				}
+					Header = Job.JobName
+				};
+				
+				// JobTab을 비동기로 생성 (자신의 정보를 직접 로딩)
+				var tabItemContent = new JobTab(item, Job, false);
+				item.Content = tabItemContent;
+				
+				MainTab.Items.Add(item);
+				_log.Info($"Load JobData : {Job.JobName}");
 			}
 
 			MainTab.SelectedIndex = 0;

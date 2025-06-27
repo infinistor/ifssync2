@@ -91,8 +91,8 @@ namespace IfsSync2UI
 			//dir Tree Create
 			TreeList = [];
 
+			// 기본 UI 초기화
 			UserDataListUpdate();
-			SourceSelectionUpdate();
 			ExtensionListUpdate();
 			Bindings();
 
@@ -120,7 +120,30 @@ namespace IfsSync2UI
 
 			UpdateButton();
 			ChangeData(false);
+			
+			// 비동기로 자신의 데이터 로딩 시작
+			_ = InitializeAsync();
 		}
+
+		private async Task InitializeAsync()
+		{
+			try
+			{
+				// 탭 헤더에 로딩 표시
+				_thisTab.Header = $"{Job.JobName} (로딩 중...)";
+
+				await SourceSelectionUpdate();
+
+				// 로딩 완료
+				_thisTab.Header = Job.JobName;
+			}
+			catch (Exception ex)
+			{
+				log.Error($"JobTab 초기화 오류: {Job.JobName}", ex);
+				_thisTab.Header = Job.JobName;
+			}
+		}
+
 		private void VSSFileExtInit()
 		{
 			string[] result = VSSFILEEXTLIST.Split('|');
@@ -156,6 +179,7 @@ namespace IfsSync2UI
 			L_ExtensionList.ItemsSource = FindExtensionList;
 			L_SelectedExtensionList.ItemsSource = Job.WhiteFileExt;
 			L_DirList.ItemsSource = DirectoryList;
+
 			ChangeData(false);
 		}
 		private void UnableButton()
@@ -394,9 +418,9 @@ namespace IfsSync2UI
 		#endregion BackupManagement
 
 		#region Source Selection
-		private void SourceSelectionUpdate()
+		private async Task SourceSelectionUpdate()
 		{
-			LoadDrive();
+			await LoadDriveAsync();
 			DirectoryList.Clear();
 			foreach (string item in Job.Path)
 			{
@@ -406,62 +430,150 @@ namespace IfsSync2UI
 		}
 		private void Btn_SourceUpdate(object sender, RoutedEventArgs e)
 		{
-			SourceSelectionUpdate();
+			_ = SourceSelectionUpdate();
 		}
 
-		public void LoadDrive()
+		public async Task LoadDriveAsync()
 		{
-			TreeNode root = new()
+			// UI 스레드에서 필요한 이미지 소스를 미리 가져오기
+			var computerIconSource = await Dispatcher.InvokeAsync(() => image_ComputerIcon.Source);
+			var userProfileIconSource = await Dispatcher.InvokeAsync(() => Utility.GetIconImageSource(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile)));
+			
+			await Task.Run(async () =>
 			{
-				Name = Root,
-				FullPath = Root,
-				FileIcon = image_ComputerIcon.Source
-			};
-
-			//driver Add
-			DriveInfo[] allDrives = DriveInfo.GetDrives();
-			foreach (var drive in allDrives)
-			{
-				if (drive.IsReady)
+				try
 				{
-					TreeNode item = new()
+					TreeNode root = new()
 					{
-						Name = drive.VolumeLabel + " (" + drive.Name.TrimEnd('\\') + ")",
-						FullPath = drive.Name,
-						FileIcon = Utility.GetIconImageSource(drive.Name),
+						Name = Root,
+						FullPath = Root,
+						FileIcon = computerIconSource
 					};
-					GetPCSubDirectories(item);
-					root.Children.Add(item);
+
+					//driver Add
+					DriveInfo[] allDrives = DriveInfo.GetDrives();
+					
+					foreach (var drive in allDrives)
+					{
+						if (drive.IsReady)
+						{
+							try
+							{
+								// UI 스레드에서 아이콘 가져오기
+								var driveIconSource = await Dispatcher.InvokeAsync(() => Utility.GetIconImageSource(drive.Name));
+								
+								TreeNode item = new()
+								{
+									Name = drive.VolumeLabel + " (" + drive.Name.TrimEnd('\\') + ")",
+									FullPath = drive.Name,
+									FileIcon = driveIconSource,
+								};
+								
+								await GetPCSubDirectoriesAsync(item);
+								
+								root.Children.Add(item);
+							}
+							catch (Exception ex)
+							{
+								log.Error($"드라이브 처리 중 오류: {drive.Name}", ex);
+							}
+						}
+					}
+
+					root.Initialize();
+					log.Info("Load root directory");
+
+					string userName = "Default";
+					string myUserPath = string.Empty;
+					try
+					{
+						myUserPath = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+						userName = Environment.UserName;
+					}
+					catch (Exception ex)
+					{
+						log.Error($"LoadDrive : {ex.Message}");
+					}
+
+					var myUserItem = new TreeNode()
+					{
+						Name = userName,
+						FullPath = myUserPath,
+						FileIcon = userProfileIconSource,
+					};
+					await GetPCSubDirectoriesAsync(myUserItem);
+					log.Info("Load my user directory");
+
+					await Dispatcher.InvokeAsync(() =>
+					{
+						TreeList.Clear();
+						TreeList.Add(myUserItem);
+						TreeList.Add(root);
+					});
 				}
-			}
+				catch (Exception ex)
+				{
+					log.Error($"LoadDriveAsync Task.Run 내부 오류: {Job.JobName}", ex);
+				}
+			});
+		}
 
-			root.Initialize();
-			log.Info("Load root directory");
+		private static async Task GetPCSubDirectoriesAsync(TreeNode node)
+		{
+			if (node == null) return;
+			if (node.Children.Count > 0) return;
 
-			string userName = "Default";
-			string myUserPath = string.Empty;
-			try
+			await Task.Run(async () =>
 			{
-				myUserPath = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
-				userName = Environment.UserName;
-			}
-			catch (Exception ex)
-			{
-				log.Error($"LoadDrive : {ex.Message}");
-			}
+				try
+				{
+					node.Children.Clear();
+					
+					DirectoryInfo dirInfo = new(node.FullPath);
+					
+					var subDirs = dirInfo.GetDirectories();
 
-			var myUserItem = new TreeNode()
-			{
-				Name = userName,
-				FullPath = myUserPath,
-				FileIcon = Utility.GetIconImageSource(myUserPath),
-			};
-			GetPCSubDirectories(myUserItem);
-			log.Info("Load my user directory");
+					foreach (var subDir in subDirs)
+					{
+						if (subDir.Name == "Documents and Settings" ||
+							subDir.Name == "System Volume Information" ||
+							subDir.FullName.Contains('$'))
+						{
+							continue;
+						}
 
-			TreeList.Clear();
-			TreeList.Add(myUserItem);
-			TreeList.Add(root);
+						try
+						{
+							// UI 스레드에서 아이콘 가져오기
+							var defaultIcon = await Application.Current.Dispatcher.InvokeAsync(() => 
+								Utility.GetIcon(subDir.FullName, IconSize.Small, ItemState.Close));
+							var defaultIconSource = await Application.Current.Dispatcher.InvokeAsync(() => 
+								Utility.IconToImageSource(defaultIcon));
+							var folderIconSource = await Application.Current.Dispatcher.InvokeAsync(() => 
+								Utility.GetIconImageSource(subDir.FullName));
+
+							var item = new TreeNode()
+							{
+								Name = subDir.Name,
+								FullPath = subDir.FullName,
+								FileIcon = folderIconSource ?? defaultIconSource
+							};
+							
+							node.Children.Add(item);
+						}
+						catch (Exception ex)
+						{
+							log.Error($"하위 디렉토리 처리 중 오류: {subDir.FullName}", ex);
+						}
+					}
+					
+					node.Initialize();
+				}
+				catch (Exception e)
+				{
+					log.Error($"GetPCSubDirectoriesAsync 오류: {node.FullPath}", e);
+				}
+			});
 		}
 
 		private static void GetPCSubDirectories(TreeNode node)

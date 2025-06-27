@@ -1133,8 +1133,11 @@ namespace IfsSync2UI
 
 		void SettingsButtonClieck(object sender, RoutedEventArgs e)
 		{
-			ConfigWindow settingsWindow = new();
-			settingsWindow.WindowStartupLocation = WindowStartupLocation.CenterScreen;
+			ConfigWindow settingsWindow = new()
+			{
+				Owner = this,
+				WindowStartupLocation = WindowStartupLocation.CenterScreen
+			};
 			settingsWindow.Show();
 		}
 	}

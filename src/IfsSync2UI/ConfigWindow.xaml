@@ -41,7 +41,7 @@
                 <TextBox Grid.Row="2" Grid.Column="1" x:Name="T_ThreadCount" 
                         VerticalAlignment="Center" Margin="5"/>
 
-                <Label Grid.Row="3" Grid.Column="0" Content="Retry Delay" 
+                <Label Grid.Row="3" Grid.Column="0" Content="Retry Delay(sec)" 
                        VerticalAlignment="Center" Margin="5"/>
                 <TextBox Grid.Row="3" Grid.Column="1" x:Name="T_RetryDelay" 
                         VerticalAlignment="Center" Margin="5"/>
@@ -60,7 +60,7 @@
 
                 <Label Grid.Column="0" Content="Delete Old Logs" 
                        VerticalAlignment="Center" Margin="5"/>
-                <ComboBox Grid.Column="1" x:Name="CB_LogRetention" 
+                <ComboBox Grid.Column="1" x:Name="CB_LogRetention" SelectedValuePath="Content"
                          VerticalAlignment="Center" Margin="5">
                     <ComboBoxItem Content="Unlimited" IsSelected="True"/>
                     <ComboBoxItem Content="1 Week"/>

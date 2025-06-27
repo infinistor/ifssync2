@@ -43,14 +43,7 @@ namespace IfsSync2Filter
 		/// <returns>파일 이벤트 유형 (None, SaveFile, SaveNewFile, Rename, Delete 중 하나)</returns>
 		public static EventList FindSaveByRenameEvent(ObservableCollection<string> Path, string FilePath, string NewFilePath)
 		{
-			if (RecycleCheck(NewFilePath))
-			{
-				if (IsLikeFolder(FilePath))
-				{
-					return EventList.Delete;
-				}
-				return EventList.None;
-			}
+			if (RecycleCheck(NewFilePath)) return EventList.Delete;
 			if (CSVSaveCheck(FilePath, NewFilePath)) return EventList.SaveFile;
 			if (PDFSaveCheck(FilePath, NewFilePath)) return EventList.SaveNewFile;
 			if (MoveSaveCheck(Path, FilePath)) return EventList.SaveNewFile;

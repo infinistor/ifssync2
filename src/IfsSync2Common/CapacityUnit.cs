@@ -100,6 +100,12 @@ namespace IfsSync2Common
 			};
 		}
 
+		public static bool TryParse(string size, out long value)
+		{
+			value = Parse(size);
+			return value != 0;
+		}
+
 		/// <summary>
 		/// 크기 문자열을 파싱합니다.
 		/// </summary>

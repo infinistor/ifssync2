@@ -159,6 +159,7 @@ namespace IfsSync2Init
 
 			Console.WriteLine("Registry Delete.");
 			if (System.Runtime.InteropServices.RuntimeInformation.IsOSPlatform(System.Runtime.InteropServices.OSPlatform.Windows))
+			{
 				try
 				{
 					Registry.LocalMachine.DeleteSubKeyTree(IfsSync2Constants.REGISTRY_ROOT);
@@ -167,6 +168,7 @@ namespace IfsSync2Init
 				{
 					Console.WriteLine(e.Message);
 				}
+			}
 			Console.WriteLine("Registry Delete End!");
 
 			Console.WriteLine("Service Stop.");
@@ -348,8 +350,53 @@ namespace IfsSync2Init
 			{
 				foreach (var process in ProcessList)
 				{
-					process.Kill();
-					Console.WriteLine("{0} : is Kill", process.ProcessName);
+					try
+					{
+						Console.WriteLine("Terminating process: {0}", process.ProcessName);
+						process.Kill();
+
+						// 프로세스가 실제로 종료될 때까지 확인 (최대 10초)
+						int maxWaitTime = 10000; // 10초
+						int checkInterval = 100; // 100ms마다 체크
+						int elapsedTime = 0;
+
+						while (elapsedTime < maxWaitTime)
+						{
+							if (process.HasExited)
+							{
+								Console.WriteLine("{0} : is Kill", process.ProcessName);
+								break;
+							}
+
+							System.Threading.Thread.Sleep(checkInterval);
+							elapsedTime += checkInterval;
+						}
+
+						// 여전히 살아있다면 강제 종료
+						if (!process.HasExited)
+						{
+							Console.WriteLine("Force killing process: {0}", process.ProcessName);
+							process.Kill(true); // 강제 종료
+
+							// 강제 종료 후에도 한 번 더 확인
+							if (!process.WaitForExit(2000)) // 2초 대기
+							{
+								Console.WriteLine("Warning: Process {0} may still be running after force kill", process.ProcessName);
+							}
+							else
+							{
+								Console.WriteLine("{0} : force killed", process.ProcessName);
+							}
+						}
+					}
+					catch (Exception e)
+					{
+						Console.WriteLine("Error killing process {0}: {1}", process.ProcessName, e.Message);
+					}
+					finally
+					{
+						process?.Dispose();
+					}
 				}
 			}
 		}
@@ -390,15 +437,24 @@ namespace IfsSync2Init
 			{
 				if (CBFSInstallCheck(mFilter))
 				{
+					Console.WriteLine("Uninstalling CBFS driver...");
 					bool Reboot = mFilter.Uninstall(IfsSync2Constants.FILTER_DRIVE_PATH, IfsSync2Constants.mGuid, null, 0);
 
 					if (Reboot)
 						Console.WriteLine("Reboot the computer for the changes to take affect");
 					else
-						Console.WriteLine("Driver installed successfully");
+						Console.WriteLine("Driver uninstalled successfully");
+				}
+				else
+				{
+					Console.WriteLine("CBFS driver is not installed, skipping uninstall.");
 				}
 			}
 			catch (CBFSFilterCbfilterException e)
+			{
+				Console.WriteLine("CBFS Uninstall Error: " + e.Message);
+			}
+			catch (Exception e)
 			{
 				Console.WriteLine("CBFS Uninstall Error: " + e.Message);
 			}
